@@ -102,10 +102,8 @@ describe("interpreter", () => {
           role "Specialist"
           description "Specialized function description."
 
-          return generate({ input: "x" }) {
-            return {
+          return generate({ input: "x" }) -> {
               ok boolean
-            }
           }
         }
       }
@@ -140,10 +138,8 @@ describe("interpreter", () => {
           insight = none
 
           repeat * 2 {
-            insight = generate({ input: "reflect" }) {
-              return {
+            insight = generate({ input: "reflect" }) -> {
                 value string
-              }
             }
           }
 

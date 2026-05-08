@@ -75,12 +75,10 @@ main agent PlanAndExecute {
         use goal
         use results.summary < 2k
 
-        return generate({ input: "Create the final answer from executed steps", limit: 800 }) {
-            return {
-                ok boolean
-                text string
-                error string
-            }
+        return generate({ input: "Create the final answer from executed steps", limit: 800 }) -> {
+            ok boolean
+            text string
+            error string
         }
     }
 }
@@ -95,12 +93,10 @@ agent Planner {
         use input.problem
         use input.previous < 1k
 
-        return generate({ input: "Create a three step plan", limit: 600 }) {
-            return {
-                step1 string
-                step2 string
-                step3 string
-            }
+        return generate({ input: "Create a three step plan", limit: 600 }) -> {
+            step1 string
+            step2 string
+            step3 string
         }
     }
 }
@@ -125,12 +121,10 @@ agent Executor {
 
         use observation
 
-        return generate({ input: "Report the result of this step", limit: 500 }) {
-            return {
-                ok boolean
-                output json
-                error string
-            }
+        return generate({ input: "Report the result of this step", limit: 500 }) -> {
+            ok boolean
+            output json
+            error string
         }
     }
 }
@@ -145,11 +139,9 @@ agent Verifier {
         use input.step
         use input.result
 
-        return generate({ input: "Verify this step result", limit: 300 }) {
-            return {
-                ok boolean
-                reason string
-            }
+        return generate({ input: "Verify this step result", limit: 300 }) -> {
+            ok boolean
+            reason string
         }
     }
 }

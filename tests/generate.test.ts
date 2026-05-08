@@ -21,10 +21,8 @@ describe("generate", () => {
 
         main func act(input) {
           use input.question < 2k
-          return generate({ input: "answer", limit: 300 }) {
-            return {
+          return generate({ input: "answer", limit: 300 }) -> {
               ok boolean
-            }
           }
         }
       }
@@ -65,10 +63,8 @@ describe("generate", () => {
         description "Debug prompts."
 
         main func act(input) {
-          return generate({ input: "answer", debug: true }) {
-            return {
+          return generate({ input: "answer", debug: true }) -> {
               ok boolean
-            }
           }
         }
       }
@@ -100,10 +96,8 @@ describe("generate", () => {
         description "Repair invalid structured output."
 
         main func act(input) {
-          return generate({ input: "answer", attempts: 2 }) {
-            return {
+          return generate({ input: "answer", attempts: 2 }) -> {
               ok boolean
-            }
           }
         }
       }
@@ -136,10 +130,8 @@ describe("generate", () => {
         description "Repair invalid JSON."
 
         main func act(input) {
-          return generate({ input: "answer", attempts: 2 }) {
-            return {
+          return generate({ input: "answer", attempts: 2 }) -> {
               ok boolean
-            }
           }
         }
       }
@@ -180,10 +172,8 @@ describe("generate", () => {
         description "Reject invalid attempts."
 
         main func act(input) {
-          return generate({ input: "answer", attempts: 0 }) {
-            return {
+          return generate({ input: "answer", attempts: 0 }) -> {
               ok boolean
-            }
           }
         }
       }
@@ -208,10 +198,8 @@ describe("generate", () => {
           scratch.add({ fact: "A" })
           scratch.add({ fact: "B" })
 
-          return generate({ input: "answer" }) {
-            return {
+          return generate({ input: "answer" }) -> {
               ok boolean
-            }
           }
         }
       }
@@ -243,10 +231,8 @@ describe("generate", () => {
         description "Validate generated output."
 
         main func(input) {
-          return generate({ input: "x" }) {
-            return {
+          return generate({ input: "x" }) -> {
               ok boolean
-            }
           }
         }
       }
@@ -273,14 +259,12 @@ describe("generate", () => {
         description "Coerce unstable LLM JSON values."
 
         main func(input) {
-          return generate({ input: "x" }) {
-            return {
+          return generate({ input: "x" }) -> {
               ok boolean
               count number
               flags list[boolean]
               scores list[number]
               text string
-            }
           }
         }
       }
@@ -344,10 +328,8 @@ describe("generate", () => {
 
         main func(input) {
           use Requirements < 100
-          return generate({ input: "summarize" }) {
-            return {
+          return generate({ input: "summarize" }) -> {
               ok boolean
-            }
           }
         }
       }

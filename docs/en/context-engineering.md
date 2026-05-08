@@ -8,13 +8,13 @@ AgentScript has variables, functions, loops, and agent calls, but its primary pu
 
 AgentScript's control flow serves prompt context construction.
 
-Ordinary statements organize data, call tools, call agents, and update intermediate state. LLM calls happen only through `generate(...) { return ... }`, and the context visible to `generate` must be declared explicitly with `use`.
+Ordinary statements organize data, call tools, call agents, and update intermediate state. LLM calls happen only through `generate(...) -> { ... }`, and the context visible to `generate` must be declared explicitly with `use`.
 
 The core objects are:
 
 - **Data**: ordinary variables, JSON values, lists, file imports, tool observations, agent return values.
 - **Context Source**: a prompt context origin declared by `use expr < budget`.
-- **Generation Site**: an LLM call declared by `generate({ input, limit, attempts, debug }) { return shape }`.
+- **Generation Site**: an LLM call declared by `generate({ input, limit, attempts, debug }) -> shape`.
 - **Boundary**: context visibility boundaries formed by agent, function, and block scopes.
 
 ## Semantics of `use`
@@ -33,12 +33,10 @@ func answer(question, scratch) {
     return generate({
         input: "Answer the question using collected facts"
         limit: 800
-    }) {
-        return {
-            ok boolean
-            text string
-            error string
-        }
+    }) -> {
+        ok boolean
+        text string
+        error string
     }
 }
 ```
@@ -57,10 +55,8 @@ main func(input) {
     scratch.add({ fact: "A" })
     scratch.add({ fact: "B" })
 
-    return generate({ input: "Answer from scratch" }) {
-        return {
-            text string
-        }
+    return generate({ input: "Answer from scratch" }) -> {
+        text string
     }
 }
 ```
@@ -108,10 +104,8 @@ func caller(input) {
 
 func helper(input) {
     use input.detail
-    return generate({ input: "Work on detail" }) {
-        return {
-            ok boolean
-        }
+    return generate({ input: "Work on detail" }) -> {
+        ok boolean
     }
 }
 ```
@@ -145,10 +139,8 @@ Blocks (`if`, `repeat`, `loop`, `for`) create child scopes. `use` declarations i
 if condition {
     temp = compute(input)
     use temp
-    result = generate({ input: "Use temp" }) {
-        return {
-            ok boolean
-        }
+    result = generate({ input: "Use temp" }) -> {
+        ok boolean
     }
 }
 ```
@@ -205,11 +197,9 @@ Source labels help models understand context and help humans audit prompts.
 Comes from the `input` field of `generate(...)` options.
 
 ```agentscript
-generate({ input: "Answer the question using only collected facts" }) {
-    return {
-        ok boolean
-        text string
-    }
+generate({ input: "Answer the question using only collected facts" }) -> {
+    ok boolean
+    text string
 }
 ```
 

@@ -7,12 +7,10 @@ describe("buildContext", () => {
     const ast = parse(`
       agent A {
         func act(input) {
-          return generate({ input: "answer" }) {
-            return {
+          return generate({ input: "answer" }) -> {
               ok boolean
               text string
               facts list[string]
-            }
           }
         }
       }
@@ -53,10 +51,8 @@ describe("buildContext", () => {
     const ast = parse(`
       agent A {
         func act(input) {
-          return generate({ input: "answer" }) {
-            return {
+          return generate({ input: "answer" }) -> {
               ok boolean
-            }
           }
         }
       }
@@ -89,12 +85,10 @@ describe("shapeToSchema", () => {
     const ast = parse(`
       agent A {
         func act(input) {
-          return generate({ input: "x" }) {
-            return {
+          return generate({ input: "x" }) -> {
               items list[string]
               score number
               data json
-            }
           }
         }
       }

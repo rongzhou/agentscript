@@ -57,12 +57,10 @@ describe("parse", () => {
     const ast = parse(`
       main agent A {
         main func act(input) {
-          return generate({ input: "x", limit: 2k, debug: true }) {
-            return {
+          return generate({ input: "x", limit: 2k, debug: true }) -> {
               ok boolean
               facts list[string]
               data json
-            }
           }
         }
       }

@@ -37,11 +37,9 @@ describe("analyze", () => {
       parse(`
         main agent A {
           main func act(input) {
-            return generate({ input: "x" }) {
-              return {
+            return generate({ input: "x" }) -> {
                 ok boolean
                 ok string
-              }
             }
           }
 
@@ -254,10 +252,8 @@ describe("analyze", () => {
 
         main agent A {
           main func act(input) {
-            return generate({ input: "x" }) {
-              return {
+            return generate({ input: "x" }) -> {
                 ok boolean
-              }
             }
           }
         }
@@ -275,10 +271,8 @@ describe("analyze", () => {
             model Qwen
             role "Assistant"
             description "Answer."
-            return generate({ input: "x" }) {
-              return {
+            return generate({ input: "x" }) -> {
                 ok boolean
-              }
             }
           }
         }
@@ -299,10 +293,8 @@ describe("analyze", () => {
           description "Validate generate options."
 
           main func act(input) {
-            return generate({ input: "x", limit: 0, debug: "yes" }) {
-              return {
+            return generate({ input: "x", limit: 0, debug: "yes" }) -> {
                 ok boolean
-              }
             }
           }
         }

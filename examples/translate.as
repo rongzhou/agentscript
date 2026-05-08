@@ -21,13 +21,11 @@ main agent MarkdownTranslator {
         use input.target_language
         use files < 4k
 
-        return generate({ input: "Create a practical markdown translation plan", limit: 1000 }) {
-            return {
-                target_language string
-                files list[string]
-                glossary_notes list[string]
-                instructions string
-            }
+        return generate({ input: "Create a practical markdown translation plan", limit: 1000 }) -> {
+            target_language string
+            files list[string]
+            glossary_notes list[string]
+            instructions string
         }
     }
 }

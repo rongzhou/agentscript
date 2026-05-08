@@ -57,6 +57,7 @@ const SYMBOLS = new Set([
   "=",
   "!",
   "<",
+  "-",
   "*"
 ]);
 
@@ -101,7 +102,7 @@ class Scanner {
 
       if (SYMBOLS.has(char)) {
         const twoChar = `${char}${this.peekNext()}`;
-        if (twoChar === "==" || twoChar === "!=") {
+        if (twoChar === "==" || twoChar === "!=" || twoChar === "->") {
           this.advance();
           this.advance();
           tokens.push({

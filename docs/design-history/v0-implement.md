@@ -92,7 +92,7 @@ V0 AST 节点：
 - `main agent { ... }` 映射为匿名入口 Agent，内部名 `__main_agent`。
 - `main func(input) { ... }` 映射为匿名入口函数，内部名 `__main`。
 - `AgentName(input)` 是普通 `CallExpr`，语义和运行时把它解析为目标 Agent 的 `main func` 调用。
-- `generate({ input: "...", limit: 500 }) { return { ... } }` 把生成预算保存在 `GenerateExpr` options 中。
+- `generate({ input: "...", limit: 500 }) -> { ... }` 把生成预算保存在 `GenerateExpr` options 中。
 - `use value < 2k` 的预算在 `UseStmt` 上。
 - `loop until done < 6` 的 `< 6` 是循环上限，不是比较表达式。
 
@@ -198,7 +198,7 @@ V0 的预算裁剪按字符数实现：`2k` 约等于 2000 字符。这是当前
 
 ```ts
 interface ToolProvider {
-  call(request: ToolCallRequest): Promise<RuntimeValue>;
+    call(request: ToolCallRequest): Promise<RuntimeValue>;
 }
 ```
 

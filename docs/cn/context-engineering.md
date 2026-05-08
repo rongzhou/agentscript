@@ -10,13 +10,13 @@ AgentScript 表面上有变量、函数、循环和 Agent 调用，但它的主�
 
 AgentScript 的控制流服务于 prompt context 构建。
 
-普通语句负责组织数据、调用工具、调用 Agent 和更新中间状态。LLM 调用只能通过 `generate(...) { return ... }` 发生，而 `generate` 能看到的上下文必须由 `use` 显式声明。
+普通语句负责组织数据、调用工具、调用 Agent 和更新中间状态。LLM 调用只能通过 `generate(...) -> { ... }` 发生，而 `generate` 能看到的上下文必须由 `use` 显式声明。
 
 AgentScript 的核心对象是：
 
 - `Data`：普通变量、JSON、list、file import、tool observation 和 Agent 返回值。
 - `Context Source`：由 `use expr < budget` 声明的 prompt context 来源。
-- `Generation Site`：由 `generate({ input, limit, attempts, debug }) { return shape }` 声明的一次 LLM 调用。
+- `Generation Site`：由 `generate({ input, limit, attempts, debug }) -> shape` 声明的一次 LLM 调用。
 - `Boundary`：由 Agent、function 和 block scope 形成的 context 可见性边界。
 
 ## `use` 的语义
@@ -35,12 +35,10 @@ func answer(question, scratch) {
     return generate({
         input: "Answer the question using collected facts"
         limit: 800
-    }) {
-        return {
-            ok boolean
-            text string
-            error string
-        }
+    }) -> {
+        ok boolean
+        text string
+        error string
     }
 }
 ```
@@ -63,10 +61,8 @@ main func(input) {
     scratch.add({ fact: "A" })
     scratch.add({ fact: "B" })
 
-    return generate({ input: "Answer from scratch" }) {
-        return {
-            text string
-        }
+    return generate({ input: "Answer from scratch" }) -> {
+        text string
     }
 }
 ```
@@ -128,10 +124,8 @@ func caller(input) {
 
 func helper(input) {
     use input.detail
-    return generate({ input: "Work on detail" }) {
-        return {
-            ok boolean
-        }
+    return generate({ input: "Work on detail" }) -> {
+        ok boolean
     }
 }
 ```
@@ -171,10 +165,8 @@ result = Worker({
 if condition {
     temp = compute(input)
     use temp
-    result = generate({ input: "Use temp" }) {
-        return {
-            ok boolean
-        }
+    result = generate({ input: "Use temp" }) -> {
+        ok boolean
     }
 }
 ```
@@ -231,11 +223,9 @@ source label 有助于模型理解 context，也有助于人类审计。
 Instruction 层来自 `generate(...)` 参数对象中的 `input` 字段。
 
 ```agentscript
-generate({ input: "Answer the question using only collected facts" }) {
-    return {
-        ok boolean
-        text string
-    }
+generate({ input: "Answer the question using only collected facts" }) -> {
+    ok boolean
+    text string
 }
 ```
 
@@ -273,10 +263,8 @@ use scratch.summary < 2k
 return generate({
     input: "Summarize"
     limit: 500
-}) {
-    return {
-        text string
-    }
+}) -> {
+    text string
 }
 ```
 

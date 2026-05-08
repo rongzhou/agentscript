@@ -21,12 +21,10 @@ main agent SelfImprover {
         result = generate({
             input: "Answer the goal using any relevant lessons.",
             attempts: 3
-        }) {
-            return {
-                ok boolean
-                answer string
-                reason string
-            }
+        }) -> {
+            ok boolean
+            answer string
+            reason string
         }
 
         lesson = reflect({
@@ -51,10 +49,8 @@ main agent SelfImprover {
         return generate({
             input: "Extract one durable lesson that could improve a future run.",
             attempts: 3
-        }) {
-            return {
-                insight string
-            }
+        }) -> {
+            insight string
         }
     }
 }

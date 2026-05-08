@@ -7,11 +7,9 @@
 
 ```agentscript
 use scratch.summary < 2k
-return generate({ input: "Answer from observations" }) {
-    return {
-        ok boolean
-        text string
-    }
+return generate({ input: "Answer from observations" }) -> {
+    ok boolean
+    text string
 }
 ```
 
@@ -69,13 +67,11 @@ main agent FileSummarizer {
         return generate({
             input: "Summarize the file for a busy teammate"
             limit: 1000
-        }) {
-            return {
-                title string
-                summary string
-                key_points list[string]
-                action_items list[string]
-            }
+        }) -> {
+            title string
+            summary string
+            key_points list[string]
+            action_items list[string]
         }
     }
 }
@@ -201,12 +197,10 @@ main agent ResearchAgent {
     func answer(question, scratch) {
         use question
         use scratch.summary < 2k
-        return generate({ input: "Answer using only the observations" }) {
-            return {
-                ok boolean
-                text string
-                error string
-            }
+        return generate({ input: "Answer using only the observations" }) -> {
+            ok boolean
+            text string
+            error string
         }
     }
 }

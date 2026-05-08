@@ -213,12 +213,10 @@ agent Reflector {
         return generate({
             input: "Extract one reusable lesson from this run.",
             attempts: 3
-        }) {
-            return {
-                insight string
-                mistake string
-                next_rule string
-            }
+        }) -> {
+            insight string
+            mistake string
+            next_rule string
         }
     }
 }
@@ -270,12 +268,10 @@ main agent Learner {
         result = generate({
             input: "Answer the goal using relevant past lessons.",
             attempts: 3
-        }) {
-            return {
-                ok boolean
-                answer string
-                reason string
-            }
+        }) -> {
+            ok boolean
+            answer string
+            reason string
         }
 
         reflection = reflect({
@@ -299,10 +295,8 @@ main agent Learner {
         return generate({
             input: "Extract one reusable lesson from this run.",
             attempts: 3
-        }) {
-            return {
-                insight string
-            }
+        }) -> {
+            insight string
         }
     }
 }

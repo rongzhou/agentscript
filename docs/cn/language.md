@@ -27,11 +27,9 @@ main agent Assistant {
         question string
     }) {
         use input.question
-        return generate({ input: "Answer the question" }) {
-            return {
-                ok boolean
-                answer string
-            }
+        return generate({ input: "Answer the question" }) -> {
+            ok boolean
+            answer string
         }
     }
 }
@@ -140,13 +138,11 @@ func careful(input) {
 Shape 用于输入校验和 `generate` 输出校验：
 
 ```agentscript
-return generate({ input: "Extract facts" }) {
-    return {
-        ok boolean
-        title string
-        items list[json]
-        meta json
-    }
+return generate({ input: "Extract facts" }) -> {
+    ok boolean
+    title string
+    items list[json]
+    meta json
 }
 ```
 
@@ -189,12 +185,10 @@ answer = generate({
     limit: 800
     attempts: 3
     debug: true
-}) {
-    return {
-        ok boolean
-        answer string
-        reason string
-    }
+}) -> {
+    ok boolean
+    answer string
+    reason string
 }
 ```
 
@@ -204,7 +198,7 @@ answer = generate({
 - `limit`：生成预算（数字或 `2k` 格式）。可选。
 - `attempts`：JSON 解析失败或 shape 不匹配时的重试次数。可选，默认 1。
 - `debug`：将完整 prompt 打印到 stderr。可选，默认 false。
-- `return { ... }` 块声明期望的输出 shape。
+- `-> { ... }` 块声明期望的输出 shape。
 - Provider 错误（认证、网络、超时、模型不存在）直接失败，不做重试。
 - Shape 校验包含类型强制转换（如 `"true"` -> `true`，`"42"` -> `42`）。
 
@@ -371,11 +365,9 @@ import file Config from "./config.json"
 func answer(input) {
     use Requirements < 4k
     use Config
-    return generate({ input: "Answer from the referenced file." }) {
-        return {
-            ok boolean
-            answer string
-        }
+    return generate({ input: "Answer from the referenced file." }) -> {
+        ok boolean
+        answer string
     }
 }
 ```

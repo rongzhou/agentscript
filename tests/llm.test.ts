@@ -178,10 +178,8 @@ function makeRequest(uri: string): GenerateRequest {
   const ast = parse(`
     agent A {
       func act(input) {
-        return generate({ input: "answer", limit: 100 }) {
-          return {
+        return generate({ input: "answer", limit: 100 }) -> {
             ok boolean
-          }
         }
       }
     }

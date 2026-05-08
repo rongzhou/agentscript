@@ -20,7 +20,7 @@ V0 支持：
 - Agent 内函数、变量赋值、对象/列表字面量、成员访问、函数调用。
 - `model`、`role`、`description` 作用域配置。
 - `use` 上下文声明和 `< n` 上下文预算。
-- `generate({ input, limit, attempts, debug }) { return { ... } }` LLM 调用。
+- `generate({ input, limit, attempts, debug }) -> { ... }` LLM 调用。
 - `if` / `else`，`==`、`!=`、`and`、`or`、`not`。
 - `loop until condition < n` 有上限循环。
 - `repeat * n` 有上限重复执行。
@@ -56,11 +56,9 @@ main agent ResearchAgent {
     func answer(question) {
         use question
 
-        return generate({ input: "Answer the question" }) {
-            return {
-                ok boolean
-                text string
-            }
+        return generate({ input: "Answer the question" }) -> {
+            ok boolean
+            text string
         }
     }
 }
@@ -105,10 +103,8 @@ agent A {
         model Strong
         description "Use a stronger model for this function."
 
-        return generate({ input: "Answer carefully" }) {
-            return {
-                text string
-            }
+        return generate({ input: "Answer carefully" }) -> {
+            text string
         }
     }
 }
@@ -134,13 +130,11 @@ V0 运行时数据以 JSON 为核心：
 `generate` 返回 shape 使用轻量标注：
 
 ```agentscript
-return generate({ input: "Extract facts" }) {
-    return {
-        facts list[string]
-        source string
-        meta json
-        ok boolean
-    }
+return generate({ input: "Extract facts" }) -> {
+    facts list[string]
+    source string
+    meta json
+    ok boolean
 }
 ```
 
@@ -155,11 +149,9 @@ func compose(question, scratch) {
     use question
     use scratch.summary < 2k
 
-    return generate({ input: "Answer using only the context" }) {
-        return {
-            ok boolean
-            text string
-        }
+    return generate({ input: "Answer using only the context" }) -> {
+        ok boolean
+        text string
     }
 }
 ```
@@ -175,19 +167,17 @@ func compose(question, scratch) {
 
 ## Generate
 
-`generate({ input, limit, attempts, debug }) { return { ... } }` 表示一次 LLM call。`input` 是本次 call 的最后用户指令，可以是字符串、对象或其它 JSON 值。`limit`、`attempts`、`debug` 都是可选参数。
+`generate({ input, limit, attempts, debug }) -> { ... }` 表示一次 LLM call。`input` 是本次 call 的最后用户指令，可以是字符串、对象或其它 JSON 值。`limit`、`attempts`、`debug` 都是可选参数。
 
 ```agentscript
 answer = generate({
     input: "Answer using collected facts"
     limit: 800
     attempts: 3
-}) {
-    return {
-        ok boolean
-        text string
-        error string
-    }
+}) -> {
+    ok boolean
+    text string
+    error string
 }
 ```
 
@@ -198,7 +188,7 @@ answer = generate({
 - `limit` 是本次 LLM call 的预算，支持 `800` 或 `2k` 这类 budget 字面量。
 - `attempts` 表示最多生成次数；它不是额外重试次数。
 - `debug` 是 boolean，缺省值为 `false`；为 `true` 时 runtime 将完整 prompt 打印到 stderr。
-- 块内 `return { ... }` 描述 LLM 输出 JSON shape，不会从外层函数返回。
+- `-> { ... }` 描述 LLM 输出 JSON shape，不会从外层函数返回。
 - LLM 输出会先按 shape 做有限容错转换。
 - 当输出不是 JSON 或转换后仍不符合 shape，且 `attempts > 1` 时，下一次调用会把上一次输出和错误信息附加到 `input` 后，请模型 repair。
 - provider 网络、认证、超时、模型不存在等基础设施错误不会被 repair 重试。

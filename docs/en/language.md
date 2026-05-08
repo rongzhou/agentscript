@@ -27,11 +27,9 @@ main agent Assistant {
         question string
     }) {
         use input.question
-        return generate({ input: "Answer the question" }) {
-            return {
-                ok boolean
-                answer string
-            }
+        return generate({ input: "Answer the question" }) -> {
+            ok boolean
+            answer string
         }
     }
 }
@@ -140,13 +138,11 @@ Runtime values are JSON-oriented:
 Shapes are used for input validation and `generate` output validation:
 
 ```agentscript
-return generate({ input: "Extract facts" }) {
-    return {
-        ok boolean
-        title string
-        items list[json]
-        meta json
-    }
+return generate({ input: "Extract facts" }) -> {
+    ok boolean
+    title string
+    items list[json]
+    meta json
 }
 ```
 
@@ -189,12 +185,10 @@ answer = generate({
     limit: 800
     attempts: 3
     debug: true
-}) {
-    return {
-        ok boolean
-        answer string
-        reason string
-    }
+}) -> {
+    ok boolean
+    answer string
+    reason string
 }
 ```
 
@@ -204,7 +198,7 @@ answer = generate({
 - `limit` is the generation budget (number or `2k` style). Optional.
 - `attempts` controls retry for JSON parse errors or shape mismatch. Optional, defaults to 1.
 - `debug` prints the full prompt to stderr. Optional, defaults to false.
-- The `return { ... }` block declares the expected output shape.
+- The `-> { ... }` block declares the expected output shape.
 - Provider errors (auth, network, timeout, missing model) fail directly without retry.
 - Shape validation includes coercion (e.g. `"true"` -> `true`, `"42"` -> `42`).
 
@@ -371,11 +365,9 @@ import file Config from "./config.json"
 func answer(input) {
     use Requirements < 4k
     use Config
-    return generate({ input: "Answer from the referenced file." }) {
-        return {
-            ok boolean
-            answer string
-        }
+    return generate({ input: "Answer from the referenced file." }) -> {
+        ok boolean
+        answer string
     }
 }
 ```

@@ -4,18 +4,18 @@ AgentScript is distributed as an npm package and can also be run from source.
 
 ## Requirements
 
-- Node.js compatible with the runtime features used by this project.
+- Node.js >= 22.5.
 - npm.
 - Optional: Ollama, OpenAI, or Anthropic credentials when running with `--real-llm`.
 
-The current development setup uses Node.js 25 types and the SQLite memory backend uses Node's built-in `node:sqlite` module.
+The SQLite memory backend uses Node's built-in `node:sqlite` module, so Node.js 22.5 or newer is required.
 
 ## Install from npm
 
 After the package is published:
 
 ```bash
-npm install -g agentscript
+npm install -g @rong/agentscript
 agentscript examples/review.as --input '{"path":"src"}'
 ```
 
@@ -24,7 +24,7 @@ agentscript examples/review.as --input '{"path":"src"}'
 After the package is published:
 
 ```bash
-npx agentscript examples/review.as --input '{"path":"src"}'
+npx @rong/agentscript examples/review.as --input '{"path":"src"}'
 ```
 
 ## Run from source

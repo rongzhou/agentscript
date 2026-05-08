@@ -1,69 +1,42 @@
 # AgentScript
 
-> **Prompt context as a first-class citizen.**  
-> `use` declares what the model sees. `generate` defines what it returns.  
+> **Agent context as code.**
+> `use` declares what the model can see.
+> `generate` defines the only LLM call site and its return shape.
 > Zero runtime dependencies. TypeScript-powered.
 
 ```agentscript
 use scratch.summary < 2k
 return generate({ input: "Answer from observations" }) {
-    return { ok boolean, text string }
+    return {
+        ok boolean
+        text string
+    }
 }
 ```
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 ![Zero Dependencies](https://img.shields.io/badge/dependencies-0-brightgreen)
-![Node >= 25](https://img.shields.io/badge/node-%3E%3D25-green)
+![Node >= 22.5](https://img.shields.io/badge/node-%3E%3D22.5-green)
 
 [中文版](./README-CN.md)
-
-LLMs are stateless by nature. Each call is a fresh start. To give an agent continuity of thought, every input must be carefully assembled — what researchers and practitioners call context engineering.
-
-After building agents with Python and TypeScript, the author kept running into the same problem: prompt context management. What data actually reaches the LLM? Where does one agent's context end and another's begin? How do you audit what the model saw?
-
-AgentScript was designed to solve this — not as a general-purpose language, nor a declarative config, nor a prompt template, but as a **DSL** that mixes imperative control flow with explicit, scope-governed context declarations.
-
-It gives you two things that general-purpose languages don't: a first-class `use` keyword that declares *which* data enters the LLM prompt, and a first-class `generate` expression that defines *what* the LLM must return. Everything else — variables, functions, agents, imports, loops — exists to support this core workflow. Scopes enforce context boundaries naturally: what's `use`d in one function stays there; child scopes inherit but never leak upward.
-
-The result is a language purpose-built for composing agent patterns — ReAct, Plan-and-Execute, Reflection, Multi-Agent — where prompt context is always visible, auditable, and under your control.
-
-## How it works
-
-```mermaid
-graph LR
-    A[".as source"] --> B["Parser"]
-    B --> C["AST"]
-    C --> D["Semantic Analyzer"]
-    D --> E["Runtime"]
-    E --> F["LLM Provider<br/>(OpenAI / Anthropic / Ollama)"]
-    E --> G["Tools<br/>(Find / Grep / File / HTTP / ...)"]
-    E --> H["Memory<br/>(JSONL / SQLite)"]
-    E --> I["Trace Output"]
-```
-
-## Agent patterns as composable primitives
-
-AgentScript doesn't hardcode agent patterns as keywords. You compose them from the same primitives:
-
-| Pattern | Tutorial | What it demonstrates |
-|---------|----------|---------------------|
-| **ReAct** | `tutorials/react.as` | Reason → Act → Observe loop with explicit context |
-| **Plan-and-Execute** | `tutorials/plan-execute.as` | Generate plan, execute steps, verify, re-plan on failure |
-| **Reflection / Self-Improvement** | `tutorials/self-improve.as` | Query past lessons → generate → reflect → persist new lessons |
-| **Multi-Agent** | `tutorials/plan-execute.as` | Independent agents with isolated context boundaries |
-
-Every pattern is explicit — which data enters the prompt, which tools each agent can use, and which output shape each LLM call must satisfy.
 
 ## Install
 
 ```bash
-npm install -g agentscript
+npm install -g @rong/agentscript
+```
+
+Then run the CLI:
+
+```bash
+agentscript --help
 ```
 
 Or run without installing:
 
 ```bash
-npx agentscript examples/review.as --input '{"path":"src"}'
+npx @rong/agentscript examples/review.as --input '{"path":"src"}'
 ```
 
 ## Quick start
@@ -123,6 +96,76 @@ Expected output (with mock LLM):
 ```
 
 With `--real-llm`, the fields are populated by the model.
+
+The block after `generate` is a return schema, not ordinary object construction.
+
+## What problem it solves
+
+LLMs are stateless by nature. Each call is a fresh start. To give an agent continuity of thought, every input must be carefully assembled — what researchers and practitioners call context engineering.
+
+After building agents with Python and TypeScript, the author kept running into the same problem: prompt context management. What data actually reaches the LLM? Where does one agent's context end and another's begin? How do you audit what the model saw?
+
+## What makes AgentScript different?
+
+AgentScript is not:
+
+- a prompt template
+- a YAML config format
+- a general-purpose agent framework
+
+It is a small language for one thing:
+
+> making LLM prompt context explicit, scoped, typed, traceable, and compilable.
+
+It gives you two things that general-purpose languages don't: a first-class `use` keyword that declares *which* data enters the LLM prompt, and a first-class `generate` expression that defines *what* the LLM must return. Everything else — variables, functions, agents, imports, loops — exists to support this core workflow. Scopes enforce context boundaries naturally: what's `use`d in one function stays there; child scopes inherit but never leak upward.
+
+## How it works
+
+```mermaid
+graph LR
+    A[".as source"] --> B["Parser"]
+    B --> C["AST"]
+    C --> D["Semantic Analyzer"]
+    D --> E["Runtime"]
+    E --> F["LLM Provider<br/>(OpenAI / Anthropic / Ollama)"]
+    E --> G["Tools<br/>(Find / Grep / File / HTTP / ...)"]
+    E --> H["Memory<br/>(JSONL / SQLite)"]
+    E --> I["Trace Output"]
+```
+
+## Status
+
+AgentScript is experimental.
+
+Currently implemented:
+
+- parser
+- semantic checker
+- mock runtime
+- OpenAI / Anthropic / Ollama LLM adapters
+- file and environment tools
+- JSONL and SQLite memory backends
+- trace output
+
+Planned:
+
+- stable IR
+- richer diagnostics
+- VS Code syntax support
+- package publishing hardening
+
+## Agent patterns as composable primitives
+
+AgentScript doesn't hardcode agent patterns as keywords. You compose them from the same primitives:
+
+| Pattern | Tutorial | What it demonstrates |
+|---------|----------|---------------------|
+| **ReAct** | `tutorials/react.as` | Reason → Act → Observe loop with explicit context |
+| **Plan-and-Execute** | `tutorials/plan-execute.as` | Generate plan, execute steps, verify, re-plan on failure |
+| **Reflection / Self-Improvement** | `tutorials/self-improve.as` | Query past lessons → generate → reflect → persist new lessons |
+| **Multi-Agent** | `tutorials/plan-execute.as` | Independent agents with isolated context boundaries |
+
+Every pattern is explicit — which data enters the prompt, which tools each agent can use, and which output shape each LLM call must satisfy.
 
 ## Language at a glance
 

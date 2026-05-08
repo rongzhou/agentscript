@@ -1,6 +1,6 @@
 # AgentScript V0 Implement
 
-本文档是 V0 阶段的历史实现快照。语言设计见 `v0-design.md`。当前 v1.0.0 的实现入口和模块概览见 `../en/language.md` 与 `../cn/language.md`。
+本文档是 V0 阶段的历史实现快照。语言设计见 `v0-design.md`。当前 v0.1.x 的实现入口和模块概览见 `../en/language.md` 与 `../cn/language.md`。
 
 ## 执行管线
 

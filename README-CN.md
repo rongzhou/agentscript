@@ -1,69 +1,42 @@
 # AgentScript
 
-> **Prompt context 是一等公民。**  
-> `use` 声明模型能看到什么。`generate` 定义模型必须返回什么。  
+> **Agent context as code.**
+> `use` 声明模型能看到什么。
+> `generate` 定义唯一的 LLM 调用点及其返回结构。
 > 零运行时依赖。TypeScript 构建。
 
 ```agentscript
 use scratch.summary < 2k
 return generate({ input: "Answer from observations" }) {
-    return { ok boolean, text string }
+    return {
+        ok boolean
+        text string
+    }
 }
 ```
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 ![Zero Dependencies](https://img.shields.io/badge/dependencies-0-brightgreen)
-![Node >= 25](https://img.shields.io/badge/node-%3E%3D25-green)
+![Node >= 22.5](https://img.shields.io/badge/node-%3E%3D22.5-green)
 
 [English](./README.md)
-
-LLM 天生无记忆。每次调用都是一张白纸。要让 Agent 获得连续思维的能力，每次输入到 LLM 的内容都必须精心组织——这被研究者与开发者总结为上下文工程（context engineering）。
-
-作者在长期使用 Python 和 TypeScript 编写 Agent 的过程中，反复遇到同一个问题：prompt 上下文管理。哪些数据真正进入了 LLM？一个 Agent 的上下文在哪里结束、另一个在哪里开始？如何审计模型到底看到了什么？
-
-AgentScript 正是为了解决这个痛点而设计——它不是通用编程语言，不是声明式配置，更不是提示词模板。它是一个 **DSL**，混合了命令式控制流与显式的、由作用域管辖的上下文声明。
-
-它提供了通用语言给不了的两个东西：一个一等公民的 `use` 关键字，声明 *哪些* 数据进入 LLM prompt；一个一等公民的 `generate` 表达式，定义 LLM *必须返回什么*。除此之外的一切——变量、函数、Agent、import、循环——都是为了支撑这个核心工作流。作用域天然地强制执行上下文边界：一个函数里的 `use` 不会泄漏到外面；子作用域继承父作用域，但从不向上泄漏。
-
-结果是，你可以用这门语言自然地组合 Agent 模式——ReAct、Plan-and-Execute、Reflection、Multi-Agent——prompt 上下文始终可见、可审计、由你掌控。
-
-## 工作原理
-
-```mermaid
-graph LR
-    A[".as source"] --> B["Parser"]
-    B --> C["AST"]
-    C --> D["Semantic Analyzer"]
-    D --> E["Runtime"]
-    E --> F["LLM Provider<br/>(OpenAI / Anthropic / Ollama)"]
-    E --> G["Tools<br/>(Find / Grep / File / HTTP / ...)"]
-    E --> H["Memory<br/>(JSONL / SQLite)"]
-    E --> I["Trace Output"]
-```
-
-## Agent 模式，可组合的原语
-
-AgentScript 不把 agent 模式硬编码为关键词。你用相同的基础原语组合它们：
-
-| 模式 | 教程 | 演示内容 |
-|------|------|----------|
-| **ReAct** | `tutorials/react.as` | 思考→行动→观察循环，上下文显式传递 |
-| **Plan-and-Execute** | `tutorials/plan-execute.as` | 生成计划、逐步执行、验证、失败后重新规划 |
-| **Reflection / Self-Improvement** | `tutorials/self-improve.as` | 查询历史经验→生成→反思→持久化新经验 |
-| **Multi-Agent** | `tutorials/plan-execute.as` | 独立 Agent 调用，上下文边界完全隔离 |
-
-每种模式都显式声明：哪些数据进入 prompt、每个 Agent 可用什么工具、每次 LLM 调用必须满足的输出结构。
 
 ## 安装
 
 ```bash
-npm install -g agentscript
+npm install -g @rong/agentscript
+```
+
+然后运行 CLI：
+
+```bash
+agentscript --help
 ```
 
 或者免安装运行：
 
 ```bash
-npx agentscript examples/review.as --input '{"path":"src"}'
+npx @rong/agentscript examples/review.as --input '{"path":"src"}'
 ```
 
 ## 快速开始
@@ -123,6 +96,76 @@ main agent FileSummarizer {
 ```
 
 加上 `--real-llm` 后，字段将由模型填充。
+
+`generate` 后面的 block 是返回结构 schema，不是普通对象构造。
+
+## 解决什么问题
+
+LLM 天生无记忆。每次调用都是一张白纸。要让 Agent 获得连续思维的能力，每次输入到 LLM 的内容都必须精心组织——这被研究者与开发者总结为上下文工程（context engineering）。
+
+作者在长期使用 Python 和 TypeScript 编写 Agent 的过程中，反复遇到同一个问题：prompt 上下文管理。哪些数据真正进入了 LLM？一个 Agent 的上下文在哪里结束、另一个在哪里开始？如何审计模型到底看到了什么？
+
+## AgentScript 有什么不同？
+
+AgentScript 不是：
+
+- prompt template
+- YAML 配置格式
+- 通用 Agent 框架
+
+它是一门专注于一件事的小语言：
+
+> 让 LLM prompt context 显式、作用域化、类型化、可追踪、可编译。
+
+它提供了通用语言给不了的两个东西：一个一等公民的 `use` 关键字，声明 *哪些* 数据进入 LLM prompt；一个一等公民的 `generate` 表达式，定义 LLM *必须返回什么*。除此之外的一切——变量、函数、Agent、import、循环——都是为了支撑这个核心工作流。作用域天然地强制执行上下文边界：一个函数里的 `use` 不会泄漏到外面；子作用域继承父作用域，但从不向上泄漏。
+
+## 工作原理
+
+```mermaid
+graph LR
+    A[".as source"] --> B["Parser"]
+    B --> C["AST"]
+    C --> D["Semantic Analyzer"]
+    D --> E["Runtime"]
+    E --> F["LLM Provider<br/>(OpenAI / Anthropic / Ollama)"]
+    E --> G["Tools<br/>(Find / Grep / File / HTTP / ...)"]
+    E --> H["Memory<br/>(JSONL / SQLite)"]
+    E --> I["Trace Output"]
+```
+
+## 状态
+
+AgentScript 仍处于实验阶段。
+
+当前已实现：
+
+- parser
+- semantic checker
+- mock runtime
+- OpenAI / Anthropic / Ollama LLM adapters
+- file 和 environment tools
+- JSONL 和 SQLite memory backends
+- trace output
+
+计划中：
+
+- stable IR
+- 更丰富的诊断信息
+- VS Code syntax support
+- package publishing hardening
+
+## Agent 模式，可组合的原语
+
+AgentScript 不把 agent 模式硬编码为关键词。你用相同的基础原语组合它们：
+
+| 模式 | 教程 | 演示内容 |
+|------|------|----------|
+| **ReAct** | `tutorials/react.as` | 思考→行动→观察循环，上下文显式传递 |
+| **Plan-and-Execute** | `tutorials/plan-execute.as` | 生成计划、逐步执行、验证、失败后重新规划 |
+| **Reflection / Self-Improvement** | `tutorials/self-improve.as` | 查询历史经验→生成→反思→持久化新经验 |
+| **Multi-Agent** | `tutorials/plan-execute.as` | 独立 Agent 调用，上下文边界完全隔离 |
+
+每种模式都显式声明：哪些数据进入 prompt、每个 Agent 可用什么工具、每次 LLM 调用必须满足的输出结构。
 
 ## 语言速览
 

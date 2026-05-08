@@ -1,6 +1,6 @@
 # AgentScript 语言参考
 
-本文档描述 AgentScript v1.0.0 的当前语言规范。
+本文档描述 AgentScript v0.1.x 的当前语言规范。
 
 ## 设计原则
 
@@ -466,7 +466,7 @@ main agent Controller {
 
 ## 非目标
 
-AgentScript v1.0.0 不包含：
+AgentScript v0.1.x 不包含：
 
 - 通用工作流引擎。
 - 通用并行执行语法。

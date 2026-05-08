@@ -1,6 +1,6 @@
 # AgentScript Language
 
-This document describes the current AgentScript v1.0.0 language.
+This document describes AgentScript v0.1.x.
 
 ## Design principles
 
@@ -466,7 +466,7 @@ The interpreter is a tree-walking evaluator. There is no IR, bytecode, or compil
 
 ## Non-goals
 
-AgentScript v1.0.0 does not provide:
+AgentScript v0.1.x does not provide:
 
 - A general workflow engine.
 - General parallel execution syntax.

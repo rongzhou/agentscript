@@ -22,15 +22,17 @@ export async function callOpenAI(
       { role: "system", content: request.builtContext.system },
       { role: "user", content: request.builtContext.finalUserMessage },
     ],
-    response_format: {
+  };
+  if (request.builtContext.returnSchema) {
+    body.response_format = {
       type: "json_schema",
       json_schema: {
         name: "agentscript_generate",
         strict: true,
         schema: request.builtContext.returnSchema,
       },
-    },
-  };
+    };
+  }
   const maxTokens = budgetToTokenLimit(request);
   if (maxTokens) {
     body.max_completion_tokens = maxTokens;
@@ -39,5 +41,6 @@ export async function callOpenAI(
   const response = await postJson(fetchImpl, `${baseUrl}/chat/completions`, body, timeoutMs, {
     authorization: `Bearer ${apiKey}`,
   });
-  return parseJsonText(readPath(response, ["choices", 0, "message", "content"]));
+  const text = readPath(response, ["choices", 0, "message", "content"]);
+  return request.returnShape ? parseJsonText(text) : text;
 }

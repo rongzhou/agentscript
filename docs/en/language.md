@@ -177,7 +177,7 @@ use past_lessons < 2k
 
 ## Generate
 
-`generate` calls the current model and requires an `input` instruction plus a return shape.
+`generate` calls the current model and requires an `input` instruction. A return shape is optional.
 
 ```agentscript
 answer = generate({
@@ -198,7 +198,8 @@ answer = generate({
 - `limit` is the generation budget (number or `2k` style). Optional.
 - `attempts` controls retry for JSON parse errors or shape mismatch. Optional, defaults to 1.
 - `debug` prints the full prompt to stderr. Optional, defaults to false.
-- The `-> { ... }` block declares the expected output shape.
+- The optional `-> { ... }` block declares the expected output shape.
+- Without `-> { ... }`, the generate output is unconstrained: AgentScript does not add a return schema to the prompt, does not request provider structured output, and does not coerce or validate the returned value.
 - Provider errors (auth, network, timeout, missing model) fail directly without retry.
 - Shape validation includes coercion (e.g. `"true"` -> `true`, `"42"` -> `42`).
 

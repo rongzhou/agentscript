@@ -32,7 +32,7 @@ describe("generate", () => {
       llmProvider: {
         async generate(request) {
           requests.push(request);
-          return buildValueFromShape(request.returnShape);
+          return buildValueFromRequestShape(request);
         }
       }
     });
@@ -74,7 +74,7 @@ describe("generate", () => {
       await executeAgent(ast, {}, {
         llmProvider: {
           async generate(request) {
-            return buildValueFromShape(request.returnShape);
+            return buildValueFromRequestShape(request);
           }
         }
       });
@@ -209,7 +209,7 @@ describe("generate", () => {
       llmProvider: {
         async generate(request) {
           requests.push(request);
-          return buildValueFromShape(request.returnShape);
+          return buildValueFromRequestShape(request);
         }
       }
     });
@@ -341,7 +341,7 @@ describe("generate", () => {
       llmProvider: {
         async generate(request) {
           requests.push(request);
-          return buildValueFromShape(request.returnShape);
+          return buildValueFromRequestShape(request);
         }
       }
     });
@@ -353,3 +353,10 @@ describe("generate", () => {
   });
 
 });
+
+function buildValueFromRequestShape(request: GenerateRequest): RuntimeValue {
+  if (!request.returnShape) {
+    throw new Error("unexpected missing return shape");
+  }
+  return buildValueFromShape(request.returnShape);
+}

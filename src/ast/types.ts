@@ -241,7 +241,7 @@ export interface BinaryExpr extends NodeBase {
 export interface GenerateExpr extends NodeBase {
   kind: "GenerateExpr";
   options: GenerateOptionsExpr;
-  returnShape: ShapeObjectExpr;
+  returnShape?: ShapeObjectExpr;
 }
 
 export interface GenerateOptionsExpr extends NodeBase {

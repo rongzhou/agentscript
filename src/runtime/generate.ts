@@ -83,8 +83,10 @@ export class GenerateRuntime {
       }
 
       try {
-        const result = coerceValueToShape(rawResult, expr.returnShape);
-        validateValueAgainstShape(result, expr.returnShape, expr.range);
+        const result = expr.returnShape ? coerceValueToShape(rawResult, expr.returnShape) : rawResult;
+        if (expr.returnShape) {
+          validateValueAgainstShape(result, expr.returnShape, expr.range);
+        }
         this.trace.push({
           kind: "generate",
           data: {

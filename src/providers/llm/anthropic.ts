@@ -30,7 +30,8 @@ export async function callAnthropic(
     "x-api-key": apiKey,
     "anthropic-version": "2023-06-01",
   });
-  return parseJsonText(readAnthropicText(response));
+  const text = readAnthropicText(response);
+  return request.returnShape ? parseJsonText(text) : text;
 }
 
 function readAnthropicText(value: JsonValue): string {

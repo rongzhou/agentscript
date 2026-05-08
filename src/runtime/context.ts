@@ -7,7 +7,7 @@ export interface ContextBuildInput {
   model?: LlmBinding;
   identity: JsonObject;
   instruction: RuntimeValue;
-  returnShape: ShapeObjectExpr;
+  returnShape?: ShapeObjectExpr;
   uses: ContextUse[];
   budget?: Budget;
 }
@@ -31,7 +31,7 @@ export interface BuiltContext {
   context: BuiltContextItem[];
   instruction: JsonValue;
   instructionText: string;
-  returnSchema: JsonObject;
+  returnSchema?: JsonObject;
   budget?: Budget;
   finalUserMessage: string;
 }
@@ -41,7 +41,7 @@ export function buildContext(input: ContextBuildInput): BuiltContext {
   const instruction = sanitizeForJson(input.instruction);
   const instructionText = renderJson(instruction);
   const system = buildSystemPrompt(input.agentName, input.identity);
-  const returnSchema = shapeToSchema(input.returnShape);
+  const returnSchema = input.returnShape ? shapeToSchema(input.returnShape) : undefined;
 
   return {
     agentName: input.agentName,
@@ -116,7 +116,7 @@ function buildSystemPrompt(agentName: string, identity: JsonObject): string {
 function buildFinalUserMessage(
   context: BuiltContextItem[],
   instructionText: string,
-  returnSchema: JsonObject,
+  returnSchema?: JsonObject,
 ): string {
   const sections: string[] = [];
 
@@ -129,7 +129,9 @@ function buildFinalUserMessage(
   }
 
   sections.push("Instruction:", instructionText);
-  sections.push("Return JSON matching this schema:", renderJson(returnSchema));
+  if (returnSchema) {
+    sections.push("Return JSON matching this schema:", renderJson(returnSchema));
+  }
 
   return sections.join("\n");
 }
@@ -216,7 +218,7 @@ export function builtContextToJson(context: BuiltContext): JsonObject {
       clippedSize: item.clippedSize,
     })),
     instruction: context.instruction,
-    returnSchema: context.returnSchema,
+    returnSchema: context.returnSchema ?? null,
     budget: budgetToJson(context.budget),
     finalUserMessage: context.finalUserMessage,
   };

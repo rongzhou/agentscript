@@ -13,7 +13,7 @@ import type {
 
 export class MockLlmProvider implements LlmProvider {
   async generate(request: GenerateRequest): Promise<RuntimeValue> {
-    return buildValueFromShape(request.returnShape);
+    return request.returnShape ? buildValueFromShape(request.returnShape) : null;
   }
 }
 

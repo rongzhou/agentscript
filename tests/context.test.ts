@@ -97,6 +97,9 @@ describe("shapeToSchema", () => {
     if (stmt.kind !== "ReturnStmt" || stmt.value.kind !== "GenerateExpr") {
       throw new Error("unexpected test AST");
     }
+    if (!stmt.value.returnShape) {
+      throw new Error("unexpected missing return shape");
+    }
 
     expect(shapeToSchema(stmt.value.returnShape)).toMatchObject({
       properties: {

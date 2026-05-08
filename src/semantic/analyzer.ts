@@ -450,7 +450,9 @@ class Analyzer {
       this.checkExpression(expr.options.input, scope);
     }
     this.checkGenerateInput(expr);
-    this.checkShapeObject(expr.returnShape);
+    if (expr.returnShape) {
+      this.checkShapeObject(expr.returnShape);
+    }
     this.checkGenerateConfig("model", expr, scope);
     this.checkGenerateConfig("role", expr, scope);
     this.checkGenerateConfig("description", expr, scope);

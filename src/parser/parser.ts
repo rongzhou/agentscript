@@ -498,8 +498,7 @@ class Parser {
     this.consume("(");
     const options = this.parseGenerateOptions();
     this.consume(")");
-    this.consume("->");
-    const returnShape = this.parseShapeObject();
+    const returnShape = this.match("->") ? this.parseShapeObject() : undefined;
 
     return {
       kind: "GenerateExpr",

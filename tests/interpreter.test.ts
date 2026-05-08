@@ -113,6 +113,9 @@ describe("interpreter", () => {
       llmProvider: {
         async generate(request) {
           requests.push(request);
+          if (!request.returnShape) {
+            throw new Error("unexpected missing return shape");
+          }
           return buildValueFromShape(request.returnShape);
         }
       }

@@ -62,7 +62,7 @@ export interface GenerateRequest {
   model?: LlmBinding;
   identity: JsonObject;
   instruction: RuntimeValue;
-  returnShape: ShapeObjectExpr;
+  returnShape?: ShapeObjectExpr;
   context: ContextUse[];
   builtContext: BuiltContext;
   budget?: Budget;

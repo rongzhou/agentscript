@@ -177,7 +177,7 @@ use past_lessons < 2k
 
 ## Generate
 
-`generate` 调用当前模型，需要 `input` 指令和返回 shape。
+`generate` 调用当前模型，需要 `input` 指令。返回 shape 是可选的。
 
 ```agentscript
 answer = generate({
@@ -198,7 +198,8 @@ answer = generate({
 - `limit`：生成预算（数字或 `2k` 格式）。可选。
 - `attempts`：JSON 解析失败或 shape 不匹配时的重试次数。可选，默认 1。
 - `debug`：将完整 prompt 打印到 stderr。可选，默认 false。
-- `-> { ... }` 块声明期望的输出 shape。
+- 可选的 `-> { ... }` 块声明期望的输出 shape。
+- 不写 `-> { ... }` 时，`generate` 输出无约束：AgentScript 不会在 prompt 中加入返回 schema，不会要求 provider 使用结构化输出，也不会对返回值做类型强制转换或 shape 校验。
 - Provider 错误（认证、网络、超时、模型不存在）直接失败，不做重试。
 - Shape 校验包含类型强制转换（如 `"true"` -> `true`，`"42"` -> `42`）。
 

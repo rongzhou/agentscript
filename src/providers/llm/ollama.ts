@@ -13,17 +13,20 @@ export async function callOllama(
     model: parsed.model,
     stream: false,
     think: false,
-    format: request.builtContext.returnSchema,
     messages: [
       { role: "system", content: request.builtContext.system },
       { role: "user", content: request.builtContext.finalUserMessage },
     ],
   };
+  if (request.builtContext.returnSchema) {
+    body.format = request.builtContext.returnSchema;
+  }
   const maxTokens = budgetToTokenLimit(request);
   if (maxTokens) {
     body.options = { num_predict: maxTokens };
   }
 
   const response = await postJson(fetchImpl, `${baseUrl}/api/chat`, body, timeoutMs);
-  return parseJsonText(readPath(response, ["message", "content"]));
+  const text = readPath(response, ["message", "content"]);
+  return request.returnShape ? parseJsonText(text) : text;
 }

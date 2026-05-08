@@ -74,6 +74,25 @@ describe("parse", () => {
     if (stmt.value.kind !== "GenerateExpr") return;
     expect(stmt.value.options.limit).toEqual({ amount: 2, unit: "k" });
     expect(stmt.value.options.debug?.value).toBe(true);
+    expect(stmt.value.returnShape).toBeDefined();
+  });
+
+  it("parses generate without a return shape", () => {
+    const ast = parse(`
+      main agent A {
+        main func act(input) {
+          return generate({ input: "x" })
+        }
+      }
+    `);
+
+    const func = ast.agents[0]!.functions[0]!;
+    const stmt = func.body[0]!;
+    expect(stmt.kind).toBe("ReturnStmt");
+    if (stmt.kind !== "ReturnStmt") return;
+    expect(stmt.value.kind).toBe("GenerateExpr");
+    if (stmt.value.kind !== "GenerateExpr") return;
+    expect(stmt.value.returnShape).toBeUndefined();
   });
 
   it("parses use budgets on the use statement", () => {

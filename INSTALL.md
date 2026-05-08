@@ -1,0 +1,92 @@
+# Install AgentScript
+
+AgentScript is distributed as an npm package and can also be run from source.
+
+## Requirements
+
+- Node.js compatible with the runtime features used by this project.
+- npm.
+- Optional: Ollama, OpenAI, or Anthropic credentials when running with `--real-llm`.
+
+The current development setup uses Node.js 25 types and the SQLite memory backend uses Node's built-in `node:sqlite` module.
+
+## Install from npm
+
+After the package is published:
+
+```bash
+npm install -g agentscript
+agentscript examples/review.as --input '{"path":"src"}'
+```
+
+## Run with npx
+
+After the package is published:
+
+```bash
+npx agentscript examples/review.as --input '{"path":"src"}'
+```
+
+## Run from source
+
+```bash
+git clone https://github.com/<owner>/<repo>.git
+cd <repo>
+npm install
+npm run build
+npm run execute -- examples/review.as --input '{"path":"src"}'
+```
+
+During local development, prefer:
+
+```bash
+npm run execute -- tutorials/react.as --input '{"question":"What is AgentScript?"}'
+npm run check -- examples/review.as
+npm run parse -- examples/review.as
+```
+
+## Real LLM providers
+
+By default, AgentScript uses a mock LLM provider for local flow checks. Add `--real-llm` to call a real provider.
+
+### OpenAI
+
+```bash
+export OPENAI_API_KEY="..."
+agentscript examples/review.as --input '{"path":"src"}' --real-llm
+```
+
+Use an AgentScript import such as:
+
+```agentscript
+import llm OpenAI from "openai://gpt-4.1-mini"
+```
+
+### Anthropic
+
+```bash
+export ANTHROPIC_API_KEY="..."
+agentscript examples/review.as --input '{"path":"src"}' --real-llm
+```
+
+Use an AgentScript import such as:
+
+```agentscript
+import llm Claude from "anthropic://claude-sonnet-4-0"
+```
+
+### Ollama
+
+Run Ollama locally, then use an import such as:
+
+```agentscript
+import llm Qwen from "ollama://localhost:11434/qwen3.6"
+```
+
+## Validate a checkout
+
+```bash
+npm run typecheck
+npm test
+npm run build
+```

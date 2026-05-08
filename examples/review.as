@@ -1,0 +1,38 @@
+import llm Qwen from "ollama://localhost:11434/qwen3.6"
+import tool Grep from "sh://grep"
+
+main agent CodeReviewAssistant {
+    model Qwen
+    role "Senior Code Reviewer"
+    description "Scan TODO and FIXME markers and return concrete review actions."
+
+    main func(input {
+        path string
+    }) {
+        todos = Grep.run({
+            path: input.path,
+            pattern: "TODO",
+            include: "*",
+            max: 100
+        })
+        fixmes = Grep.run({
+            path: input.path,
+            pattern: "FIXME",
+            include: "*",
+            max: 100
+        })
+
+        use input.path
+        use todos < 4k
+        use fixmes < 4k
+
+        return generate({ input: "Turn TODO and FIXME scan results into prioritized repair suggestions", limit: 1200 }) {
+            return {
+                summary string
+                findings list[string]
+                suggested_fixes list[string]
+                next_steps list[string]
+            }
+        }
+    }
+}

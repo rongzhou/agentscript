@@ -1,0 +1,12 @@
+{
+  "steps": [
+    {
+      "id": "step-1",
+      "task": "Read the goal"
+    },
+    {
+      "id": "step-2",
+      "task": "Return a compact result"
+    }
+  ]
+}

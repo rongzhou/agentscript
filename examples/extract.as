@@ -14,8 +14,8 @@ main agent ApiExtractor {
             timeout: 10000
         })
 
-        use input.url
-        use response < 8k
+        use input.url as endpoint
+        use response < 8k as api response
 
         generate({ input: "Extract normalized data from the API response", limit: 1200 }) -> {
             records list[json]

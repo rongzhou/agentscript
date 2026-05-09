@@ -80,6 +80,7 @@ export interface UseStmt extends NodeBase {
   kind: "UseStmt";
   value: Expr;
   budget?: Budget;
+  label?: string;
 }
 
 export interface AssignStmt extends NodeBase {

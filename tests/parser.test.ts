@@ -132,6 +132,27 @@ describe("parse", () => {
     expect(useStmt.budget).toEqual({ amount: 2, unit: "k" });
   });
 
+  it("parses literal labels on use statements", () => {
+    const ast = parse(`
+      agent A {
+        func act(input) {
+          use input.question as user
+          use docs.summary < 4k as retrieved evidence
+          return input
+        }
+      }
+    `);
+
+    const firstUse = ast.agents[0]!.functions[0]!.body[0]!;
+    const secondUse = ast.agents[0]!.functions[0]!.body[1]!;
+    expect(firstUse.kind).toBe("UseStmt");
+    expect(secondUse.kind).toBe("UseStmt");
+    if (firstUse.kind !== "UseStmt" || secondUse.kind !== "UseStmt") return;
+    expect(firstUse.label).toBe("user");
+    expect(secondUse.budget).toEqual({ amount: 4, unit: "k" });
+    expect(secondUse.label).toBe("retrieved evidence");
+  });
+
   it("parses if else and natural boolean expressions", () => {
     const ast = parse(`
       agent A {

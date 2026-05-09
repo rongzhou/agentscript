@@ -17,9 +17,9 @@ main agent MarkdownTranslator {
             max: 50
         })
 
-        use input.path
-        use input.target_language
-        use files < 4k
+        use input.path as source path
+        use input.target_language as target language
+        use files < 4k as markdown files
 
         generate({ input: "Create a practical markdown translation plan", limit: 1000 }) -> {
             target_language string

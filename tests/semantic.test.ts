@@ -111,6 +111,26 @@ describe("analyze", () => {
     );
   });
 
+  it("reports reserved context labels", () => {
+    const result = analyze(
+      parse(`
+        agent A {
+          func act(input) {
+            use input as system
+            return input
+          }
+        }
+      `)
+    );
+
+    expect(result.diagnostics).toContainEqual(
+      expect.objectContaining({
+        severity: "error",
+        code: "RESERVED_CONTEXT_LABEL"
+      })
+    );
+  });
+
   it("checks memory resources and methods", () => {
     const valid = analyze(
       parse(`

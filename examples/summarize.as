@@ -13,8 +13,8 @@ main agent FileSummarizer {
             path: input.path
         })
 
-        use input.path
-        use content < 8k
+        use input.path as source path
+        use content < 8k as file content
 
         generate({ input: "Summarize the file for a busy teammate", limit: 1000 }) -> {
             title string

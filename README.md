@@ -1,12 +1,12 @@
 # AgentScript
 
 > **Agent context as code.**
-> `use` declares what the model can see.
+> `use` declares what the model can see, with optional labels for prompt sections.
 > `generate` defines the only LLM call site and optional output shape.
 > Zero runtime dependencies. TypeScript-powered.
 
 ```agentscript
-use scratch.summary < 2k
+use scratch.summary < 2k as observations
 generate({ input: "Answer from observations" }) -> {
     ok boolean
     text string
@@ -61,8 +61,8 @@ main agent FileSummarizer {
 
     main func(input { path string }) {
         content = File.read({ path: input.path })
-        use input.path
-        use content < 8k
+        use input.path as source path
+        use content < 8k as file content
 
         generate({
             input: "Summarize the file for a busy teammate"
@@ -113,7 +113,7 @@ It is a small language for one thing:
 
 > making LLM prompt context explicit, scoped, typed, traceable, and compilable.
 
-It gives you two things that general-purpose languages don't: a first-class `use` keyword that declares *which* data enters the LLM prompt, and a first-class `generate` expression that defines an LLM call with an optional output contract. Everything else — variables, functions, agents, imports, loops — exists to support this core workflow. Scopes enforce context boundaries naturally: what's `use`d in one function stays there; child scopes inherit but never leak upward. Functions can also return their final top-level expression directly, which keeps typical LLM workflows concise.
+It gives you two things that general-purpose languages don't: a first-class `use` keyword that declares *which* data enters the LLM prompt and what role it plays via `as label`, and a first-class `generate` expression that defines an LLM call with an optional output contract. Everything else — variables, functions, agents, imports, loops — exists to support this core workflow. Scopes enforce context boundaries naturally: what's `use`d in one function stays there; child scopes inherit but never leak upward. Functions can also return their final top-level expression directly, which keeps typical LLM workflows concise.
 
 ## How it works
 
@@ -178,10 +178,10 @@ main agent ResearchAgent {
     main func(input {
         question string
     }) {
-        use input.question
+        use input.question as user question
 
         scratch = []
-        use scratch.summary < 2k
+        use scratch.summary < 2k as observations
 
         done = false
         loop until done < 6 {
@@ -195,8 +195,8 @@ main agent ResearchAgent {
     }
 
     func answer(question, scratch) {
-        use question
-        use scratch.summary < 2k
+        use question as user question
+        use scratch.summary < 2k as observations
         generate({ input: "Answer using only the observations" }) -> {
             ok boolean
             text string
@@ -208,7 +208,7 @@ main agent ResearchAgent {
 
 ## Key ideas
 
-1. **`use` is explicit context** — nothing enters the LLM prompt unless `use`d
+1. **`use` is explicit context** — nothing enters the LLM prompt unless `use`d; `as label` names the context section
 2. **`generate` is the only LLM call site** — with a required input instruction and optional output shape
 3. **Final expression return keeps flows concise** — a function returns its final top-level expression
 4. **Scope is context boundary** — functions, agents, and blocks isolate prompt visibility
@@ -219,7 +219,7 @@ main agent ResearchAgent {
 
 | | Python / TypeScript | AgentScript |
 |---|---|---|
-| Context management | Implicit (string concatenation, array append) | Explicit (`use` declaration) |
+| Context management | Implicit (string concatenation, array append) | Explicit (`use` declaration, optional `as label`) |
 | LLM call site | Anywhere in the code | One `generate` expression |
 | Context isolation | Manual discipline | Scope-inherited, auto-isolated |
 | Trace / audit | External tooling needed | Built-in, per-call |

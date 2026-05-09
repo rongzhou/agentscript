@@ -158,6 +158,8 @@ Shapes are not a full static type system.
 use input.question
 use Requirements < 4k
 use past_lessons < 2k
+use input.question as user
+use docs.summary < 4k as evidence
 ```
 
 ### Rules
@@ -167,9 +169,23 @@ use past_lessons < 2k
 - Memory query results do not automatically enter prompts.
 - Trace events do not automatically enter prompts.
 - `use value < n` applies a context budget.
+- `use value as label` attaches a literal context label to the selected source.
+- `use value < n as label` applies the budget first, then attaches the label.
 - `llm`, `tool`, `agent`, `memory` bindings cannot be used.
 - Function bindings cannot be used.
 - `use` declarations are inherited by child scopes.
+
+### Context labels
+
+The label after `as` is literal label text. It is not an expression, is not evaluated, and does not read variables from scope.
+
+```agentscript
+use docs as evidence
+use docs.summary < 4k as retrieved evidence
+use input.question as user
+```
+
+`as evidence` labels the context section as `evidence` even if a variable named `evidence` exists. Labels organize prompt sections and trace output; they do not change provider message roles such as `system`, `user`, or `assistant`.
 
 ### Deferred evaluation
 

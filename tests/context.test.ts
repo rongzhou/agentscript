@@ -25,20 +25,21 @@ describe("buildContext", () => {
       identity: { role: "Researcher" },
       instruction: "answer",
       returnShape: generate.value.returnShape,
-      uses: [{ source: "input.text", value: "abcdefghijklmnopqrstuvwxyz", budget: { amount: 5 } }],
+      uses: [{ source: "input.text", label: "evidence", value: "abcdefghijklmnopqrstuvwxyz", budget: { amount: 5 } }],
       budget: { amount: 100 }
     });
 
-    expect(context.system).toContain("You are A.");
-    expect(context.system).toContain("role: Researcher");
+    expect(context.system).toContain("You are Researcher.");
     expect(context.context[0]).toMatchObject({
       text: "abcde",
       source: "input.text",
+      label: "evidence",
       clipped: true,
       originalSize: 26,
       clippedSize: 5
     });
-    expect(context.finalUserMessage).toContain("[0] input.text:");
+    expect(context.finalUserMessage).toContain("[evidence]");
+    expect(context.finalUserMessage).toContain("source: input.text");
     expect(context.finalUserMessage).toContain("Instruction:");
     expect(context.finalUserMessage).toContain("Return JSON matching this schema:");
     expect(context.returnSchema).toMatchObject({

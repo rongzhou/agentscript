@@ -235,12 +235,26 @@ class Parser {
     const start = this.consume("use").range.start;
     const value = this.parseLogicalOr();
     const budget = this.match("<") ? this.parseBudget() : undefined;
+    const label = this.match("as") ? this.parseUseLabel() : undefined;
     return {
       kind: "UseStmt",
       value,
       budget,
+      label,
       range: { start, end: this.previous().range.end }
     };
+  }
+
+  private parseUseLabel(): string {
+    const tokens: Token[] = [];
+    const line = this.previous().range.start.line;
+    while (!this.isAtEnd() && !this.check("}") && this.peek().range.start.line === line) {
+      tokens.push(this.advance());
+    }
+    if (tokens.length === 0) {
+      throw this.error("Expected context label after 'as'");
+    }
+    return stringifyLabelTokens(tokens);
   }
 
   private parseConfigValue(key: ConfigKey): Expr {
@@ -775,4 +789,17 @@ class Parser {
 
 function isImportResourceKind(value: string): value is ImportResourceKind {
   return IMPORT_RESOURCE_KINDS.has(value as ImportResourceKind);
+}
+
+function stringifyLabelTokens(tokens: Token[]): string {
+  let label = tokens[0]?.value ?? "";
+  for (let index = 1; index < tokens.length; index += 1) {
+    const previous = tokens[index - 1]!;
+    const current = tokens[index]!;
+    if (current.range.start.column > previous.range.end.column) {
+      label += " ";
+    }
+    label += current.value;
+  }
+  return label;
 }

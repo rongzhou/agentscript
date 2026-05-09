@@ -2,6 +2,19 @@
 
 All notable changes to AgentScript will be documented in this file.
 
+## 0.1.3 - 2026-05-08
+
+### Added
+
+- Added final expression return for functions.
+- Added literal context labels with `use context as label`.
+- Added agent role and description to prompt identity construction.
+- Added trace and built context output for context labels.
+
+### Changed
+
+- Updated README, examples, and language references for labeled context usage.
+
 ## 1.0.0 - 2026-05-07
 
 ### Added

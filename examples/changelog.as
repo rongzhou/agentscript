@@ -13,8 +13,8 @@ main agent ChangelogWriter {
             path: input.diff_path
         })
 
-        use input.diff_path
-        use diff < 10k
+        use input.diff_path as diff path
+        use diff < 10k as git diff
 
         generate({ input: "Write a changelog from this git diff", limit: 1200 }) -> {
             title string

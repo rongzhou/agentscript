@@ -15,6 +15,7 @@ export interface ContextBuildInput {
 export interface BuiltContextItem {
   index: number;
   source?: string;
+  label?: string;
   value: JsonValue;
   text: string;
   budget?: Budget;
@@ -96,6 +97,7 @@ function buildContextItem(item: ContextUse, index: number): BuiltContextItem {
   return {
     index,
     source: item.source,
+    label: item.label,
     value: clipped.value,
     text: clipped.text,
     budget: item.budget,
@@ -106,8 +108,15 @@ function buildContextItem(item: ContextUse, index: number): BuiltContextItem {
 }
 
 function buildSystemPrompt(agentName: string, identity: JsonObject): string {
-  const lines = [`You are ${agentName}.`];
+  const role = typeof identity.role === "string" ? identity.role : agentName;
+  const lines = [`You are ${role}.`];
+  if (typeof identity.description === "string") {
+    lines.push(identity.description);
+  }
   for (const [key, value] of Object.entries(identity)) {
+    if (key === "role" || key === "description") {
+      continue;
+    }
     lines.push(`${key}: ${renderJson(value)}`);
   }
   return lines.join("\n");
@@ -123,8 +132,9 @@ function buildFinalUserMessage(
   if (context.length > 0) {
     sections.push("Context:");
     for (const item of context) {
-      const label = item.source ? `${item.source}:\n` : "";
-      sections.push(`[${item.index}] ${label}${item.text}`);
+      const label = item.label ?? String(item.index);
+      const source = item.source ? `source: ${item.source}\n` : "";
+      sections.push(`[${label}]\n${source}${item.text}`);
     }
   }
 
@@ -210,6 +220,7 @@ export function builtContextToJson(context: BuiltContext): JsonObject {
     context: context.context.map((item) => ({
       index: item.index,
       source: item.source ?? null,
+      label: item.label ?? null,
       value: item.value,
       text: item.text,
       budget: budgetToJson(item.budget),

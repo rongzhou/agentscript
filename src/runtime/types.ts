@@ -53,6 +53,7 @@ export type RuntimeValue =
 
 export interface ContextUse {
   source?: string;
+  label?: string;
   value: RuntimeValue;
   budget?: Budget;
 }

@@ -128,6 +128,56 @@ describe("interpreter", () => {
     });
   });
 
+  it("carries literal context labels into trace and generated context", async () => {
+    const requests: GenerateRequest[] = [];
+    const ast = parse(`
+      import llm Qwen from "openai://gpt-4.1-mini"
+
+      main agent A {
+        model Qwen
+        role "Assistant"
+        description "Use labeled context."
+
+        main func(input) {
+          use input.question as user
+          use input.docs < 2k as retrieved evidence
+
+          generate({ input: "answer" }) -> {
+              ok boolean
+          }
+        }
+      }
+    `);
+
+    const result = await executeAgent(ast, {
+      question: "What is AgentScript?",
+      docs: "AgentScript keeps context explicit."
+    }, {
+      llmProvider: {
+        async generate(request) {
+          requests.push(request);
+          if (!request.returnShape) {
+            throw new Error("unexpected missing return shape");
+          }
+          return buildValueFromShape(request.returnShape);
+        }
+      }
+    });
+
+    expect(result.trace).toContainEqual(
+      expect.objectContaining({
+        kind: "use",
+        data: expect.objectContaining({ source: "input.question", label: "user" })
+      })
+    );
+    expect(requests[0]!.context).toEqual([
+      expect.objectContaining({ source: "input.question", label: "user" }),
+      expect.objectContaining({ source: "input.docs", label: "retrieved evidence" })
+    ]);
+    expect(requests[0]!.builtContext.context[0]).toMatchObject({ label: "user" });
+    expect(requests[0]!.builtContext.finalUserMessage).toContain("[retrieved evidence]");
+  });
+
   it("updates outer variables from repeat attempt scopes", async () => {
     const ast = parse(`
       import llm Qwen from "openai://gpt-4.1-mini"

@@ -59,6 +59,24 @@ func run(input) {
 }
 ```
 
+This rule applies to all expression forms, including calls. It does not matter whether the callee resolves to a local function or an agent call. For example, calling another agent by name invokes that agent's `main func`, and the result is returned implicitly:
+
+```agentscript
+agent Planner {
+    main func(input) {
+        generate({ input: "Create a plan" }) -> {
+            steps list[string]
+        }
+    }
+}
+
+agent Controller {
+    func run(input) {
+        Planner(input)
+    }
+}
+```
+
 ```agentscript
 func get_result(result) {
     result.value

@@ -15,6 +15,7 @@ export interface RuntimeContextUse {
   expr: Expr;
   source: string;
   budget?: Budget;
+  label?: string;
   scope: RuntimeScope;
 }
 
@@ -50,8 +51,8 @@ export class RuntimeScope {
     this.define(name, value);
   }
 
-  addUse(expr: Expr, source: string, budget?: Budget): void {
-    this.uses.push({ expr, source, budget, scope: this });
+  addUse(expr: Expr, source: string, budget?: Budget, label?: string): void {
+    this.uses.push({ expr, source, budget, label, scope: this });
   }
 
   setConfig(name: string, value: RuntimeValue): void {

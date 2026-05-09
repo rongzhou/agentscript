@@ -106,6 +106,7 @@ export class Evaluator {
     for (const item of scope.visibleUses()) {
       uses.push({
         source: item.source,
+        label: item.label,
         value: await this.evaluate(item.expr, item.scope),
         budget: item.budget,
       });

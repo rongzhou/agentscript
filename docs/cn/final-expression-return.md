@@ -59,6 +59,24 @@ func run(input) {
 }
 ```
 
+这条规则适用于所有表达式形式，包括调用表达式。被调用者解析为本地函数还是 agent 调用，都不影响 final expression return。例如，直接用 agent 名称调用另一个 agent 时，会调用该 agent 的 `main func`，其结果会被隐式返回：
+
+```agentscript
+agent Planner {
+    main func(input) {
+        generate({ input: "Create a plan" }) -> {
+            steps list[string]
+        }
+    }
+}
+
+agent Controller {
+    func run(input) {
+        Planner(input)
+    }
+}
+```
+
 ```agentscript
 func get_result(result) {
     result.value

@@ -158,6 +158,8 @@ Shape 不是完整的静态类型系统。
 use input.question
 use Requirements < 4k
 use past_lessons < 2k
+use input.question as user
+use docs.summary < 4k as evidence
 ```
 
 ### 规则
@@ -167,9 +169,23 @@ use past_lessons < 2k
 - Memory 查询结果不会自动进入 prompt。
 - Trace 事件不会自动进入 prompt。
 - `use value < n` 应用上下文预算。
+- `use value as label` 为选中的 context source 附加字面标签。
+- `use value < n as label` 先应用预算，再附加标签。
 - `llm`、`tool`、`agent`、`memory` 绑定不能被 `use`。
 - 函数绑定不能被 `use`。
 - `use` 声明被子作用域继承。
+
+### Context label
+
+`as` 后面的 label 是字面标签文本，不是表达式，不会求值，也不会读取作用域中的变量。
+
+```agentscript
+use docs as evidence
+use docs.summary < 4k as retrieved evidence
+use input.question as user
+```
+
+即使当前作用域中存在名为 `evidence` 的变量，`as evidence` 也只是把 context section 标记为 `evidence`。Label 用于组织 prompt section 和 trace 输出；它不会改变 `system`、`user`、`assistant` 等 provider message role。
 
 ### 延迟求值
 

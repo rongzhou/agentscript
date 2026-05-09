@@ -1,12 +1,12 @@
 # AgentScript
 
 > **Agent context as code.**
-> `use` 声明模型能看到什么。
+> `use` 声明模型能看到什么，并可用 label 标注 prompt section。
 > `generate` 定义唯一的 LLM 调用点及其返回结构。
 > 零运行时依赖。TypeScript 构建。
 
 ```agentscript
-use scratch.summary < 2k
+use scratch.summary < 2k as observations
 generate({ input: "Answer from observations" }) -> {
     ok boolean
     text string
@@ -61,8 +61,8 @@ main agent FileSummarizer {
 
     main func(input { path string }) {
         content = File.read({ path: input.path })
-        use input.path
-        use content < 8k
+        use input.path as source path
+        use content < 8k as file content
 
         generate({
             input: "Summarize the file for a busy teammate"
@@ -113,7 +113,7 @@ AgentScript 不是：
 
 > 让 LLM prompt context 显式、作用域化、类型化、可追踪、可编译。
 
-它提供了通用语言给不了的两个东西：一个一等公民的 `use` 关键字，声明 *哪些* 数据进入 LLM prompt；一个一等公民的 `generate` 表达式，定义 LLM *必须返回什么*。除此之外的一切——变量、函数、Agent、import、循环——都是为了支撑这个核心工作流。作用域天然地强制执行上下文边界：一个函数里的 `use` 不会泄漏到外面；子作用域继承父作用域，但从不向上泄漏。
+它提供了通用语言给不了的两个东西：一个一等公民的 `use` 关键字，声明 *哪些* 数据进入 LLM prompt，并通过 `as label` 标注这些 context 的用途；一个一等公民的 `generate` 表达式，定义 LLM *必须返回什么*。除此之外的一切——变量、函数、Agent、import、循环——都是为了支撑这个核心工作流。作用域天然地强制执行上下文边界：一个函数里的 `use` 不会泄漏到外面；子作用域继承父作用域，但从不向上泄漏。
 
 ## 工作原理
 
@@ -178,10 +178,10 @@ main agent ResearchAgent {
     main func(input {
         question string
     }) {
-        use input.question
+        use input.question as user question
 
         scratch = []
-        use scratch.summary < 2k
+        use scratch.summary < 2k as observations
 
         done = false
         loop until done < 6 {
@@ -195,8 +195,8 @@ main agent ResearchAgent {
     }
 
     func answer(question, scratch) {
-        use question
-        use scratch.summary < 2k
+        use question as user question
+        use scratch.summary < 2k as observations
         generate({ input: "Answer using only the observations" }) -> {
             ok boolean
             text string
@@ -208,7 +208,7 @@ main agent ResearchAgent {
 
 ## 五个核心概念
 
-1. **`use` 显式声明上下文** —— 未被 `use` 的变量不会进入 LLM prompt
+1. **`use` 显式声明上下文** —— 未被 `use` 的变量不会进入 LLM prompt；`as label` 标注 context section
 2. **`generate` 是唯一的 LLM 调用点** —— 必须包含 input 指令，可选择声明输出 shape
 3. **Final expression return 让流程更简洁** —— 函数返回最后一个顶层表达式
 4. **作用域即上下文边界** —— 函数、Agent、块级作用域隔离 prompt 可见性
@@ -219,7 +219,7 @@ main agent ResearchAgent {
 
 | | Python / TypeScript | AgentScript |
 |---|---|---|
-| 上下文管理 | 隐式（字符串拼接、数组 append） | 显式（`use` 声明） |
+| 上下文管理 | 隐式（字符串拼接、数组 append） | 显式（`use` 声明，可选 `as label`） |
 | LLM 调用点 | 代码任意位置 | 唯一的 `generate` 表达式 |
 | 上下文隔离 | 靠开发者自律 | 作用域继承，自动隔离 |
 | Trace / 审计 | 需要额外工具 | 内置，每次调用自动记录 |

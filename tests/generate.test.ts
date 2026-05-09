@@ -45,10 +45,12 @@ describe("generate", () => {
     });
     expect(requests[0]!.context).toHaveLength(1);
     expect(requests[0]!.context[0]!.budget).toEqual({ amount: 2, unit: "k" });
-    expect(requests[0]!.builtContext.system).toContain("You are A.");
+    expect(requests[0]!.builtContext.system).toContain("You are Assistant.");
+    expect(requests[0]!.builtContext.system).toContain("Answer test questions.");
     expect(requests[0]!.builtContext.system).not.toContain("openai://gpt-4.1-mini");
     expect(requests[0]!.builtContext.context[0]!.source).toBe("input.question");
-    expect(requests[0]!.builtContext.finalUserMessage).toContain("[0] input.question:");
+    expect(requests[0]!.builtContext.finalUserMessage).toContain("[0]");
+    expect(requests[0]!.builtContext.finalUserMessage).toContain("source: input.question");
     expect(requests[0]!.builtContext.finalUserMessage).toContain("Return JSON matching this schema:");
   });
 

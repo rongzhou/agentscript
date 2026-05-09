@@ -280,8 +280,11 @@ class Interpreter {
 
       case "UseStmt": {
         const source = formatExpressionSource(stmt.value);
-        scope.addUse(stmt.value, source, stmt.budget);
-        this.trace.push({ kind: "use", data: { source, budget: budgetToJson(stmt.budget) } });
+        scope.addUse(stmt.value, source, stmt.budget, stmt.label);
+        this.trace.push({
+          kind: "use",
+          data: { source, label: stmt.label ?? null, budget: budgetToJson(stmt.budget) },
+        });
         return undefined;
       }
 

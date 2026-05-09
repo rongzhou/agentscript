@@ -231,6 +231,9 @@ class Analyzer {
         if (stmt.budget && stmt.budget.amount <= 0) {
           this.error("INVALID_BUDGET", "Budget amount must be greater than 0", stmt.range);
         }
+        if (stmt.label && RESERVED_CONTEXT_LABELS.has(stmt.label)) {
+          this.error("RESERVED_CONTEXT_LABEL", `Context label '${stmt.label}' is reserved`, stmt.range);
+        }
         break;
       case "AssignStmt":
         this.checkAssignment(stmt, scope);
@@ -605,6 +608,7 @@ class Analyzer {
 const IMPORTED_BINDING_KINDS = new Set<BindingKind>(["tool", "llm", "file", "agent", "memory"]);
 const NON_CONTEXT_BINDING_KINDS = new Set<BindingKind>(["tool", "llm", "agent", "function", "memory"]);
 const VALID_MEMORY_METHODS = new Set(["add", "query"]);
+const RESERVED_CONTEXT_LABELS = new Set(["system", "assistant", "tool", "developer"]);
 
 function functionBinding(agentName: string, fn: FuncDecl): Binding {
   return {

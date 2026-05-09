@@ -24,7 +24,7 @@ The core objects are:
 
 - **Data**: ordinary values such as input, JSON, lists, file contents, tool observations, memory query results, and agent return values.
 - **Context source**: data selected for prompt context by `use expr`, optionally with a budget and label.
-- **Generation site**: one LLM call expressed by `generate({ input, limit, attempts, debug }) -> shape`.
+- **Generation site**: one LLM call expressed by `generate({ input, max_output, attempts, temperature, think, strict, debug }) -> shape`.
 - **Boundary**: a visibility boundary formed by an agent, function, or block scope.
 - **Trace**: the audit record explaining which sources were selected, how prompt context was built, and what each generation returned.
 

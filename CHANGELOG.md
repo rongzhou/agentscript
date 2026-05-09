@@ -2,6 +2,20 @@
 
 All notable changes to AgentScript will be documented in this file.
 
+## 0.1.4 - 2026-05-08
+
+### Added
+
+- Added `max_output` as the explicit `generate` output budget.
+- Added `temperature`, `think`, and `strict` generate options.
+- Added provider request mapping for generate provider hints.
+
+### Changed
+
+- Replaced generate `limit` usage with `max_output` in current docs, examples, tutorials, and fixtures.
+- Expanded English and Chinese `generate` design docs with configuration semantics.
+- Updated shape validation so `strict: true` disables coercion and rejects extra fields.
+
 ## 0.1.3 - 2026-05-08
 
 ### Added

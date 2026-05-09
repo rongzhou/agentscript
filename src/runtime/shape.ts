@@ -11,15 +11,22 @@ export function buildValueFromShape(shape: ShapeObjectExpr): JsonObject {
   return result;
 }
 
-export function validateValueAgainstShape(value: RuntimeValue, shape: ShapeObjectExpr, range?: SourceRange): void {
+export function validateValueAgainstShape(
+  value: RuntimeValue,
+  shape: ShapeObjectExpr,
+  range?: SourceRange,
+  options: { rejectExtraFields?: boolean } = {},
+): void {
   if (!isObject(value)) {
     throw new RuntimeError("LLM result must be an object matching the generate return shape", range);
   }
 
   const allowedFields = new Set(shape.fields.map((field) => field.name));
-  for (const key of Object.keys(value)) {
-    if (!allowedFields.has(key)) {
-      throw new RuntimeError(`LLM result contains unexpected field '${key}'`, range);
+  if (options.rejectExtraFields) {
+    for (const key of Object.keys(value)) {
+      if (!allowedFields.has(key)) {
+        throw new RuntimeError(`LLM result contains unexpected field '${key}'`, range);
+      }
     }
   }
 

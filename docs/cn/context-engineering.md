@@ -24,7 +24,7 @@ AgentScript 的核心对象是：
 
 - **Data**：普通值，例如 input、JSON、list、文件内容、工具 observation、memory 查询结果和 Agent 返回值。
 - **Context source**：通过 `use expr` 选择进入 prompt context 的数据，可带 budget 和 label。
-- **Generation site**：一次由 `generate({ input, limit, attempts, debug }) -> shape` 表示的 LLM 调用。
+- **Generation site**：一次由 `generate({ input, max_output, attempts, temperature, think, strict, debug }) -> shape` 表示的 LLM 调用。
 - **Boundary**：由 Agent、function 或 block scope 形成的可见性边界。
 - **Trace**：解释哪些 source 被选择、prompt context 如何构建、每次 generation 返回了什么的审计记录。
 

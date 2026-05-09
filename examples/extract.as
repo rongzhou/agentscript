@@ -17,7 +17,7 @@ main agent ApiExtractor {
         use input.url as endpoint
         use response < 8k as api response
 
-        generate({ input: "Extract normalized data from the API response", limit: 1200 }) -> {
+        generate({ input: "Extract normalized data from the API response", max_output: 1200 }) -> {
             records list[json]
             fields list[string]
             warnings list[string]

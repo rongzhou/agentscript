@@ -1,5 +1,5 @@
 import { RuntimeError } from "../../runtime/errors.js";
-import type { GenerateRequest, JsonValue, RuntimeValue } from "../../runtime/types.js";
+import type { GenerateRequest, JsonObject, JsonValue, RuntimeValue } from "../../runtime/types.js";
 import { budgetToTokenLimit, parseJsonText, postJson } from "./shared.js";
 import type { FetchLike, ParsedLlmUri, ProtocolLlmProviderOptions } from "./types.js";
 
@@ -16,7 +16,7 @@ export async function callAnthropic(
     throw new RuntimeError("ANTHROPIC_API_KEY is required for anthropic:// models");
   }
 
-  const response = await postJson(fetchImpl, `${baseUrl}/messages`, {
+  const body: JsonObject = {
     model: parsed.model,
     max_tokens: budgetToTokenLimit(request) ?? 1024,
     system: request.builtContext.system,
@@ -26,7 +26,12 @@ export async function callAnthropic(
         content: request.builtContext.finalUserMessage,
       },
     ],
-  }, timeoutMs, {
+  };
+  if (request.temperature !== undefined) {
+    body.temperature = request.temperature;
+  }
+
+  const response = await postJson(fetchImpl, `${baseUrl}/messages`, body, timeoutMs, {
     "x-api-key": apiKey,
     "anthropic-version": "2023-06-01",
   });

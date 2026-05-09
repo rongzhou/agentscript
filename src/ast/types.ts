@@ -250,7 +250,10 @@ export interface GenerateOptionsExpr extends NodeBase {
   properties: ObjectProperty[];
   input?: Expr;
   attempts?: NumberExpr;
-  limit?: Budget;
+  maxOutput?: Budget;
+  temperature?: NumberExpr;
+  think?: BooleanExpr | StringExpr;
+  strict?: BooleanExpr;
   debug?: BooleanExpr;
 }
 

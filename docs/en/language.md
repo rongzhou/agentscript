@@ -200,7 +200,7 @@ For the full design semantics, see [`use ... as ...`](./use-as.md).
 ```agentscript
 answer = generate({
     input: "Answer using the selected context."
-    limit: 800
+    max_output: 800
     attempts: 3
     debug: true
 }) -> {
@@ -213,8 +213,11 @@ answer = generate({
 ### Semantics
 
 - `input` is the per-generation instruction. Required.
-- `limit` is the generation budget (number or `2k` style). Optional.
+- `max_output` is the output generation budget (number or `2k` style). Optional.
 - `attempts` controls retry for JSON parse errors or shape mismatch. Optional, defaults to 1.
+- `temperature` is a provider sampling hint. Optional.
+- `think` is a provider/model reasoning hint. Optional.
+- `strict` controls shape validation strictness. Optional, defaults to false.
 - `debug` prints the full prompt to stderr. Optional, defaults to false.
 - The optional `-> { ... }` block declares the expected output shape.
 - Without `-> { ... }`, the generate output is unconstrained: AgentScript does not add a return schema to the prompt, does not request provider structured output, and does not coerce or validate the returned value.

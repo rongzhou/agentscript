@@ -3,13 +3,13 @@ import type { GenerateRequest, JsonObject, JsonValue, RuntimeValue } from "../..
 import type { FetchLike } from "./types.js";
 
 export function budgetToTokenLimit(request: GenerateRequest): number | undefined {
-  if (!request.budget) {
+  if (!request.maxOutput) {
     return undefined;
   }
-  if (request.budget.unit === "k") {
-    return Math.max(1, Math.floor(request.budget.amount * 1000));
+  if (request.maxOutput.unit === "k") {
+    return Math.max(1, Math.floor(request.maxOutput.amount * 1000));
   }
-  return Math.max(1, Math.floor(request.budget.amount));
+  return Math.max(1, Math.floor(request.maxOutput.amount));
 }
 
 export async function postJson(

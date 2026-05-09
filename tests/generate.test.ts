@@ -21,7 +21,7 @@ describe("generate", () => {
 
         main func act(input) {
           use input.question < 2k
-          return generate({ input: "answer", limit: 300 }) -> {
+          return generate({ input: "answer", max_output: 300 }) -> {
               ok boolean
           }
         }
@@ -38,7 +38,7 @@ describe("generate", () => {
     });
 
     expect(requests).toHaveLength(1);
-    expect(requests[0]!.budget).toEqual({ amount: 300 });
+    expect(requests[0]!.maxOutput).toEqual({ amount: 300 });
     expect(requests[0]!.model).toMatchObject({
       name: "Qwen",
       uri: "openai://gpt-4.1-mini"
@@ -52,6 +52,50 @@ describe("generate", () => {
     expect(requests[0]!.builtContext.finalUserMessage).toContain("[0]");
     expect(requests[0]!.builtContext.finalUserMessage).toContain("source: input.question");
     expect(requests[0]!.builtContext.finalUserMessage).toContain("Return JSON matching this schema:");
+  });
+
+  it("passes generate provider hints and runtime validation options", async () => {
+    const requests: GenerateRequest[] = [];
+    const ast = parse(`
+      import llm Qwen from "openai://gpt-4.1-mini"
+
+      main agent A {
+        model Qwen
+        role "Assistant"
+        description "Answer test questions."
+
+        main func act(input) {
+          return generate({
+            input: "answer"
+            max_output: 2k
+            attempts: 2
+            temperature: 0.2
+            think: "medium"
+            strict: true
+            debug: false
+          }) -> {
+              ok boolean
+          }
+        }
+      }
+    `);
+
+    await executeAgent(ast, {}, {
+      llmProvider: {
+        async generate(request) {
+          requests.push(request);
+          return { ok: true };
+        }
+      }
+    });
+
+    expect(requests[0]).toMatchObject({
+      maxOutput: { amount: 2, unit: "k" },
+      temperature: 0.2,
+      think: "medium",
+      strict: true,
+      debug: false
+    });
   });
 
   it("prints generate debug prompts to stderr when requested", async () => {
@@ -293,6 +337,34 @@ describe("generate", () => {
       scores: [1, 2.5],
       text: "42"
     });
+  });
+
+  it("does not coerce LLM generate results in strict mode", async () => {
+    const ast = parse(`
+      import llm Qwen from "openai://gpt-4.1-mini"
+
+      agent A {
+        model Qwen
+        role "Assistant"
+        description "Reject coercion in strict mode."
+
+        main func(input) {
+          return generate({ input: "x", strict: true }) -> {
+              ok boolean
+          }
+        }
+      }
+    `);
+
+    await expect(
+      executeAgent(ast, {}, {
+        llmProvider: {
+          async generate(): Promise<RuntimeValue> {
+            return { ok: "true" };
+          }
+        }
+      })
+    ).rejects.toThrow(/must be a boolean/);
   });
 
   it("includes source location in runtime errors", async () => {

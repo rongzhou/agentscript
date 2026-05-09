@@ -161,7 +161,7 @@ use results < 4k as search results
 use docs.summary < 4k as evidence
 ```
 
-This is different from `generate({ limit: ... })`, which is a generation budget. See [`generate`](./generate.md).
+This is different from `generate({ max_output: ... })`, which is an output generation budget. See [`generate`](./generate.md).
 
 ## Prompt rendering
 

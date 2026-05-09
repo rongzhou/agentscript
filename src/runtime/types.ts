@@ -66,7 +66,11 @@ export interface GenerateRequest {
   returnShape?: ShapeObjectExpr;
   context: ContextUse[];
   builtContext: BuiltContext;
-  budget?: Budget;
+  maxOutput?: Budget;
+  temperature?: number;
+  think?: boolean | string;
+  strict: boolean;
+  debug: boolean;
 }
 
 export interface ToolCallRequest {

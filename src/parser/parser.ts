@@ -527,7 +527,10 @@ class Parser {
     const properties: ObjectProperty[] = [];
     let input: Expr | undefined;
     let attempts: NumberExpr | undefined;
-    let limit: Budget | undefined;
+    let maxOutput: Budget | undefined;
+    let temperature: NumberExpr | undefined;
+    let think: BooleanExpr | StringExpr | undefined;
+    let strict: BooleanExpr | undefined;
     let debug: BooleanExpr | undefined;
 
     while (!this.check("}") && !this.isAtEnd()) {
@@ -535,9 +538,9 @@ class Parser {
       const key = this.consumeObjectKey();
       this.consume(":");
       let value: Expr;
-      if (key === "limit") {
-        const token = this.consumeKind("number", "Expected generate limit");
-        limit = this.parseBudgetToken(token);
+      if (key === "max_output") {
+        const token = this.consumeKind("number", "Expected generate max_output");
+        maxOutput = this.parseBudgetToken(token);
         value = {
           kind: "NumberExpr",
           value: Number.parseFloat(token.value),
@@ -557,6 +560,12 @@ class Parser {
         input = value;
       } else if (key === "attempts" && value.kind === "NumberExpr") {
         attempts = value;
+      } else if (key === "temperature" && value.kind === "NumberExpr") {
+        temperature = value;
+      } else if (key === "think" && (value.kind === "BooleanExpr" || value.kind === "StringExpr")) {
+        think = value;
+      } else if (key === "strict" && value.kind === "BooleanExpr") {
+        strict = value;
       } else if (key === "debug" && value.kind === "BooleanExpr") {
         debug = value;
       }
@@ -569,7 +578,10 @@ class Parser {
       properties,
       input,
       attempts,
-      limit,
+      maxOutput,
+      temperature,
+      think,
+      strict,
       debug,
       range: { start, end: this.previous().range.end }
     };

@@ -61,6 +61,42 @@ describe("ProtocolLlmProvider", () => {
     });
   });
 
+
+
+  it("passes provider hints to OpenAI requests", async () => {
+    const calls: JsonObject[] = [];
+    const provider = new ProtocolLlmProvider({
+      openaiApiKey: "test-key",
+      fetch: async (_input, init) => {
+        calls.push(JSON.parse(String(init?.body)) as JsonObject);
+        return jsonResponse({
+          choices: [
+            {
+              message: {
+                content: JSON.stringify({ ok: true })
+              }
+            }
+          ]
+        });
+      }
+    });
+
+    await provider.generate({
+      ...makeRequest("openai://gpt-4.1-mini"),
+      temperature: 0.2,
+      think: "high",
+      strict: true
+    });
+
+    expect(calls[0]).toMatchObject({
+      temperature: 0.2,
+      reasoning_effort: "high"
+    });
+    expect((calls[0]!.response_format as JsonObject).json_schema).toMatchObject({
+      strict: true
+    });
+  });
+
   it("calls Anthropic messages API", async () => {
     const calls: JsonObject[] = [];
     const provider = new ProtocolLlmProvider({
@@ -87,7 +123,7 @@ describe("ProtocolLlmProvider", () => {
     });
   });
 
-  it("calls Ollama chat API with schema format and thinking disabled", async () => {
+  it("calls Ollama chat API with schema format and generation options", async () => {
     const calls: Array<{ url: string; body: JsonObject }> = [];
     const provider = new ProtocolLlmProvider({
       fetch: async (input, init) => {
@@ -103,15 +139,20 @@ describe("ProtocolLlmProvider", () => {
       }
     });
 
-    const result = await provider.generate(makeRequest("ollama://localhost:11434/qwen3.6"));
+    const result = await provider.generate({
+      ...makeRequest("ollama://localhost:11434/qwen3.6"),
+      temperature: 0.7,
+      think: "high"
+    });
 
     expect(result).toEqual({ ok: true });
     expect(calls[0]!.url).toBe("http://localhost:11434/api/chat");
     expect(calls[0]!.body).toMatchObject({
       model: "qwen3.6",
       stream: false,
-      think: false
+      think: "high"
     });
+    expect(calls[0]!.body.options).toMatchObject({ num_predict: 100, temperature: 0.7 });
     expect(calls[0]!.body.format).toMatchObject({ type: "object" });
   });
 
@@ -178,7 +219,7 @@ function makeRequest(uri: string): GenerateRequest {
   const ast = parse(`
     agent A {
       func act(input) {
-        return generate({ input: "answer", limit: 100 }) -> {
+        return generate({ input: "answer", max_output: 100 }) -> {
             ok boolean
         }
       }
@@ -190,7 +231,7 @@ function makeRequest(uri: string): GenerateRequest {
   }
 
   const model = { ...mainModel, uri };
-  const budget = stmt.value.options.limit;
+  const maxOutput = stmt.value.options.maxOutput;
   const builtContext = buildContext({
     agentName: "A",
     model,
@@ -198,7 +239,7 @@ function makeRequest(uri: string): GenerateRequest {
     instruction: "answer",
     returnShape: stmt.value.returnShape,
     uses: [],
-    budget
+    maxOutput
   });
 
   return {
@@ -209,7 +250,9 @@ function makeRequest(uri: string): GenerateRequest {
     returnShape: stmt.value.returnShape,
     context: [],
     builtContext,
-    budget
+    maxOutput,
+    strict: false,
+    debug: false
   };
 }
 

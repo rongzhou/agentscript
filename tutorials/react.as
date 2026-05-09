@@ -32,7 +32,7 @@ main agent ResearchAgent {
         use question
         use scratch.summary < 1k
 
-        generate({ input: "Choose the next search focus", limit: 300 }) -> {
+        generate({ input: "Choose the next search focus", max_output: 300 }) -> {
             focus string
             why string
         }
@@ -60,7 +60,7 @@ main agent ResearchAgent {
 
         use raw
 
-        generate({ input: "Summarize the useful observation", limit: 400 }) -> {
+        generate({ input: "Summarize the useful observation", max_output: 400 }) -> {
             facts list[string]
             source string
         }
@@ -70,7 +70,7 @@ main agent ResearchAgent {
         use question
         use scratch.summary < 1k
 
-        verdict = generate({ input: "Decide whether the observations are enough", limit: 200 }) -> {
+        verdict = generate({ input: "Decide whether the observations are enough", max_output: 200 }) -> {
             done boolean
         }
 
@@ -81,7 +81,7 @@ main agent ResearchAgent {
         use question
         use scratch.summary < 2k
 
-        generate({ input: "Answer using only the observations", limit: 800 }) -> {
+        generate({ input: "Answer using only the observations", max_output: 800 }) -> {
             ok boolean
             text string
             error string

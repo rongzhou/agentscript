@@ -302,7 +302,7 @@ describe("analyze", () => {
     expect(scoped.diagnostics.filter((diagnostic) => diagnostic.severity === "error")).toEqual([]);
   });
 
-  it("checks generate limit and debug options", () => {
+  it("checks generate max_output and debug options", () => {
     const result = analyze(
       parse(`
         import llm Qwen from "openai://gpt-4.1-mini"
@@ -313,7 +313,7 @@ describe("analyze", () => {
           description "Validate generate options."
 
           main func act(input) {
-            return generate({ input: "x", limit: 0, debug: "yes" }) -> {
+            return generate({ input: "x", max_output: 0, debug: "yes" }) -> {
                 ok boolean
             }
           }
@@ -325,12 +325,47 @@ describe("analyze", () => {
       expect.arrayContaining([
         expect.objectContaining({
           severity: "error",
-          code: "INVALID_GENERATE_LIMIT"
+          code: "INVALID_GENERATE_MAX_OUTPUT"
         }),
         expect.objectContaining({
           severity: "error",
           code: "INVALID_GENERATE_DEBUG"
         })
+      ])
+    );
+  });
+
+
+
+  it("checks generate temperature, think, and strict options", () => {
+    const result = analyze(
+      parse(`
+        import llm Qwen from "openai://gpt-4.1-mini"
+
+        main agent A {
+          model Qwen
+          role "Assistant"
+          description "Validate generate options."
+
+          main func act(input) {
+            return generate({
+              input: "x"
+              temperature: "warm"
+              think: "extreme"
+              strict: "yes"
+            }) -> {
+                ok boolean
+            }
+          }
+        }
+      `)
+    );
+
+    expect(result.diagnostics).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ severity: "error", code: "INVALID_GENERATE_TEMPERATURE" }),
+        expect.objectContaining({ severity: "error", code: "INVALID_GENERATE_THINK" }),
+        expect.objectContaining({ severity: "error", code: "INVALID_GENERATE_STRICT" })
       ])
     );
   });

@@ -9,7 +9,7 @@ export interface ContextBuildInput {
   instruction: RuntimeValue;
   returnShape?: ShapeObjectExpr;
   uses: ContextUse[];
-  budget?: Budget;
+  maxOutput?: Budget;
 }
 
 export interface BuiltContextItem {
@@ -33,7 +33,7 @@ export interface BuiltContext {
   instruction: JsonValue;
   instructionText: string;
   returnSchema?: JsonObject;
-  budget?: Budget;
+  maxOutput?: Budget;
   finalUserMessage: string;
 }
 
@@ -53,7 +53,7 @@ export function buildContext(input: ContextBuildInput): BuiltContext {
     instruction,
     instructionText,
     returnSchema,
-    budget: input.budget,
+    maxOutput: input.maxOutput,
     finalUserMessage: buildFinalUserMessage(context, instructionText, returnSchema),
   };
 }
@@ -230,7 +230,7 @@ export function builtContextToJson(context: BuiltContext): JsonObject {
     })),
     instruction: context.instruction,
     returnSchema: context.returnSchema ?? null,
-    budget: budgetToJson(context.budget),
+    maxOutput: budgetToJson(context.maxOutput),
     finalUserMessage: context.finalUserMessage,
   };
 }

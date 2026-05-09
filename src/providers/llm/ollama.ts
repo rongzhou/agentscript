@@ -12,7 +12,7 @@ export async function callOllama(
   const body: JsonObject = {
     model: parsed.model,
     stream: false,
-    think: false,
+    think: request.think ?? false,
     messages: [
       { role: "system", content: request.builtContext.system },
       { role: "user", content: request.builtContext.finalUserMessage },
@@ -22,8 +22,15 @@ export async function callOllama(
     body.format = request.builtContext.returnSchema;
   }
   const maxTokens = budgetToTokenLimit(request);
+  const options: JsonObject = {};
   if (maxTokens) {
-    body.options = { num_predict: maxTokens };
+    options.num_predict = maxTokens;
+  }
+  if (request.temperature !== undefined) {
+    options.temperature = request.temperature;
+  }
+  if (Object.keys(options).length > 0) {
+    body.options = options;
   }
 
   const response = await postJson(fetchImpl, `${baseUrl}/api/chat`, body, timeoutMs);

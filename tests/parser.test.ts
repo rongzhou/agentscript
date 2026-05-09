@@ -57,7 +57,7 @@ describe("parse", () => {
     const ast = parse(`
       main agent A {
         main func act(input) {
-          return generate({ input: "x", limit: 2k, debug: true }) -> {
+          return generate({ input: "x", max_output: 2k, debug: true }) -> {
               ok boolean
               facts list[string]
               data json
@@ -72,7 +72,7 @@ describe("parse", () => {
     if (stmt.kind !== "ReturnStmt") return;
     expect(stmt.value.kind).toBe("GenerateExpr");
     if (stmt.value.kind !== "GenerateExpr") return;
-    expect(stmt.value.options.limit).toEqual({ amount: 2, unit: "k" });
+    expect(stmt.value.options.maxOutput).toEqual({ amount: 2, unit: "k" });
     expect(stmt.value.options.debug?.value).toBe(true);
     expect(stmt.value.returnShape).toBeDefined();
   });

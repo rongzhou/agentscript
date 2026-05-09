@@ -23,7 +23,10 @@ export interface GenerateRuntimeHost {
 interface GenerateOptions {
   input: RuntimeValue;
   attempts: number;
-  limit?: Budget;
+  maxOutput?: Budget;
+  temperature?: number;
+  think?: boolean | string;
+  strict: boolean;
   debug: boolean;
 }
 
@@ -52,7 +55,7 @@ export class GenerateRuntime {
         instruction,
         returnShape: expr.returnShape,
         uses: context,
-        budget: options.limit,
+        maxOutput: options.maxOutput,
       });
 
       if (options.debug) {
@@ -69,7 +72,11 @@ export class GenerateRuntime {
           returnShape: expr.returnShape,
           context,
           builtContext,
-          budget: options.limit,
+          maxOutput: options.maxOutput,
+          temperature: options.temperature,
+          think: options.think,
+          strict: options.strict,
+          debug: options.debug,
         });
       } catch (error) {
         if (attempt >= options.attempts || !isRepairableGenerateError(error)) {
@@ -83,18 +90,27 @@ export class GenerateRuntime {
       }
 
       try {
-        const result = expr.returnShape ? coerceValueToShape(rawResult, expr.returnShape) : rawResult;
+        const result = expr.returnShape && !options.strict ? coerceValueToShape(rawResult, expr.returnShape) : rawResult;
         if (expr.returnShape) {
-          validateValueAgainstShape(result, expr.returnShape, expr.range);
+          validateValueAgainstShape(result, expr.returnShape, expr.range, { rejectExtraFields: options.strict });
         }
         this.trace.push({
           kind: "generate",
           data: {
             instruction: sanitizeForJson(options.input),
+            config: {
+              maxOutput: budgetToJson(options.maxOutput),
+              attempts: options.attempts,
+              temperature: options.temperature ?? null,
+              think: options.think ?? false,
+              strict: options.strict,
+              debug: options.debug,
+            },
             attempts: attempt,
-            budget: budgetToJson(options.limit),
+            maxOutput: budgetToJson(options.maxOutput),
             debug: options.debug,
             context: builtContextToJson(builtContext),
+            validation: expr.returnShape ? { ok: true, strict: options.strict } : null,
             result: sanitizeForJson(result),
           },
         });
@@ -128,7 +144,10 @@ export class GenerateRuntime {
     return {
       input: await this.host.evaluate(expr.options.input, scope),
       attempts,
-      limit: expr.options.limit,
+      maxOutput: expr.options.maxOutput,
+      temperature: expr.options.temperature?.value,
+      think: expr.options.think?.value,
+      strict: expr.options.strict?.value ?? false,
       debug: expr.options.debug?.value ?? false,
     };
   }

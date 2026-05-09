@@ -161,7 +161,7 @@ use results < 4k as search results
 use docs.summary < 4k as evidence
 ```
 
-这不同于 `generate({ limit: ... })` 的 generation budget。详见 [`generate`](./generate.md)。
+这不同于 `generate({ max_output: ... })` 的 output generation budget。详见 [`generate`](./generate.md)。
 
 ## Prompt 渲染
 

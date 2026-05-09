@@ -28,10 +28,17 @@ export async function callOpenAI(
       type: "json_schema",
       json_schema: {
         name: "agentscript_generate",
-        strict: true,
+        strict: request.strict,
         schema: request.builtContext.returnSchema,
       },
     };
+  }
+  if (request.temperature !== undefined) {
+    body.temperature = request.temperature;
+  }
+  const reasoningEffort = openAIReasoningEffort(request.think);
+  if (reasoningEffort) {
+    body.reasoning_effort = reasoningEffort;
   }
   const maxTokens = budgetToTokenLimit(request);
   if (maxTokens) {
@@ -43,4 +50,10 @@ export async function callOpenAI(
   });
   const text = readPath(response, ["choices", 0, "message", "content"]);
   return request.returnShape ? parseJsonText(text) : text;
+}
+
+function openAIReasoningEffort(think: boolean | string | undefined): string | undefined {
+  if (think === true) return "medium";
+  if (think === "low" || think === "medium" || think === "high") return think;
+  return undefined;
 }

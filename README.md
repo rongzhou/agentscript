@@ -66,7 +66,7 @@ main agent FileSummarizer {
 
         generate({
             input: "Summarize the file for a busy teammate"
-            limit: 1000
+            max_output: 1000
         }) -> {
             title string
             summary string

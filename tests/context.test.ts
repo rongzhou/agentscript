@@ -26,7 +26,7 @@ describe("buildContext", () => {
       instruction: "answer",
       returnShape: generate.value.returnShape,
       uses: [{ source: "input.text", label: "evidence", value: "abcdefghijklmnopqrstuvwxyz", budget: { amount: 5 } }],
-      budget: { amount: 100 }
+      maxOutput: { amount: 100 }
     });
 
     expect(context.system).toContain("You are Researcher.");

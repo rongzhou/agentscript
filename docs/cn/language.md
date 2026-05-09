@@ -200,7 +200,7 @@ use input.question as user
 ```agentscript
 answer = generate({
     input: "Answer using the selected context."
-    limit: 800
+    max_output: 800
     attempts: 3
     debug: true
 }) -> {
@@ -213,8 +213,11 @@ answer = generate({
 ### 语义
 
 - `input`：每次生成的指令。必填。
-- `limit`：生成预算（数字或 `2k` 格式）。可选。
+- `max_output`：输出生成预算（数字或 `2k` 格式）。可选。
 - `attempts`：JSON 解析失败或 shape 不匹配时的重试次数。可选，默认 1。
+- `temperature`：provider sampling hint。可选。
+- `think`：provider/model reasoning hint。可选。
+- `strict`：控制 shape validation 是否严格。可选，默认 false。
 - `debug`：将完整 prompt 打印到 stderr。可选，默认 false。
 - 可选的 `-> { ... }` 块声明期望的输出 shape。
 - 不写 `-> { ... }` 时，`generate` 输出无约束：AgentScript 不会在 prompt 中加入返回 schema，不会要求 provider 使用结构化输出，也不会对返回值做类型强制转换或 shape 校验。

@@ -26,7 +26,7 @@ main agent CodeReviewAssistant {
         use todos < 4k as todo findings
         use fixmes < 4k as fixme findings
 
-        generate({ input: "Turn TODO and FIXME scan results into prioritized repair suggestions", limit: 1200 }) -> {
+        generate({ input: "Turn TODO and FIXME scan results into prioritized repair suggestions", max_output: 1200 }) -> {
             summary string
             findings list[string]
             suggested_fixes list[string]

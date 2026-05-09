@@ -12,7 +12,7 @@ main agent {
         use input.name
         use input.request
 
-        generate({ input: "Reply to the CLI user by name", limit: 300 }) -> {
+        generate({ input: "Reply to the CLI user by name", max_output: 300 }) -> {
             ok boolean
             message string
         }

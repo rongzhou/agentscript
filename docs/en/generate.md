@@ -1,6 +1,6 @@
 # `generate`
 
-This document defines the semantics of `generate` in AgentScript: generation sites, prompt layers, agent identity, selected context, output contracts, budgets, attempts, and trace output.
+This document defines the semantics of `generate` in AgentScript: generation sites, prompt layers, agent identity, selected context, output contracts, generation configuration, retries, validation, debug output, and trace output.
 
 For context selection and labels, see [`use ... as ...`](./use-as.md). For the broader design map, see [Context Engineering](./context-engineering.md).
 
@@ -17,18 +17,20 @@ generate({ input: "Answer using the selected context." }) -> {
 
 Ordinary code can compute values, call tools, call agents, and organize state. Only `generate` asks the current model to produce new output.
 
-## Syntax
+## Recommended syntax
 
 ```agentscript
 generate({
-    input: "Answer using the selected context."
-    limit: 800
-    attempts: 3
-    debug: true
+    input: "Classify the issue"
+    max_output: 300
+    attempts: 2
+    temperature: 0.2
+    think: "medium"
+    strict: true
+    debug: false
 }) -> {
-    ok boolean
-    answer string
-    reason string
+    category string
+    confidence number
 }
 ```
 
@@ -39,6 +41,46 @@ generate({ input: "Draft a response." })
 ```
 
 When no shape is declared, the runtime should not inject a schema or require structured JSON output.
+
+## Configuration fields
+
+| Field | Required | Type | Meaning |
+|---|---:|---|---|
+| `input` | yes | `string` | Per-generation task instruction. |
+| `max_output` | no | `number` / budget literal | Requested output generation budget. |
+| `attempts` | no | `number` | Retry count for JSON parse failures or shape validation failures. |
+| `temperature` | no | `number` | Sampling temperature passed to providers that support it. |
+| `think` | no | `boolean` / `string` | Request model reasoning / thinking mode. |
+| `strict` | no | `boolean` | Controls whether output shape validation is strict. |
+| `debug` | no | `boolean` | Enables prompt / trace debug output for this generation. |
+
+Recommended defaults:
+
+```text
+max_output: provider/runtime default
+attempts: 1
+temperature: provider/model default
+think: false
+strict: false
+debug: false
+```
+
+The fields fall into three groups:
+
+```text
+Generation instruction:
+  input
+
+Generation provider hints:
+  max_output
+  temperature
+  think
+
+AgentScript runtime behavior:
+  attempts
+  strict
+  debug
+```
 
 ## Prompt construction
 
@@ -114,34 +156,53 @@ generate({ input: "Answer" }) -> {
 
 The runtime asks the provider for structured output when possible and validates the returned value against the shape.
 
-## Budgets
+## `max_output`
 
-`generate({ limit: n })` is a generation budget. It limits output size or maps to a provider token limit.
+`max_output` is the requested provider-side generation budget.
 
 ```agentscript
 generate({
-    input: "Summarize"
-    limit: 500
+    input: "Answer briefly"
+    max_output: 300
 }) -> {
-    text string
+    answer string
 }
 ```
 
-This is different from a context item budget:
+Semantics:
 
-```agentscript
-use docs.summary < 4k as evidence
+```text
+max_output = provider-side generation budget requested by AgentScript
 ```
 
-The first controls generated output. The second controls how much selected context is rendered into the prompt.
+It is separate from `use` input context budgets:
 
-## Attempts and repair
+```agentscript
+use docs.summary < 4k
 
-`attempts` controls how many times the runtime may try to obtain a valid result for the requested output shape.
+generate({
+    input: "Answer from the selected docs"
+    max_output: 800
+}) -> {
+    answer string
+}
+```
+
+Difference:
+
+```text
+use ... < 4k       = input context budget
+max_output: 800    = output generation budget
+```
+
+## `attempts`
+
+`attempts` controls how many times the runtime may try to obtain a valid structured result.
 
 ```agentscript
 generate({
-    input: "Extract fields"
+    input: "Extract metadata"
+    max_output: 500
     attempts: 3
 }) -> {
     title string
@@ -149,32 +210,214 @@ generate({
 }
 ```
 
-If a provider response is malformed or fails shape validation, the runtime may retry with repair feedback. Infrastructure errors should not be treated as repairable model output.
+Retryable failures:
 
-## Debug output
+```text
+JSON parse failed
+shape validation failed
+required field missing
+type mismatch
+strict mode violation
+```
 
-`debug: true` allows the runtime to print or expose the final prompt for inspection.
+Non-retryable failures:
+
+```text
+provider auth error
+network error
+model not found
+quota exceeded
+timeout, unless runtime policy decides it is retryable
+```
+
+Default:
+
+```text
+attempts: 1
+```
+
+## `temperature`
+
+`temperature` is the sampling temperature.
 
 ```agentscript
 generate({
-    input: "Answer"
+    input: "Brainstorm alternatives"
+    max_output: 1000
+    temperature: 0.7
+}) -> {
+    ideas list[string]
+}
+```
+
+Semantics:
+
+```text
+If supported by the selected provider/model, pass through as sampling temperature.
+If unsupported, adapter may ignore, warn, or fail according to capability policy.
+```
+
+## `think`
+
+`think` is a model reasoning / thinking mode request.
+
+Recommended values:
+
+```agentscript
+think: false
+think: true
+think: "auto"
+think: "low"
+think: "medium"
+think: "high"
+```
+
+Semantics:
+
+```text
+false     do not request thinking/reasoning mode
+true      request provider default thinking/reasoning mode
+"auto"    let provider/model decide
+"low"     request low-intensity reasoning
+"medium"  request medium-intensity reasoning
+"high"    request high-intensity reasoning
+```
+
+Example:
+
+```agentscript
+generate({
+    input: "Analyze the tradeoffs"
+    max_output: 1200
+    think: "high"
+}) -> {
+    decision string
+    tradeoffs list[string]
+    risks list[string]
+}
+```
+
+`think` is a provider/model capability hint. Not every model guarantees support.
+
+If unsupported, the runtime may handle it according to policy:
+
+```text
+ignore
+warn
+fail
+```
+
+Recommended default policy:
+
+```text
+warn in debug mode, otherwise ignore
+```
+
+## `strict`
+
+`strict` controls output shape validation.
+
+```agentscript
+generate({
+    input: "Classify the issue"
+    max_output: 300
+    strict: true
+}) -> {
+    category string
+    confidence number
+}
+```
+
+Default:
+
+```text
+strict: false
+```
+
+### `strict: false`
+
+Allows limited coercion:
+
+```text
+"true"  -> true
+"false" -> false
+"42"    -> 42
+"3.14"  -> 3.14
+```
+
+Still required:
+
+```text
+output is parseable
+required fields exist
+unsafe conversions fail
+```
+
+### `strict: true`
+
+Strict validation:
+
+```text
+coercion is forbidden
+required fields must exist
+field types must match exactly
+extra fields are rejected
+shape mismatch triggers retry if attempts > 1
+```
+
+In one sentence:
+
+```text
+strict is AgentScript runtime control over the output contract.
+```
+
+## `debug`
+
+`debug` controls debug output for this `generate` call.
+
+```agentscript
+generate({
+    input: "Answer the question"
+    max_output: 800
     debug: true
 }) -> {
     answer string
 }
 ```
 
-Debug output is for developers. It is not itself prompt context.
+Recommended debug output:
+
+```text
+resolved agent identity
+generate input
+selected context entries
+context labels
+budgets
+rendered prompt/messages
+output shape
+raw model output
+validation result
+```
+
+`debug` only affects debug output. It does not change prompt semantics.
 
 ## Trace requirements
 
-A `generate` trace should explain the actual prompt inputs and result:
+A `generate` trace should explain the actual prompt inputs, configuration, validation, and result:
 
 ```json
 {
   "kind": "generate",
   "data": {
     "instruction": "Answer from observations",
+    "config": {
+      "max_output": 800,
+      "attempts": 1,
+      "temperature": 0.2,
+      "think": "medium",
+      "strict": false,
+      "debug": false
+    },
     "context": {
       "context": [
         {
@@ -189,6 +432,7 @@ A `generate` trace should explain the actual prompt inputs and result:
       ]
     },
     "attempts": 1,
+    "validation": { "ok": true, "strict": false },
     "result": { "answer": "..." }
   }
 }
@@ -200,8 +444,10 @@ Trace answers:
 - What instruction was used?
 - What selected context was visible?
 - Which context items were clipped?
+- What provider hints and runtime behavior were requested?
 - What shape was requested?
 - How many attempts were needed?
+- What validation mode was used?
 - What value was returned?
 
 ## Final expression return
@@ -228,5 +474,7 @@ Before changing `generate`, verify:
 - Does it use only visible `use` context sources?
 - Does it keep agent identity, selected context, instruction, and output contract distinct?
 - Does `role` remain agent identity rather than provider role control?
-- Does `limit` remain a generation budget, not a context item budget?
-- Does trace explain the actual prompt and result?
+- Does `max_output` remain an output generation budget, not a context item budget?
+- Does `strict` remain runtime validation behavior rather than provider configuration?
+- Does `think` remain a provider/model capability hint rather than guaranteed reasoning access?
+- Does trace explain the actual prompt, configuration, validation, and result?

@@ -378,6 +378,28 @@ describe("generate", () => {
     });
   });
 
+  it("builds empty mock defaults for list shape fields", () => {
+    const ast = parse(`
+      agent A {
+        main func(input) {
+          return generate({ input: "x" }) -> {
+              title string
+              tags list[string]
+          }
+        }
+      }
+    `);
+    const stmt = ast.agents[0]!.functions[0]!.body[0]!;
+    if (stmt.kind !== "ReturnStmt" || stmt.value.kind !== "GenerateExpr" || !stmt.value.returnShape) {
+      throw new Error("unexpected test AST");
+    }
+
+    expect(buildValueFromShape(stmt.value.returnShape)).toEqual({
+      title: "",
+      tags: [],
+    });
+  });
+
   it("does not coerce LLM generate results in strict mode", async () => {
     const ast = parse(`
       import llm Qwen from "openai://gpt-4.1-mini"

@@ -113,9 +113,19 @@ The optional block after `generate` is an output schema, not ordinary object con
 
 - `examples/` contains minimal examples. Each file demonstrates one language feature or agent pattern.
 - `tutorials/` contains longer walkthrough programs for learning multi-step agent patterns end to end.
-- `recipes/` contains practical workflows you can copy and adapt, such as code review, changelog drafting, file summarization, document translation, API extraction, and research briefs.
+- `recipes/` contains practical workflows you can copy and adapt, such as repo review, code review, changelog drafting, file summarization, document translation, API extraction, and research briefs.
 
-Start with `examples/structured-generate.as` to learn the syntax, read `tutorials/` for pattern walkthroughs, then use `recipes/` when you want something closer to a real task.
+Start with `examples/structured-generate.as` to learn the syntax, read `tutorials/` for pattern walkthroughs, then use `recipes/repo-review.as` when you want a realistic, auditable repository workflow.
+
+`recipes/repo-review.as` shows the core difference: tool results are not automatically prompt context. The recipe explicitly selects only the file tree, TODO/FIXME findings, package metadata, and CI configuration before asking for structured release-readiness output:
+
+```text
+use "file tree"          budget=8k
+use "todo findings"      budget=4k
+use "package metadata"   budget=4k
+use "ci configuration"   budget=4k
+generate                 blockers, risks, quick_wins, next_steps
+```
 
 ## What problem it solves
 

@@ -30,6 +30,8 @@ use expr as label
 use expr max budget as label
 ```
 
+`label` 必须是单个 identifier 或 string literal。包含空格的 label 应写成 string literal。
+
 固定顺序是：
 
 ```text

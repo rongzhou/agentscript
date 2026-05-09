@@ -103,9 +103,19 @@ main agent FileSummarizer {
 
 - `examples/` 放最小化示例，每个文件只演示一个语言特性或 agent pattern。
 - `tutorials/` 放更完整的 walkthrough 程序，用于学习端到端的多步骤 agent pattern。
-- `recipes/` 放可直接复制改造的实际工作流，例如 code review、changelog、文件摘要、文档翻译、API 数据抽取和 research brief。
+- `recipes/` 放可直接复制改造的实际工作流，例如 repo review、code review、changelog、文件摘要、文档翻译、API 数据抽取和 research brief。
 
-先看 `examples/structured-generate.as` 学语法，再读 `tutorials/` 理解模式，最后到 `recipes/` 找接近真实任务的模板。
+先看 `examples/structured-generate.as` 学语法，再读 `tutorials/` 理解模式，最后用 `recipes/repo-review.as` 体验更真实、可审计的仓库工作流。
+
+`recipes/repo-review.as` 展示了 AgentScript 的核心差异：工具结果不会自动进入 prompt。这个 recipe 会显式选择 file tree、TODO/FIXME findings、package metadata 和 CI configuration，然后生成结构化的 release readiness 结果：
+
+```text
+use "file tree"          budget=8k
+use "todo findings"      budget=4k
+use "package metadata"   budget=4k
+use "ci configuration"   budget=4k
+generate                 blockers, risks, quick_wins, next_steps
+```
 
 ## 解决什么问题
 

@@ -158,7 +158,7 @@ export function validateValueAgainstShapeType(
 
 function buildValueFromShapeType(type: ShapeTypeExpr): JsonValue {
   if (type.kind === "ListShapeType") {
-    return [buildValueFromShapeType(type.itemType)];
+    return [];
   }
   return SHAPE_TYPE_CONFIG[type.name]?.default ?? {};
 }

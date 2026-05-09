@@ -179,7 +179,7 @@ use docs.summary max 4k as evidence
 
 ### Context labels
 
-The label after `as` is literal label text. It is not an expression, is not evaluated, and does not read variables from scope.
+The label after `as` is literal label text. It must be either a single identifier or a string literal. It is not an expression, is not evaluated, and does not read variables from scope.
 
 ```agentscript
 use docs as evidence

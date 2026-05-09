@@ -179,7 +179,7 @@ use docs.summary max 4k as evidence
 
 ### Context label
 
-`as` 后面的 label 是字面标签文本，不是表达式，不会求值，也不会读取作用域中的变量。
+`as` 后面的 label 是字面标签文本，必须是单个 identifier 或 string literal。它不是表达式，不会求值，也不会读取作用域中的变量。
 
 ```agentscript
 use docs as evidence

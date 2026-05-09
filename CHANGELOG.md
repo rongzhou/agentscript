@@ -2,6 +2,25 @@
 
 All notable changes to AgentScript will be documented in this file.
 
+## 0.1.6 - 2026-05-09
+
+### Added
+
+- Added `--mock` as the explicit CLI override for deterministic local runs.
+- Added `--dry-run` for prompt and trace inspection without model calls.
+- Added clearer Ollama diagnostics when `think` output consumes the response budget before final content is produced.
+
+### Changed
+
+- Made `agentscript run` call real LLM providers by default.
+- Removed the legacy `--real-llm` CLI and REPL compatibility interfaces.
+- Increased the `repo-review` recipe generation budget for reliable Ollama `qwen3.6` `think` runs.
+- Updated README, README-CN, and installation docs for the real-by-default CLI flow.
+
+### Verified
+
+- Verified `recipes/repo-review.as` with local Ollama `qwen3.6`, shell tools, explicit context, structured output, trace, and `think: "medium"`.
+
 ## 0.1.5 - 2026-05-09
 
 ### Changed

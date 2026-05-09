@@ -46,7 +46,7 @@ main agent RepoReviewAssistant {
         use package_metadata max 4k as "package metadata"
         use ci_config max 4k as "ci configuration"
 
-        generate({ input: "Review this repository for release readiness", max_output: 1600, strict: true, think: "medium" }) -> {
+        generate({ input: "Review this repository for release readiness", max_output: 4k, strict: true, think: "medium" }) -> {
             summary string
             blockers list[string]
             risks list[string]

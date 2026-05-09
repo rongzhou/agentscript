@@ -50,13 +50,13 @@ main agent ResearchAgent {
         question string
     }) {
         use input.question
-        return answer(input.question)
+        answer(input.question)
     }
 
     func answer(question) {
         use question
 
-        return generate({ input: "Answer the question" }) -> {
+        generate({ input: "Answer the question" }) -> {
             ok boolean
             text string
         }
@@ -103,7 +103,7 @@ agent A {
         model Strong
         description "Use a stronger model for this function."
 
-        return generate({ input: "Answer carefully" }) -> {
+        generate({ input: "Answer carefully" }) -> {
             text string
         }
     }
@@ -130,7 +130,7 @@ V0 运行时数据以 JSON 为核心：
 `generate` 返回 shape 使用轻量标注：
 
 ```agentscript
-return generate({ input: "Extract facts" }) -> {
+generate({ input: "Extract facts" }) -> {
     facts list[string]
     source string
     meta json
@@ -149,7 +149,7 @@ func compose(question, scratch) {
     use question
     use scratch.summary < 2k
 
-    return generate({ input: "Answer using only the context" }) -> {
+    generate({ input: "Answer using only the context" }) -> {
         ok boolean
         text string
     }

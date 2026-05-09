@@ -7,7 +7,7 @@
 
 ```agentscript
 use scratch.summary < 2k
-return generate({ input: "Answer from observations" }) -> {
+generate({ input: "Answer from observations" }) -> {
     ok boolean
     text string
 }
@@ -64,7 +64,7 @@ main agent FileSummarizer {
         use input.path
         use content < 8k
 
-        return generate({
+        generate({
             input: "Summarize the file for a busy teammate"
             limit: 1000
         }) -> {
@@ -191,13 +191,13 @@ main agent ResearchAgent {
             done = enough(input.question, scratch)
         }
 
-        return answer(input.question, scratch)
+        answer(input.question, scratch)
     }
 
     func answer(question, scratch) {
         use question
         use scratch.summary < 2k
-        return generate({ input: "Answer using only the observations" }) -> {
+        generate({ input: "Answer using only the observations" }) -> {
             ok boolean
             text string
             error string
@@ -209,10 +209,11 @@ main agent ResearchAgent {
 ## 五个核心概念
 
 1. **`use` 显式声明上下文** —— 未被 `use` 的变量不会进入 LLM prompt
-2. **`generate` 是唯一的 LLM 调用点** —— 必须包含 input 指令和返回 shape
-3. **作用域即上下文边界** —— 函数、Agent、块级作用域隔离 prompt 可见性
-4. **工具、memory、文件都是导入资源** —— 访问可审计
-5. **内置 Trace** —— 每次 `generate` 和 `use` 都被记录，便于调试
+2. **`generate` 是唯一的 LLM 调用点** —— 必须包含 input 指令，可选择声明输出 shape
+3. **Final expression return 让流程更简洁** —— 函数返回最后一个顶层表达式
+4. **作用域即上下文边界** —— 函数、Agent、块级作用域隔离 prompt 可见性
+5. **工具、memory、文件都是导入资源** —— 访问可审计
+6. **内置 Trace** —— 每次 `generate` 和 `use` 都被记录，便于调试
 
 ## 为什么不用 Python 或 TypeScript？
 

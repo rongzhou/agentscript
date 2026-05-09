@@ -40,13 +40,13 @@ main agent SelfImprover {
             ok: result.ok
         })
 
-        return result
+        result
     }
 
     func reflect(run) {
         use run
 
-        return generate({
+        generate({
             input: "Extract one durable lesson that could improve a future run.",
             attempts: 3
         }) -> {

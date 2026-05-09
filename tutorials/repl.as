@@ -22,7 +22,7 @@ main agent ReplGuide {
             }
         ]
 
-        return {
+        {
             ok: true,
             title: "AgentScript REPL quick start",
             commands: commands

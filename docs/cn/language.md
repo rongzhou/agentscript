@@ -27,7 +27,7 @@ main agent Assistant {
         question string
     }) {
         use input.question
-        return generate({ input: "Answer the question" }) -> {
+        generate({ input: "Answer the question" }) -> {
             ok boolean
             answer string
         }
@@ -138,7 +138,7 @@ func careful(input) {
 Shape 用于输入校验和 `generate` 输出校验：
 
 ```agentscript
-return generate({ input: "Extract facts" }) -> {
+generate({ input: "Extract facts" }) -> {
     ok boolean
     title string
     items list[json]
@@ -366,7 +366,7 @@ import file Config from "./config.json"
 func answer(input) {
     use Requirements < 4k
     use Config
-    return generate({ input: "Answer from the referenced file." }) -> {
+    generate({ input: "Answer from the referenced file." }) -> {
         ok boolean
         answer string
     }
@@ -418,7 +418,7 @@ main agent Controller {
             result = Executor({ goal: input.goal, step: step })
             results.add(result)
         }
-        return results.summary
+        results.summary
     }
 }
 ```

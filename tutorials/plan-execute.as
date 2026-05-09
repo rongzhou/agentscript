@@ -44,7 +44,7 @@ main agent PlanAndExecute {
             }
         }
 
-        return finish(input.goal, results)
+        finish(input.goal, results)
     }
 
     func run_step(goal, step, previous) {
@@ -60,7 +60,7 @@ main agent PlanAndExecute {
             result: result
         })
 
-        return {
+        {
             ok: verdict.ok,
             reason: verdict.reason,
             result: {
@@ -75,7 +75,7 @@ main agent PlanAndExecute {
         use goal
         use results.summary < 2k
 
-        return generate({ input: "Create the final answer from executed steps", limit: 800 }) -> {
+        generate({ input: "Create the final answer from executed steps", limit: 800 }) -> {
             ok boolean
             text string
             error string
@@ -93,7 +93,7 @@ agent Planner {
         use input.problem
         use input.previous < 1k
 
-        return generate({ input: "Create a three step plan", limit: 600 }) -> {
+        generate({ input: "Create a three step plan", limit: 600 }) -> {
             step1 string
             step2 string
             step3 string
@@ -121,7 +121,7 @@ agent Executor {
 
         use observation
 
-        return generate({ input: "Report the result of this step", limit: 500 }) -> {
+        generate({ input: "Report the result of this step", limit: 500 }) -> {
             ok boolean
             output json
             error string
@@ -139,7 +139,7 @@ agent Verifier {
         use input.step
         use input.result
 
-        return generate({ input: "Verify this step result", limit: 300 }) -> {
+        generate({ input: "Verify this step result", limit: 300 }) -> {
             ok boolean
             reason string
         }

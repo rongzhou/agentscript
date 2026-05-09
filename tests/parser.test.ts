@@ -95,6 +95,25 @@ describe("parse", () => {
     expect(stmt.value.returnShape).toBeUndefined();
   });
 
+  it("parses final expressions as expression statements", () => {
+    const ast = parse(`
+      main agent A {
+        main func act(input) {
+          use input.question
+          generate({ input: "x" }) -> {
+              ok boolean
+          }
+        }
+      }
+    `);
+
+    const body = ast.agents[0]!.functions[0]!.body;
+    expect(body[0]!.kind).toBe("UseStmt");
+    expect(body[1]!.kind).toBe("ExprStmt");
+    if (body[1]!.kind !== "ExprStmt") return;
+    expect(body[1]!.expr.kind).toBe("GenerateExpr");
+  });
+
   it("parses use budgets on the use statement", () => {
     const ast = parse(`
       agent A {

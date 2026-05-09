@@ -10,7 +10,7 @@ main agent MemoryDemo {
             topic: input.topic
         })
 
-        return Notes.query({
+        Notes.query({
             kind: "note"
             text: input.topic
             limit: 3

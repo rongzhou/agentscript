@@ -30,7 +30,7 @@ func answer(question, scratch) {
     use question
     use scratch.summary < 2k
 
-    return generate({
+    generate({
         input: "Answer the question using collected facts"
         limit: 800
     }) -> {
@@ -55,7 +55,7 @@ main func(input) {
     scratch.add({ fact: "A" })
     scratch.add({ fact: "B" })
 
-    return generate({ input: "Answer from scratch" }) -> {
+    generate({ input: "Answer from scratch" }) -> {
         text string
     }
 }
@@ -99,12 +99,12 @@ Each function call creates an independent context boundary.
 ```agentscript
 func caller(input) {
     use input.goal
-    return helper(input)
+    helper(input)
 }
 
 func helper(input) {
     use input.detail
-    return generate({ input: "Work on detail" }) -> {
+    generate({ input: "Work on detail" }) -> {
         ok boolean
     }
 }
@@ -207,10 +207,10 @@ The instruction is the per-call task. `limit`, `attempts`, and `debug` are local
 
 ### Output contract
 
-Comes from `return { ... }` shape.
+Comes from the optional `-> { ... }` shape on a `generate` expression.
 
 ```agentscript
-return {
+generate({ input: "Answer" }) -> {
     ok boolean
     text string
     error string

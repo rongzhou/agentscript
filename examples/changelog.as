@@ -16,7 +16,7 @@ main agent ChangelogWriter {
         use input.diff_path
         use diff < 10k
 
-        return generate({ input: "Write a changelog from this git diff", limit: 1200 }) -> {
+        generate({ input: "Write a changelog from this git diff", limit: 1200 }) -> {
             title string
             highlights list[string]
             breaking_changes list[string]

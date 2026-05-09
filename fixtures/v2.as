@@ -39,7 +39,7 @@ main agent Learner {
             ok: answer.ok
         })
 
-        return {
+        {
             ok: answer.ok
             answer: answer.answer
             lessons: past.length
@@ -49,7 +49,7 @@ main agent Learner {
     func reflect(run) {
         use run
 
-        return generate({
+        generate({
             input: "Extract one reusable lesson from this run.",
             attempts: 2
         }) -> {

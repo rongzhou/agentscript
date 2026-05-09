@@ -160,7 +160,7 @@ describe("interpreter", () => {
 
 
 
-  it("rejects functions that complete without returning", async () => {
+  it("returns none when a function has no explicit return or final expression", async () => {
     const ast = parse(`
       main agent A {
         main func(input) {
@@ -169,7 +169,105 @@ describe("interpreter", () => {
       }
     `);
 
-    await expect(executeAgent(ast, {})).rejects.toThrow(/completed without return/);
+    const result = await executeAgent(ast, {});
+
+    expect(result.value).toBeNull();
+  });
+
+  it("returns the final top-level expression from a function", async () => {
+    const ast = parse(`
+      main agent A {
+        main func(input) {
+          use input.question
+          answer(input)
+        }
+
+        func answer(input) {
+          value = {
+            ok: true,
+            answer: input.question,
+            tags: ["final", "expression"]
+          }
+
+          value.answer
+        }
+      }
+    `);
+
+    const result = await executeAgent(ast, { question: "What is AgentScript?" });
+
+    expect(result.value).toBe("What is AgentScript?");
+  });
+
+  it("supports final expression return for generate output", async () => {
+    const ast = parse(`
+      import llm Qwen from "openai://gpt-4.1-mini"
+
+      main agent A {
+        model Qwen
+        role "Assistant"
+        description "Answer questions."
+
+        main func(input) {
+          use input.question
+
+          generate({ input: "answer" }) -> {
+              ok boolean
+              answer string
+          }
+        }
+      }
+    `);
+
+    const result = await executeAgent(ast, { question: "x" });
+
+    expect(result.value).toEqual({ ok: true, answer: "" });
+  });
+
+  it("does not return expression statements inside nested blocks implicitly", async () => {
+    const ast = parse(`
+      main agent A {
+        main func(input) {
+          if input.ok {
+            "nested"
+          }
+        }
+      }
+    `);
+
+    const result = await executeAgent(ast, { ok: true });
+
+    expect(result.value).toBeNull();
+  });
+
+  it("returns object and list literals as final expressions", async () => {
+    const objectAst = parse(`
+      main agent A {
+        main func(input) {
+          {
+            facts: [input.fact],
+            source: input.source
+          }
+        }
+      }
+    `);
+    const listAst = parse(`
+      main agent A {
+        main func(input) {
+          [input.a, input.b]
+        }
+      }
+    `);
+
+    await expect(executeAgent(objectAst, { fact: "ok", source: "test" })).resolves.toMatchObject({
+      value: {
+        facts: ["ok"],
+        source: "test"
+      }
+    });
+    await expect(executeAgent(listAst, { a: 1, b: 2 })).resolves.toMatchObject({
+      value: [1, 2]
+    });
   });
 
   it("rejects list.add without exactly one argument", async () => {

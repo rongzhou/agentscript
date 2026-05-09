@@ -32,7 +32,7 @@ func answer(question, scratch) {
     use question
     use scratch.summary < 2k
 
-    return generate({
+    generate({
         input: "Answer the question using collected facts"
         limit: 800
     }) -> {
@@ -61,7 +61,7 @@ main func(input) {
     scratch.add({ fact: "A" })
     scratch.add({ fact: "B" })
 
-    return generate({ input: "Answer from scratch" }) -> {
+    generate({ input: "Answer from scratch" }) -> {
         text string
     }
 }
@@ -119,12 +119,12 @@ AgentScript 中的作用域不仅是变量可见性规则，也是 prompt contex
 ```agentscript
 func caller(input) {
     use input.goal
-    return helper(input)
+    helper(input)
 }
 
 func helper(input) {
     use input.detail
-    return generate({ input: "Work on detail" }) -> {
+    generate({ input: "Work on detail" }) -> {
         ok boolean
     }
 }
@@ -235,10 +235,10 @@ Instruction 是本次 LLM 调用的局部任务，不应混入长期 context。
 
 ### Output contract
 
-Output contract 来自 `return shape`。
+Output contract 来自 `generate` 表达式上可选的 `-> { ... }` shape。
 
 ```agentscript
-return {
+generate({ input: "Answer" }) -> {
     ok boolean
     text string
     error string
@@ -260,7 +260,7 @@ use scratch.summary < 2k
 `generate({ limit: budget }) { ... }` 是 generation budget。
 
 ```agentscript
-return generate({
+generate({
     input: "Summarize"
     limit: 500
 }) -> {

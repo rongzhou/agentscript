@@ -25,14 +25,14 @@ main agent ResearchAgent {
             done = enough(input.question, scratch)
         }
 
-        return answer(input.question, scratch)
+        answer(input.question, scratch)
     }
 
     func reason(question, scratch) {
         use question
         use scratch.summary < 1k
 
-        return generate({ input: "Choose the next search focus", limit: 300 }) -> {
+        generate({ input: "Choose the next search focus", limit: 300 }) -> {
             focus string
             why string
         }
@@ -42,7 +42,7 @@ main agent ResearchAgent {
         raw_query = Search.query(question, thought)
         raw_result = Search.search(raw_query)
 
-        return {
+        {
             query: raw_query.summary,
             result: {
                 summary: raw_result.summary,
@@ -60,7 +60,7 @@ main agent ResearchAgent {
 
         use raw
 
-        return generate({ input: "Summarize the useful observation", limit: 400 }) -> {
+        generate({ input: "Summarize the useful observation", limit: 400 }) -> {
             facts list[string]
             source string
         }
@@ -74,14 +74,14 @@ main agent ResearchAgent {
             done boolean
         }
 
-        return verdict.done
+        verdict.done
     }
 
     func answer(question, scratch) {
         use question
         use scratch.summary < 2k
 
-        return generate({ input: "Answer using only the observations", limit: 800 }) -> {
+        generate({ input: "Answer using only the observations", limit: 800 }) -> {
             ok boolean
             text string
             error string

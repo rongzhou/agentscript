@@ -209,11 +209,8 @@ class Interpreter {
     const scope = await this.buildFunctionScope(agent, fn, args);
 
     try {
-      const signal = await this.executeBlock(fn.body, scope);
-      if (!signal) {
-        throw new RuntimeError(`Function '${agent.name}.${name}' completed without return`, fn.range);
-      }
-      return signal.value;
+      const signal = await this.executeBlock(fn.body, scope, true);
+      return signal?.value ?? null;
     } finally {
       this.callDepth -= 1;
       this.currentAgent = previousAgent;
@@ -260,8 +257,15 @@ class Interpreter {
     return agent.functions.find((fn) => fn.name === name);
   }
 
-  private async executeBlock(statements: Stmt[], scope: RuntimeScope): Promise<StatementResult> {
-    for (const stmt of statements) {
+  private async executeBlock(
+    statements: Stmt[],
+    scope: RuntimeScope,
+    allowFinalExpressionReturn = false,
+  ): Promise<StatementResult> {
+    for (const [index, stmt] of statements.entries()) {
+      if (allowFinalExpressionReturn && index === statements.length - 1 && stmt.kind === "ExprStmt") {
+        return { kind: "return", value: await this.evaluator.evaluate(stmt.expr, scope) };
+      }
       const result = await this.executeStatement(stmt, scope);
       if (result) return result;
     }

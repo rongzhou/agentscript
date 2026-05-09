@@ -113,7 +113,7 @@ for item in list < n {
 V1 不需要专门的 `plan` 类型。推荐结构：
 
 ```agentscript
-return generate({ input: "Create a short executable plan" }) -> {
+generate({ input: "Create a short executable plan" }) -> {
     steps list[json]
 }
 ```
@@ -278,7 +278,7 @@ func answer(input) {
     use Requirements < 4k
     use input.question
 
-    return generate({ input: "Answer from the referenced file" }) -> {
+    generate({ input: "Answer from the referenced file" }) -> {
         ok boolean
         text string
     }

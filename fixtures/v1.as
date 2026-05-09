@@ -14,7 +14,7 @@ main agent V1Regression {
             }))
         }
 
-        return {
+        {
             ok: true,
             first: results[0].id,
             count: results.length,

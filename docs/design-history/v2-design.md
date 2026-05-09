@@ -210,7 +210,7 @@ agent Reflector {
     main func(input) {
         use input
 
-        return generate({
+        generate({
             input: "Extract one reusable lesson from this run.",
             attempts: 3
         }) -> {
@@ -286,13 +286,13 @@ main agent Learner {
             ok: result.ok
         })
 
-        return result
+        result
     }
 
     func reflect(run) {
         use run
 
-        return generate({
+        generate({
             input: "Extract one reusable lesson from this run.",
             attempts: 3
         }) -> {

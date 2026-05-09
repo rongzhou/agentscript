@@ -2,12 +2,12 @@
 
 > **Agent context as code.**
 > `use` declares what the model can see.
-> `generate` defines the only LLM call site and its return shape.
+> `generate` defines the only LLM call site and optional output shape.
 > Zero runtime dependencies. TypeScript-powered.
 
 ```agentscript
 use scratch.summary < 2k
-return generate({ input: "Answer from observations" }) -> {
+generate({ input: "Answer from observations" }) -> {
     ok boolean
     text string
 }
@@ -64,7 +64,7 @@ main agent FileSummarizer {
         use input.path
         use content < 8k
 
-        return generate({
+        generate({
             input: "Summarize the file for a busy teammate"
             limit: 1000
         }) -> {
@@ -93,7 +93,7 @@ Expected output (with mock LLM):
 
 With `--real-llm`, the fields are populated by the model.
 
-The block after `generate` is a return schema, not ordinary object construction.
+The optional block after `generate` is an output schema, not ordinary object construction.
 
 ## What problem it solves
 
@@ -113,7 +113,7 @@ It is a small language for one thing:
 
 > making LLM prompt context explicit, scoped, typed, traceable, and compilable.
 
-It gives you two things that general-purpose languages don't: a first-class `use` keyword that declares *which* data enters the LLM prompt, and a first-class `generate` expression that defines *what* the LLM must return. Everything else — variables, functions, agents, imports, loops — exists to support this core workflow. Scopes enforce context boundaries naturally: what's `use`d in one function stays there; child scopes inherit but never leak upward.
+It gives you two things that general-purpose languages don't: a first-class `use` keyword that declares *which* data enters the LLM prompt, and a first-class `generate` expression that defines an LLM call with an optional output contract. Everything else — variables, functions, agents, imports, loops — exists to support this core workflow. Scopes enforce context boundaries naturally: what's `use`d in one function stays there; child scopes inherit but never leak upward. Functions can also return their final top-level expression directly, which keeps typical LLM workflows concise.
 
 ## How it works
 
@@ -161,7 +161,7 @@ AgentScript doesn't hardcode agent patterns as keywords. You compose them from t
 | **Reflection / Self-Improvement** | `tutorials/self-improve.as` | Query past lessons → generate → reflect → persist new lessons |
 | **Multi-Agent** | `tutorials/plan-execute.as` | Independent agents with isolated context boundaries |
 
-Every pattern is explicit — which data enters the prompt, which tools each agent can use, and which output shape each LLM call must satisfy.
+Every pattern is explicit — which data enters the prompt, which tools each agent can use, and which output shape each LLM call must satisfy when one is declared.
 
 ## Language at a glance
 
@@ -191,13 +191,13 @@ main agent ResearchAgent {
             done = enough(input.question, scratch)
         }
 
-        return answer(input.question, scratch)
+        answer(input.question, scratch)
     }
 
     func answer(question, scratch) {
         use question
         use scratch.summary < 2k
-        return generate({ input: "Answer using only the observations" }) -> {
+        generate({ input: "Answer using only the observations" }) -> {
             ok boolean
             text string
             error string
@@ -209,10 +209,11 @@ main agent ResearchAgent {
 ## Key ideas
 
 1. **`use` is explicit context** — nothing enters the LLM prompt unless `use`d
-2. **`generate` is the only LLM call site** — with a required input instruction and a return shape
-3. **Scope is context boundary** — functions, agents, and blocks isolate prompt visibility
-4. **Tools, memory, and files are imported resources** — with auditable access
-5. **Trace is built in** — every `generate` and `use` is recorded for debugging
+2. **`generate` is the only LLM call site** — with a required input instruction and optional output shape
+3. **Final expression return keeps flows concise** — a function returns its final top-level expression
+4. **Scope is context boundary** — functions, agents, and blocks isolate prompt visibility
+5. **Tools, memory, and files are imported resources** — with auditable access
+6. **Trace is built in** — every `generate` and `use` is recorded for debugging
 
 ## Why not just Python or TypeScript?
 

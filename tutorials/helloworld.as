@@ -6,7 +6,7 @@ main agent {
     description "Return a simple hello world response."
 
     main func(input {}) {
-        return {
+        {
             ok: true,
             message: "Hello, AgentScript!"
         }

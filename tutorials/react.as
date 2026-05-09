@@ -12,11 +12,11 @@ main agent ResearchAgent {
         use input.question
 
         scratch = []
-        use scratch.summary < 2k
+        use scratch.summary max 2k
 
         done = false
 
-        loop until done < 4 {
+        loop until done max 4 {
             thought = reason(input.question, scratch)
             action = act(input.question, thought)
             observation = observe(action)
@@ -30,7 +30,7 @@ main agent ResearchAgent {
 
     func reason(question, scratch) {
         use question
-        use scratch.summary < 1k
+        use scratch.summary max 1k
 
         generate({ input: "Choose the next search focus", max_output: 300 }) -> {
             focus string
@@ -68,7 +68,7 @@ main agent ResearchAgent {
 
     func enough(question, scratch) {
         use question
-        use scratch.summary < 1k
+        use scratch.summary max 1k
 
         verdict = generate({ input: "Decide whether the observations are enough", max_output: 200 }) -> {
             done boolean
@@ -79,7 +79,7 @@ main agent ResearchAgent {
 
     func answer(question, scratch) {
         use question
-        use scratch.summary < 2k
+        use scratch.summary max 2k
 
         generate({ input: "Answer using only the observations", max_output: 800 }) -> {
             ok boolean

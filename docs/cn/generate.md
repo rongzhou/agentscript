@@ -21,12 +21,12 @@ generate({ input: "Answer using the selected context." }) -> {
 
 ```agentscript
 generate({
-    input: "Classify the issue"
-    max_output: 300
-    attempts: 2
-    temperature: 0.2
-    think: "medium"
-    strict: true
+    input: "Classify the issue",
+    max_output: 300,
+    attempts: 2,
+    temperature: 0.2,
+    think: "medium",
+    strict: true,
     debug: false
 }) -> {
     category string
@@ -40,7 +40,7 @@ generate({
 generate({ input: "Draft a response." })
 ```
 
-没有声明 shape 时，runtime 不应注入 schema，也不应要求 provider 返回结构化 JSON。
+没有声明 shape 时，runtime 不应注入 schema，也不应要求 provider 返回结构化 JSON。自由形式的 `generate` 是允许的，但不推荐用于 agent workflow；优先声明明确的输出 shape，便于 retry、validation、trace 和下游 agent 调用保持可审计。
 
 ## 配置字段
 
@@ -110,7 +110,7 @@ Selected context 来自可见的 `use` 声明：
 
 ```agentscript
 use input.question as user question
-use scratch.summary < 2k as observations
+use scratch.summary max 2k as observations
 ```
 
 渲染出的 prompt section 可以是：
@@ -162,7 +162,7 @@ Runtime 会在可能时请求 provider 返回结构化输出，并校验返回�
 
 ```agentscript
 generate({
-    input: "Answer briefly"
+    input: "Answer briefly",
     max_output: 300
 }) -> {
     answer string
@@ -178,10 +178,10 @@ max_output = provider-side generation budget requested by AgentScript
 它和 `use` 的输入上下文预算分开：
 
 ```agentscript
-use docs.summary < 4k
+use docs.summary max 4k
 
 generate({
-    input: "Answer from the selected docs"
+    input: "Answer from the selected docs",
     max_output: 800
 }) -> {
     answer string
@@ -191,18 +191,18 @@ generate({
 区别：
 
 ```text
-use ... < 4k       = 输入上下文预算
+use ... max 4k       = 输入上下文预算
 max_output: 800    = 输出生成预算
 ```
 
 ## `attempts`
 
-`attempts` 控制结构化输出失败时的重试次数。
+`attempts` 控制 runtime 获取有效结构化结果的尝试次数。`attempts` 是最大总尝试次数，包含第一次尝试。
 
 ```agentscript
 generate({
-    input: "Extract metadata"
-    max_output: 500
+    input: "Extract metadata",
+    max_output: 500,
     attempts: 3
 }) -> {
     title string
@@ -242,8 +242,8 @@ attempts: 1
 
 ```agentscript
 generate({
-    input: "Brainstorm alternatives"
-    max_output: 1000
+    input: "Brainstorm alternatives",
+    max_output: 1000,
     temperature: 0.7
 }) -> {
     ideas list[string]
@@ -253,8 +253,8 @@ generate({
 语义：
 
 ```text
-If supported by the selected provider/model, pass through as sampling temperature.
-If unsupported, adapter may ignore, warn, or fail according to capability policy.
+如果选中的 provider/model 支持，则作为 sampling temperature 透传。
+如果不支持，adapter 可以按照 capability policy 选择 ignore、warn 或 fail。
 ```
 
 ## `think`
@@ -264,11 +264,11 @@ If unsupported, adapter may ignore, warn, or fail according to capability policy
 推荐支持：
 
 ```agentscript
-think: false
-think: true
-think: "auto"
-think: "low"
-think: "medium"
+think: false,
+think: true,
+think: "auto",
+think: "low",
+think: "medium",
 think: "high"
 ```
 
@@ -287,8 +287,8 @@ true      请求 provider 默认 thinking/reasoning 模式
 
 ```agentscript
 generate({
-    input: "Analyze the tradeoffs"
-    max_output: 1200
+    input: "Analyze the tradeoffs",
+    max_output: 1200,
     think: "high"
 }) -> {
     decision string
@@ -297,20 +297,16 @@ generate({
 }
 ```
 
-`think` 是 provider/model capability hint，不是所有模型都保证支持。
+`think` 是 provider/model capability hint，不是所有模型都保证支持。如果不支持，adapter 可以按照 capability policy 选择 ignore、warn 或 fail。
 
-如果 provider 不支持，runtime 可按策略处理：
+## Provider hint 的 capability policy
 
-```text
-ignore
-warn
-fail
-```
+`temperature` 和 `think` 都是 provider/model capability hint。不支持的 provider hint 默认在 debug mode 下 warn，否则 ignore。
 
-默认建议：
+Adapter 可以按照 runtime capability policy 对不支持的 hint 选择 ignore、warn 或 fail，但文档中的默认语义统一为：
 
 ```text
-warn in debug mode, otherwise ignore
+不支持的 provider hint 默认在 debug mode 下 warn，否则 ignore
 ```
 
 ## `strict`
@@ -319,8 +315,8 @@ warn in debug mode, otherwise ignore
 
 ```agentscript
 generate({
-    input: "Classify the issue"
-    max_output: 300
+    input: "Classify the issue",
+    max_output: 300,
     strict: true
 }) -> {
     category string
@@ -377,8 +373,8 @@ strict 是 AgentScript runtime 对输出契约的控制。
 
 ```agentscript
 generate({
-    input: "Answer the question"
-    max_output: 800
+    input: "Answer the question",
+    max_output: 800,
     debug: true
 }) -> {
     answer string

@@ -150,16 +150,18 @@ generate({ input: "Extract facts" }) -> {
 
 Shape 不是完整的静态类型系统。
 
+对象字面量使用 JSON-like 语法：字段写作 `key: value`，多字段之间必须用逗号分隔。
+
 ## 显式上下文（`use`）
 
 `use` 选择在当前作用域及其子作用域中，后续 `generate` 可以包含哪些变量的值。
 
 ```agentscript
 use input.question
-use Requirements < 4k
-use past_lessons < 2k
+use Requirements max 4k
+use past_lessons max 2k
 use input.question as user
-use docs.summary < 4k as evidence
+use docs.summary max 4k as evidence
 ```
 
 ### 规则
@@ -168,9 +170,9 @@ use docs.summary < 4k as evidence
 - 工具输出不会自动进入 prompt。
 - Memory 查询结果不会自动进入 prompt。
 - Trace 事件不会自动进入 prompt。
-- `use value < n` 应用上下文预算。
+- `use value max n` 应用上下文预算。
 - `use value as label` 为选中的 context source 附加字面标签。
-- `use value < n as label` 先应用预算，再附加标签。
+- `use value max n as label` 先应用预算，再附加标签。
 - `llm`、`tool`、`agent`、`memory` 绑定不能被 `use`。
 - 函数绑定不能被 `use`。
 - `use` 声明被子作用域继承。
@@ -181,7 +183,7 @@ use docs.summary < 4k as evidence
 
 ```agentscript
 use docs as evidence
-use docs.summary < 4k as retrieved evidence
+use docs.summary max 4k as retrieved evidence
 use input.question as user
 ```
 
@@ -189,7 +191,7 @@ use input.question as user
 
 ### 延迟求值
 
-`use expr < budget` 声明的是 context source，而不是当前值的快照。当 `generate` 构建 prompt 时，表达式会被重新求值。这意味着在 `use` 之后、`generate` 之前对变量的修改在生成时刻是可见的。
+`use expr max budget` 声明的是 context source，而不是当前值的快照。当 `generate` 构建 prompt 时，表达式会被重新求值。这意味着在 `use` 之后、`generate` 之前对变量的修改在生成时刻是可见的。
 
 完整设计语义见 [`use ... as ...`](./use-as.md)。
 
@@ -199,9 +201,9 @@ use input.question as user
 
 ```agentscript
 answer = generate({
-    input: "Answer using the selected context."
-    max_output: 800
-    attempts: 3
+    input: "Answer using the selected context.",
+    max_output: 800,
+    attempts: 3,
     debug: true
 }) -> {
     ok boolean
@@ -214,13 +216,13 @@ answer = generate({
 
 - `input`：每次生成的指令。必填。
 - `max_output`：输出生成预算（数字或 `2k` 格式）。可选。
-- `attempts`：JSON 解析失败或 shape 不匹配时的重试次数。可选，默认 1。
-- `temperature`：provider sampling hint。可选。
-- `think`：provider/model reasoning hint。可选。
+- `attempts`：JSON 解析失败或 shape 不匹配时的尝试次数。它是包含第一次调用在内的最大总尝试次数。可选，默认 1。
+- `temperature`：provider sampling hint。可选。不支持的 provider hint 默认在 debug mode 下 warn，否则 ignore。
+- `think`：provider/model reasoning hint。可选。不支持的 provider hint 默认在 debug mode 下 warn，否则 ignore。
 - `strict`：控制 shape validation 是否严格。可选，默认 false。
 - `debug`：将完整 prompt 打印到 stderr。可选，默认 false。
 - 可选的 `-> { ... }` 块声明期望的输出 shape。
-- 不写 `-> { ... }` 时，`generate` 输出无约束：AgentScript 不会在 prompt 中加入返回 schema，不会要求 provider 使用结构化输出，也不会对返回值做类型强制转换或 shape 校验。
+- 不写 `-> { ... }` 时，`generate` 输出无约束：AgentScript 不会在 prompt 中加入返回 schema，不会要求 provider 使用结构化输出，也不会对返回值做类型强制转换或 shape 校验。自由形式的 `generate` 是允许的，但不推荐用于 agent workflow。
 - Provider 错误（认证、网络、超时、模型不存在）直接失败，不做重试。
 - Shape 校验包含类型强制转换（如 `"true"` -> `true`，`"42"` -> `42`）。
 
@@ -238,14 +240,14 @@ if answer.ok and not input.dry_run {
 }
 ```
 
-支持的运算符：`==`、`!=`、`and`、`or`、`not`。`<` 不是通用比较运算符——它只能用于预算和循环上限。
+支持的运算符：`==`、`!=`、`<`、`and`、`or`、`not`。Context budget 和循环上限使用 `max`，因此 `<` 恢复为类似 `==` 的普通比较运算符。
 
 ### Loop until
 
 ```agentscript
 done = false
 
-loop until done < 6 {
+loop until done max 6 {
     observation = observe(input)
     done = observation.ok
 }
@@ -269,7 +271,7 @@ repeat * 3 {
 ### For in
 
 ```agentscript
-for step in plan.steps < 12 {
+for step in plan.steps max 12 {
     result = Executor(step)
     results.add(result)
 }
@@ -289,7 +291,7 @@ summary = items.summary
 - `list[index]` 只读。index 必须是非负整数。
 - `list.add(value)` 修改原列表。恰好接受一个参数。
 - `.length` 返回列表长度。
-- `.summary` 返回列表的 JSON-safe 运行时视图。它不是 LLM 生成的摘要，也不是语义压缩；如果需要控制 prompt 大小，应通过 `use scratch.summary < 2k` 这类显式 context budget 裁剪。
+- `.summary` 返回列表的 JSON-safe 运行时视图。它不是 LLM 生成的摘要，也不是语义压缩；如果需要控制 prompt 大小，应通过 `use scratch.summary max 2k` 这类显式 context budget 裁剪。
 
 ## 工具
 
@@ -307,9 +309,9 @@ import tool Http from "https://api.example.com"
 
 ```agentscript
 files = Find.run({
-    path: "."
-    name: "*.ts"
-    type: "file"
+    path: ".",
+    name: "*.ts",
+    type: "file",
     max: 50
 })
 ```
@@ -318,9 +320,9 @@ files = Find.run({
 
 ```agentscript
 matches = Grep.run({
-    path: "src"
-    pattern: "TODO"
-    include: "*.ts"
+    path: "src",
+    pattern: "TODO",
+    include: "*.ts",
     max: 100
 })
 ```
@@ -329,8 +331,8 @@ matches = Grep.run({
 
 ```agentscript
 lines = Sed.run({
-    path: "src/main.as"
-    start: 1
+    path: "src/main.as",
+    start: 1,
     max: 20
 })
 ```
@@ -338,10 +340,21 @@ lines = Sed.run({
 ### File
 
 ```agentscript
-content = File.read({ path: "README.md" })
-entries = File.list({ path: "src" })
-result = File.write({ path: "output.md", content: "# Result" })
-result = File.patch({ path: "file.as", search: "old", replace: "new" })
+content = File.read({
+    path: "README.md"
+})
+entries = File.list({
+    path: "src"
+})
+result = File.write({
+    path: "output.md",
+    content: "# Result"
+})
+result = File.patch({
+    path: "file.as",
+    search: "old",
+    replace: "new"
+})
 result = File.undo(effects)
 ```
 
@@ -350,14 +363,24 @@ result = File.undo(effects)
 ### Env
 
 ```agentscript
-home = Env.get({ name: "HOME" })
+home = Env.get({
+    name: "HOME"
+})
 ```
 
 ### Http
 
 ```agentscript
-response = Http.get({ url: "/api/data", headers: { Authorization: "Bearer ..." }, timeout: 10000 })
-response = Http.post({ url: "/api/submit", body: { key: "value" }, timeout: 10000 })
+response = Http.get({
+    url: "/api/data",
+    headers: { Authorization: "Bearer ..." },
+    timeout: 10000
+})
+response = Http.post({
+    url: "/api/submit",
+    body: { key: "value" },
+    timeout: 10000
+})
 ```
 
 HTTP 请求限制在 import URI 的 origin 内。
@@ -387,7 +410,7 @@ import file Requirements from "./requirements.md"
 import file Config from "./config.json"
 
 func answer(input) {
-    use Requirements < 4k
+    use Requirements max 4k
     use Config
     generate({ input: "Answer from the referenced file." }) -> {
         ok boolean
@@ -402,18 +425,18 @@ func answer(input) {
 
 ```agentscript
 Lessons.add({
-    kind: "lesson"
-    text: reflection.insight
+    kind: "lesson",
+    text: reflection.insight,
     goal: input.goal
 })
 
 past = Lessons.query({
-    kind: "lesson"
-    text: input.goal
+    kind: "lesson",
+    text: input.goal,
     limit: 5
 })
 
-use past < 2k
+use past max 2k
 ```
 
 ### 规则
@@ -437,8 +460,11 @@ main agent Controller {
     main func(input) {
         plan = Planner(input)
         results = []
-        for step in plan.steps < 10 {
-            result = Executor({ goal: input.goal, step: step })
+        for step in plan.steps max 10 {
+            result = Executor({
+                goal: input.goal,
+                step: step
+            })
             results.add(result)
         }
         results.summary

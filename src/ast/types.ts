@@ -234,7 +234,7 @@ export interface UnaryExpr extends NodeBase {
 
 export interface BinaryExpr extends NodeBase {
   kind: "BinaryExpr";
-  operator: "==" | "!=" | "and" | "or";
+  operator: "==" | "!=" | "<" | "and" | "or";
   left: Expr;
   right: Expr;
 }

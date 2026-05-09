@@ -47,8 +47,8 @@ agent 调用
 变量引用
 字段访问
 索引访问
-object literal
-list literal
+对象字面量
+列表字面量
 ```
 
 例如：
@@ -175,10 +175,10 @@ return none
 
 ```agentscript
 func summarize(content) {
-    use content < 8k
+    use content max 8k
 
     generate({
-        input: "Summarize the content"
+        input: "Summarize the content",
         max_output: 1000
     }) -> {
         title string

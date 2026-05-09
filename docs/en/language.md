@@ -150,16 +150,18 @@ Supported shape types: `string`, `number`, `boolean`, `json`, `list`, `list[T]` 
 
 Shapes are not a full static type system.
 
+Object literals use JSON-like syntax: fields are written as `key: value`, and multiple fields must be separated with commas.
+
 ## Explicit context with `use`
 
 `use` selects values that may be included in later `generate` prompts within the current scope and child scopes.
 
 ```agentscript
 use input.question
-use Requirements < 4k
-use past_lessons < 2k
+use Requirements max 4k
+use past_lessons max 2k
 use input.question as user
-use docs.summary < 4k as evidence
+use docs.summary max 4k as evidence
 ```
 
 ### Rules
@@ -168,9 +170,9 @@ use docs.summary < 4k as evidence
 - Tool outputs do not automatically enter prompts.
 - Memory query results do not automatically enter prompts.
 - Trace events do not automatically enter prompts.
-- `use value < n` applies a context budget.
+- `use value max n` applies a context budget.
 - `use value as label` attaches a literal context label to the selected source.
-- `use value < n as label` applies the budget first, then attaches the label.
+- `use value max n as label` applies the budget first, then attaches the label.
 - `llm`, `tool`, `agent`, `memory` bindings cannot be used.
 - Function bindings cannot be used.
 - `use` declarations are inherited by child scopes.
@@ -181,7 +183,7 @@ The label after `as` is literal label text. It is not an expression, is not eval
 
 ```agentscript
 use docs as evidence
-use docs.summary < 4k as retrieved evidence
+use docs.summary max 4k as retrieved evidence
 use input.question as user
 ```
 
@@ -189,7 +191,7 @@ use input.question as user
 
 ### Deferred evaluation
 
-`use expr < budget` declares a context source, not a snapshot. The expression is re-evaluated when `generate` builds the prompt. This means updates to a variable made after `use` but before `generate` are visible at generation time.
+`use expr max budget` declares a context source, not a snapshot. The expression is re-evaluated when `generate` builds the prompt. This means updates to a variable made after `use` but before `generate` are visible at generation time.
 
 For the full design semantics, see [`use ... as ...`](./use-as.md).
 
@@ -199,9 +201,9 @@ For the full design semantics, see [`use ... as ...`](./use-as.md).
 
 ```agentscript
 answer = generate({
-    input: "Answer using the selected context."
-    max_output: 800
-    attempts: 3
+    input: "Answer using the selected context.",
+    max_output: 800,
+    attempts: 3,
     debug: true
 }) -> {
     ok boolean
@@ -214,13 +216,13 @@ answer = generate({
 
 - `input` is the per-generation instruction. Required.
 - `max_output` is the output generation budget (number or `2k` style). Optional.
-- `attempts` controls retry for JSON parse errors or shape mismatch. Optional, defaults to 1.
-- `temperature` is a provider sampling hint. Optional.
-- `think` is a provider/model reasoning hint. Optional.
+- `attempts` controls retry for JSON parse errors or shape mismatch. It is the maximum total number of attempts, including the first one. Optional, defaults to 1.
+- `temperature` is a provider sampling hint. Optional. Unsupported provider hints default to warn in debug mode and ignore otherwise.
+- `think` is a provider/model reasoning hint. Optional. Unsupported provider hints default to warn in debug mode and ignore otherwise.
 - `strict` controls shape validation strictness. Optional, defaults to false.
 - `debug` prints the full prompt to stderr. Optional, defaults to false.
 - The optional `-> { ... }` block declares the expected output shape.
-- Without `-> { ... }`, the generate output is unconstrained: AgentScript does not add a return schema to the prompt, does not request provider structured output, and does not coerce or validate the returned value.
+- Without `-> { ... }`, the generate output is unconstrained: AgentScript does not add a return schema to the prompt, does not request provider structured output, and does not coerce or validate the returned value. Free-form generate is allowed but not recommended for agent workflows.
 - Provider errors (auth, network, timeout, missing model) fail directly without retry.
 - Shape validation includes coercion (e.g. `"true"` -> `true`, `"42"` -> `42`).
 
@@ -238,14 +240,14 @@ if answer.ok and not input.dry_run {
 }
 ```
 
-Supported operators: `==`, `!=`, `and`, `or`, `not`. `<` is not a general comparison operator — it is used for budgets and loop limits.
+Supported operators: `==`, `!=`, `<`, `and`, `or`, `not`. Context budgets and loop limits use `max`, so `<` remains an ordinary comparison operator like `==`.
 
 ### Loop until
 
 ```agentscript
 done = false
 
-loop until done < 6 {
+loop until done max 6 {
     observation = observe(input)
     done = observation.ok
 }
@@ -269,7 +271,7 @@ Each iteration creates a child scope. Outer variables updated inside the loop pe
 ### For in
 
 ```agentscript
-for step in plan.steps < 12 {
+for step in plan.steps max 12 {
     result = Executor(step)
     results.add(result)
 }
@@ -289,7 +291,7 @@ summary = items.summary
 - `list[index]` is read-only. Index must be a non-negative integer.
 - `list.add(value)` mutates the list. Takes exactly one argument.
 - `.length` returns the list length.
-- `.summary` returns a JSON-safe runtime view of the list. It is not an LLM-generated summary or semantic compression; any prompt-size reduction comes from explicit context budgets such as `use scratch.summary < 2k`.
+- `.summary` returns a JSON-safe runtime view of the list. It is not an LLM-generated summary or semantic compression; any prompt-size reduction comes from explicit context budgets such as `use scratch.summary max 2k`.
 
 ## Tools
 
@@ -307,9 +309,9 @@ import tool Http from "https://api.example.com"
 
 ```agentscript
 files = Find.run({
-    path: "."
-    name: "*.ts"
-    type: "file"
+    path: ".",
+    name: "*.ts",
+    type: "file",
     max: 50
 })
 ```
@@ -318,9 +320,9 @@ files = Find.run({
 
 ```agentscript
 matches = Grep.run({
-    path: "src"
-    pattern: "TODO"
-    include: "*.ts"
+    path: "src",
+    pattern: "TODO",
+    include: "*.ts",
     max: 100
 })
 ```
@@ -329,8 +331,8 @@ matches = Grep.run({
 
 ```agentscript
 lines = Sed.run({
-    path: "src/main.as"
-    start: 1
+    path: "src/main.as",
+    start: 1,
     max: 20
 })
 ```
@@ -338,10 +340,21 @@ lines = Sed.run({
 ### File
 
 ```agentscript
-content = File.read({ path: "README.md" })
-entries = File.list({ path: "src" })
-result = File.write({ path: "output.md", content: "# Result" })
-result = File.patch({ path: "file.as", search: "old", replace: "new" })
+content = File.read({
+    path: "README.md"
+})
+entries = File.list({
+    path: "src"
+})
+result = File.write({
+    path: "output.md",
+    content: "# Result"
+})
+result = File.patch({
+    path: "file.as",
+    search: "old",
+    replace: "new"
+})
 result = File.undo(effects)
 ```
 
@@ -350,14 +363,24 @@ Write and patch operations return undoable effect records. `File.undo` accepts a
 ### Env
 
 ```agentscript
-home = Env.get({ name: "HOME" })
+home = Env.get({
+    name: "HOME"
+})
 ```
 
 ### Http
 
 ```agentscript
-response = Http.get({ url: "/api/data", headers: { Authorization: "Bearer ..." }, timeout: 10000 })
-response = Http.post({ url: "/api/submit", body: { key: "value" }, timeout: 10000 })
+response = Http.get({
+    url: "/api/data",
+    headers: { Authorization: "Bearer ..." },
+    timeout: 10000
+})
+response = Http.post({
+    url: "/api/submit",
+    body: { key: "value" },
+    timeout: 10000
+})
 ```
 
 HTTP requests are restricted to the origin of the import URI.
@@ -387,7 +410,7 @@ import file Requirements from "./requirements.md"
 import file Config from "./config.json"
 
 func answer(input) {
-    use Requirements < 4k
+    use Requirements max 4k
     use Config
     generate({ input: "Answer from the referenced file." }) -> {
         ok boolean
@@ -402,18 +425,18 @@ Text files are loaded as strings. JSON files are parsed as JSON values. File con
 
 ```agentscript
 Lessons.add({
-    kind: "lesson"
-    text: reflection.insight
+    kind: "lesson",
+    text: reflection.insight,
     goal: input.goal
 })
 
 past = Lessons.query({
-    kind: "lesson"
-    text: input.goal
+    kind: "lesson",
+    text: input.goal,
     limit: 5
 })
 
-use past < 2k
+use past max 2k
 ```
 
 ### Rules
@@ -437,8 +460,11 @@ main agent Controller {
     main func(input) {
         plan = Planner(input)
         results = []
-        for step in plan.steps < 10 {
-            result = Executor({ goal: input.goal, step: step })
+        for step in plan.steps max 10 {
+            result = Executor({
+                goal: input.goal,
+                step: step
+            })
             results.add(result)
         }
         results.summary

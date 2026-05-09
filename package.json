@@ -1,6 +1,6 @@
 {
   "name": "@rong/agentscript",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "AgentScript context engineering language runtime",
   "main": "dist/index.js",
   "bin": {

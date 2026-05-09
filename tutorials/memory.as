@@ -5,14 +5,14 @@ main agent MemoryDemo {
         topic string
     }) {
         Notes.add({
-            kind: "note"
-            text: input.topic
+            kind: "note",
+            text: input.topic,
             topic: input.topic
         })
 
         Notes.query({
-            kind: "note"
-            text: input.topic
+            kind: "note",
+            text: input.topic,
             limit: 3
         })
     }

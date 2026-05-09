@@ -164,12 +164,12 @@ describe("agentscript CLI", () => {
       main agent A {
         main func(input) {
           Notes.add({
-            kind: "note"
+            kind: "note",
             text: input.topic
           })
           return Notes.query({
-            kind: "note"
-            text: input.topic
+            kind: "note",
+            text: input.topic,
             limit: 1
           })
         }
@@ -235,7 +235,7 @@ describe("agentscript CLI", () => {
       "  description \"Return hello.\"",
       "  main func(input {}) {",
       "    return {",
-      "      ok: true",
+      "      ok: true,",
       "      text: \"hello\"",
       "    }",
       "  }",

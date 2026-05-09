@@ -20,7 +20,7 @@ describe("generate", () => {
         description "Answer test questions."
 
         main func act(input) {
-          use input.question < 2k
+          use input.question max 2k
           return generate({ input: "answer", max_output: 300 }) -> {
               ok boolean
           }
@@ -66,12 +66,12 @@ describe("generate", () => {
 
         main func act(input) {
           return generate({
-            input: "answer"
-            max_output: 2k
-            attempts: 2
-            temperature: 0.2
-            think: "medium"
-            strict: true
+            input: "answer",
+            max_output: 2k,
+            attempts: 2,
+            temperature: 0.2,
+            think: "medium",
+            strict: true,
             debug: false
           }) -> {
               ok boolean
@@ -240,7 +240,7 @@ describe("generate", () => {
 
         main func(input) {
           scratch = []
-          use scratch.summary < 2k
+          use scratch.summary max 2k
           scratch.add({ fact: "A" })
           scratch.add({ fact: "B" })
 
@@ -401,7 +401,7 @@ describe("generate", () => {
         description "Use imported files."
 
         main func(input) {
-          use Requirements < 100
+          use Requirements max 100
           return generate({ input: "summarize" }) -> {
               ok boolean
           }

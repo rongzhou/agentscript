@@ -119,7 +119,7 @@ describe("parse", () => {
       agent A {
         func act(input) {
           scratch = []
-          use scratch.summary < 2k
+          use scratch.summary max 2k
           return input
         }
       }
@@ -137,7 +137,7 @@ describe("parse", () => {
       agent A {
         func act(input) {
           use input.question as user
-          use docs.summary < 4k as retrieved evidence
+          use docs.summary max 4k as retrieved evidence
           return input
         }
       }
@@ -176,11 +176,33 @@ describe("parse", () => {
     expect(stmt.elseBody).toHaveLength(1);
   });
 
+
+
+  it("parses less-than as a comparison expression", () => {
+    const ast = parse(`
+      agent A {
+        func act(input) {
+          if input.count < 3 {
+            return true
+          }
+          return false
+        }
+      }
+    `);
+
+    const stmt = ast.agents[0]!.functions[0]!.body[0]!;
+    expect(stmt.kind).toBe("IfStmt");
+    if (stmt.kind !== "IfStmt") return;
+    expect(stmt.condition).toMatchObject({
+      kind: "BinaryExpr",
+      operator: "<"
+    });
+  });
   it("parses for-in list traversal", () => {
     const ast = parse(`
       agent A {
         func act(input) {
-          for step in input.steps < 6 {
+          for step in input.steps max 6 {
             use step
           }
           return input
@@ -197,6 +219,20 @@ describe("parse", () => {
     expect(stmt.body[0]).toMatchObject({
       kind: "UseStmt"
     });
+  });
+
+
+  it("rejects object literals with missing commas", () => {
+    expect(() => parse(`
+      agent A {
+        func act(input) {
+          return {
+            ok: true
+            text: "missing comma"
+          }
+        }
+      }
+    `)).toThrow(ParseError);
   });
 
   it("parses list index access as a postfix expression", () => {
@@ -306,7 +342,7 @@ describe("parse", () => {
 
       main agent A {
         main func(input) {
-          use Requirements < 2k
+          use Requirements max 2k
           return input
         }
       }

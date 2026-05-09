@@ -41,7 +41,8 @@ const KEYWORDS = new Set([
   "number",
   "boolean",
   "json",
-  "list"
+  "list",
+  "max"
 ]);
 
 const SYMBOLS = new Set([

@@ -175,10 +175,10 @@ For typical LLM calls, omit `return`:
 
 ```agentscript
 func summarize(content) {
-    use content < 8k
+    use content max 8k
 
     generate({
-        input: "Summarize the content"
+        input: "Summarize the content",
         max_output: 1000
     }) -> {
         title string

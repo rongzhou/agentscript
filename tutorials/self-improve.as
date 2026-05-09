@@ -10,13 +10,13 @@ main agent SelfImprover {
         goal string
     }) {
         past = Lessons.query({
-            kind: "lesson"
-            text: input.goal
+            kind: "lesson",
+            text: input.goal,
             limit: 5
         })
 
         use input.goal
-        use past < 2k
+        use past max 2k
 
         result = generate({
             input: "Answer the goal using any relevant lessons.",
@@ -28,15 +28,15 @@ main agent SelfImprover {
         }
 
         lesson = reflect({
-            goal: input.goal
-            result: result
+            goal: input.goal,
+            result: result,
             past: past
         })
 
         Lessons.add({
-            kind: "lesson"
-            text: lesson.insight
-            goal: input.goal
+            kind: "lesson",
+            text: lesson.insight,
+            goal: input.goal,
             ok: result.ok
         })
 

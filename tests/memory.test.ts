@@ -15,21 +15,21 @@ describe("memory", () => {
       main agent A {
         main func(input) {
           Lessons.add({
-            kind: "lesson"
-            text: "AgentScript keeps context explicit"
+            kind: "lesson",
+            text: "AgentScript keeps context explicit",
             goal: input.goal
           })
           Lessons.add({
-            kind: "note"
-            text: "unrelated"
+            kind: "note",
+            text: "unrelated",
             goal: "other"
           })
           return Lessons.query({
-            kind: "lesson"
-            text: "context"
+            kind: "lesson",
+            text: "context",
             where: {
               goal: input.goal
-            }
+            },
             limit: 5
           })
         }
@@ -72,13 +72,13 @@ describe("memory", () => {
       main agent A {
         main func(input) {
           Lessons.add({
-            kind: "lesson"
+            kind: "lesson",
             text: "no optional field"
           })
           return Lessons.query({
             where: {
               optional: none
-            }
+            },
             limit: 5
           })
         }
@@ -119,21 +119,21 @@ describe("memory", () => {
       main agent A {
         main func(input) {
           Lessons.add({
-            kind: "lesson"
-            text: "sqlite memory keeps namespaces separate"
+            kind: "lesson",
+            text: "sqlite memory keeps namespaces separate",
             goal: input.goal
           })
           Runs.add({
-            kind: "lesson"
-            text: "run record"
+            kind: "lesson",
+            text: "run record",
             goal: input.goal
           })
           return Lessons.query({
-            kind: "lesson"
-            text: "namespaces"
+            kind: "lesson",
+            text: "namespaces",
             where: {
               goal: input.goal
-            }
+            },
             limit: 5
           })
         }

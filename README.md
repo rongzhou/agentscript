@@ -6,8 +6,10 @@
 > Zero runtime dependencies. TypeScript-powered.
 
 ```agentscript
-use scratch.summary < 2k as observations
-generate({ input: "Answer from observations" }) -> {
+use scratch.summary max 2k as observations
+generate({
+    input: "Answer from observations"
+}) -> {
     ok boolean
     text string
 }
@@ -60,12 +62,14 @@ main agent FileSummarizer {
     description "Read one local file and produce a useful structured summary."
 
     main func(input { path string }) {
-        content = File.read({ path: input.path })
+        content = File.read({
+            path: input.path
+        })
         use input.path as source path
-        use content < 8k as file content
+        use content max 8k as file content
 
         generate({
-            input: "Summarize the file for a busy teammate"
+            input: "Summarize the file for a busy teammate",
             max_output: 1000
         }) -> {
             title string
@@ -181,10 +185,10 @@ main agent ResearchAgent {
         use input.question as user question
 
         scratch = []
-        use scratch.summary < 2k as observations
+        use scratch.summary max 2k as observations
 
         done = false
-        loop until done < 6 {
+        loop until done max 6 {
             thought = reason(input.question, scratch)
             obs = Search.search(thought.focus)
             scratch.add(obs)
@@ -196,8 +200,10 @@ main agent ResearchAgent {
 
     func answer(question, scratch) {
         use question as user question
-        use scratch.summary < 2k as observations
-        generate({ input: "Answer using only the observations" }) -> {
+        use scratch.summary max 2k as observations
+        generate({
+            input: "Answer using only the observations"
+        }) -> {
             ok boolean
             text string
             error string

@@ -10,7 +10,7 @@ For the larger mental model, see [Context Engineering](./context-engineering.md)
 
 ```agentscript
 use input.question as user question
-use scratch.summary < 2k as observations
+use scratch.summary max 2k as observations
 ```
 
 The meaning is:
@@ -25,9 +25,9 @@ Local variables not selected with `use` do not enter the prompt.
 
 ```agentscript
 use expr
-use expr < budget
+use expr max budget
 use expr as label
-use expr < budget as label
+use expr max budget as label
 ```
 
 The fixed order is:
@@ -40,8 +40,8 @@ Examples:
 
 ```agentscript
 use input.question as user question
-use docs.summary < 4k as retrieved evidence
-use scratch.summary < 2k as observations
+use docs.summary max 4k as retrieved evidence
+use scratch.summary max 2k as observations
 ```
 
 ## Context labels
@@ -50,7 +50,7 @@ The label after `as` is literal label text. It is not an expression, is not eval
 
 ```agentscript
 use docs as evidence
-use docs.summary < 4k as retrieved evidence
+use docs.summary max 4k as retrieved evidence
 use input.question as user
 ```
 
@@ -92,7 +92,7 @@ developer
 ```agentscript
 main func(input) {
     scratch = []
-    use scratch.summary < 2k as observations
+    use scratch.summary max 2k as observations
 
     scratch.add({ fact: "A" })
     scratch.add({ fact: "B" })
@@ -150,15 +150,15 @@ Use the data returned by these capabilities instead:
 
 ```agentscript
 results = Search.search(input.question)
-use results < 4k as search results
+use results max 4k as search results
 ```
 
 ## Budget semantics
 
-`use expr < budget` is a context item budget. It limits how much of that source may be rendered into the prompt.
+`use expr max budget` is a context item budget. It limits how much of that source may be rendered into the prompt.
 
 ```agentscript
-use docs.summary < 4k as evidence
+use docs.summary max 4k as evidence
 ```
 
 This is different from `generate({ max_output: ... })`, which is an output generation budget. See [`generate`](./generate.md).

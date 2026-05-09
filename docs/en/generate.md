@@ -21,12 +21,12 @@ Ordinary code can compute values, call tools, call agents, and organize state. O
 
 ```agentscript
 generate({
-    input: "Classify the issue"
-    max_output: 300
-    attempts: 2
-    temperature: 0.2
-    think: "medium"
-    strict: true
+    input: "Classify the issue",
+    max_output: 300,
+    attempts: 2,
+    temperature: 0.2,
+    think: "medium",
+    strict: true,
     debug: false
 }) -> {
     category string
@@ -40,7 +40,7 @@ The output shape after `->` is optional:
 generate({ input: "Draft a response." })
 ```
 
-When no shape is declared, the runtime should not inject a schema or require structured JSON output.
+When no shape is declared, the runtime should not inject a schema or require structured JSON output. Free-form generate is allowed but not recommended for agent workflows; prefer an explicit output shape so retries, validation, trace, and downstream agent calls stay auditable.
 
 ## Configuration fields
 
@@ -110,7 +110,7 @@ Selected context comes from visible `use` declarations:
 
 ```agentscript
 use input.question as user question
-use scratch.summary < 2k as observations
+use scratch.summary max 2k as observations
 ```
 
 A rendered prompt section may look like:
@@ -162,7 +162,7 @@ The runtime asks the provider for structured output when possible and validates 
 
 ```agentscript
 generate({
-    input: "Answer briefly"
+    input: "Answer briefly",
     max_output: 300
 }) -> {
     answer string
@@ -178,10 +178,10 @@ max_output = provider-side generation budget requested by AgentScript
 It is separate from `use` input context budgets:
 
 ```agentscript
-use docs.summary < 4k
+use docs.summary max 4k
 
 generate({
-    input: "Answer from the selected docs"
+    input: "Answer from the selected docs",
     max_output: 800
 }) -> {
     answer string
@@ -191,18 +191,18 @@ generate({
 Difference:
 
 ```text
-use ... < 4k       = input context budget
+use ... max 4k       = input context budget
 max_output: 800    = output generation budget
 ```
 
 ## `attempts`
 
-`attempts` controls how many times the runtime may try to obtain a valid structured result.
+`attempts` controls how many times the runtime may try to obtain a valid structured result. `attempts` is the maximum total number of attempts, including the first one.
 
 ```agentscript
 generate({
-    input: "Extract metadata"
-    max_output: 500
+    input: "Extract metadata",
+    max_output: 500,
     attempts: 3
 }) -> {
     title string
@@ -242,8 +242,8 @@ attempts: 1
 
 ```agentscript
 generate({
-    input: "Brainstorm alternatives"
-    max_output: 1000
+    input: "Brainstorm alternatives",
+    max_output: 1000,
     temperature: 0.7
 }) -> {
     ideas list[string]
@@ -264,11 +264,11 @@ If unsupported, adapter may ignore, warn, or fail according to capability policy
 Recommended values:
 
 ```agentscript
-think: false
-think: true
-think: "auto"
-think: "low"
-think: "medium"
+think: false,
+think: true,
+think: "auto",
+think: "low",
+think: "medium",
 think: "high"
 ```
 
@@ -287,8 +287,8 @@ Example:
 
 ```agentscript
 generate({
-    input: "Analyze the tradeoffs"
-    max_output: 1200
+    input: "Analyze the tradeoffs",
+    max_output: 1200,
     think: "high"
 }) -> {
     decision string
@@ -297,20 +297,16 @@ generate({
 }
 ```
 
-`think` is a provider/model capability hint. Not every model guarantees support.
+`think` is a provider/model capability hint. Not every model guarantees support. If unsupported, the adapter may ignore, warn, or fail according to capability policy.
 
-If unsupported, the runtime may handle it according to policy:
+## Capability policy for provider hints
 
-```text
-ignore
-warn
-fail
-```
+`temperature` and `think` are provider/model capability hints. Unsupported provider hints default to warn in debug mode and ignore otherwise.
 
-Recommended default policy:
+Adapters may ignore, warn, or fail for unsupported hints according to runtime capability policy, but documentation should treat the default as:
 
 ```text
-warn in debug mode, otherwise ignore
+unsupported provider hints default to warn in debug mode and ignore otherwise
 ```
 
 ## `strict`
@@ -319,8 +315,8 @@ warn in debug mode, otherwise ignore
 
 ```agentscript
 generate({
-    input: "Classify the issue"
-    max_output: 300
+    input: "Classify the issue",
+    max_output: 300,
     strict: true
 }) -> {
     category string
@@ -377,8 +373,8 @@ strict is AgentScript runtime control over the output contract.
 
 ```agentscript
 generate({
-    input: "Answer the question"
-    max_output: 800
+    input: "Answer the question",
+    max_output: 800,
     debug: true
 }) -> {
     answer string

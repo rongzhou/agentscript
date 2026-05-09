@@ -7,7 +7,7 @@ main agent V1Regression {
     }) {
         results = []
 
-        for step in Plan.steps < 4 {
+        for step in Plan.steps max 4 {
             results.add(Worker({
                 goal: input.goal,
                 step: step

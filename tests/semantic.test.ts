@@ -96,7 +96,7 @@ describe("analyze", () => {
       parse(`
         agent A {
           func act(input) {
-            use input < 0
+            use input max 0
             return input
           }
         }
@@ -349,9 +349,9 @@ describe("analyze", () => {
 
           main func act(input) {
             return generate({
-              input: "x"
-              temperature: "warm"
-              think: "extreme"
+              input: "x",
+              temperature: "warm",
+              think: "extreme",
               strict: "yes"
             }) -> {
                 ok boolean
@@ -618,7 +618,7 @@ describe("analyze", () => {
 
         main agent A {
           main func(input) {
-            use Requirements < 2k
+            use Requirements max 2k
             return Requirements
           }
         }
@@ -634,7 +634,7 @@ describe("analyze", () => {
         main agent A {
           main func(input) {
             items = [input]
-            for item in items < 3 {
+            for item in items max 3 {
               value = item
             }
             return item

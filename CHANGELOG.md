@@ -2,6 +2,16 @@
 
 All notable changes to AgentScript will be documented in this file.
 
+## 0.1.5 - 2026-05-09
+
+### Changed
+
+- Switched context budgets from `use expr < budget` to `use expr max budget`.
+- Switched loop and for-in iteration limits to `max` syntax.
+- Restored `<` as an ordinary numeric comparison operator.
+- Required comma separators between object literal fields.
+- Updated current docs, examples, tutorials, fixtures, and tests for the new syntax.
+
 ## 0.1.4 - 2026-05-08
 
 ### Added

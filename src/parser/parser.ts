@@ -234,7 +234,7 @@ class Parser {
   private parseUse(): UseStmt {
     const start = this.consume("use").range.start;
     const value = this.parseLogicalOr();
-    const budget = this.match("<") ? this.parseBudget() : undefined;
+    const budget = this.match("max") ? this.parseBudget() : undefined;
     const label = this.match("as") ? this.parseUseLabel() : undefined;
     return {
       kind: "UseStmt",
@@ -292,7 +292,7 @@ class Parser {
     const item = this.consumeIdentifier("Expected for item name");
     this.consume("in");
     const iterable = this.parseLogicalOr();
-    this.consume("<");
+    this.consume("max");
     const maxIterations = this.parsePositiveInteger("Expected for iteration count");
     const body = this.parseBlock();
     return {
@@ -310,7 +310,7 @@ class Parser {
     const start = this.consume("loop").range.start;
     this.consume("until");
     const condition = this.parseLogicalOr();
-    this.consume("<");
+    this.consume("max");
     const maxIterations = this.parsePositiveInteger("Expected loop iteration count");
     const body = this.parseBlock();
     return {
@@ -371,7 +371,11 @@ class Parser {
   }
 
   private parseEquality(): Expr {
-    return this.parseBinaryExpression(() => this.parseUnary(), "==", "!=");
+    return this.parseBinaryExpression(() => this.parseComparison(), "==", "!=");
+  }
+
+  private parseComparison(): Expr {
+    return this.parseBinaryExpression(() => this.parseUnary(), "<");
   }
 
   private parseBinaryExpression(parseOperand: () => Expr, ...operators: BinaryExpr["operator"][]): Expr {
@@ -569,7 +573,7 @@ class Parser {
       } else if (key === "debug" && value.kind === "BooleanExpr") {
         debug = value;
       }
-      this.match(",");
+      this.consumePropertySeparator("}");
     }
 
     this.consume("}");
@@ -602,7 +606,7 @@ class Parser {
         value,
         range: { start: propStart, end: value.range.end }
       });
-      this.match(",");
+      this.consumePropertySeparator("}");
     }
 
     this.consume("}");
@@ -611,6 +615,11 @@ class Parser {
       properties,
       range: { start, end: this.previous().range.end }
     };
+  }
+
+  private consumePropertySeparator(terminator: string): void {
+    if (this.check(terminator)) return;
+    this.consume(",");
   }
 
   private parseList(): ListExpr {

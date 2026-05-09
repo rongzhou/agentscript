@@ -67,7 +67,7 @@ Agent 调用形成更强的边界。被调用 Agent 不会看到 caller 的 prom
 
 ```agentscript
 result = Worker({
-    goal: input.goal
+    goal: input.goal,
     previous: results.summary
 })
 ```

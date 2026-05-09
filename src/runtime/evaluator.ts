@@ -124,7 +124,16 @@ export class Evaluator {
         return this.valuesEqual(await this.evaluate(expr.left, scope), await this.evaluate(expr.right, scope));
       case "!=":
         return !this.valuesEqual(await this.evaluate(expr.left, scope), await this.evaluate(expr.right, scope));
+      case "<":
+        return this.evaluateLessThan(await this.evaluate(expr.left, scope), await this.evaluate(expr.right, scope), expr.range);
     }
+  }
+
+  private evaluateLessThan(left: RuntimeValue, right: RuntimeValue, range: SourceRange): boolean {
+    if (typeof left !== "number" || typeof right !== "number") {
+      throw new RuntimeError("operator '<' requires number operands", range);
+    }
+    return left < right;
   }
 
   private valuesEqual(left: RuntimeValue, right: RuntimeValue): boolean {

@@ -10,13 +10,13 @@ main agent Learner {
         goal string
     }) {
         past = Lessons.query({
-            text: input.goal
-            kind: "lesson"
+            text: input.goal,
+            kind: "lesson",
             limit: 5
         })
 
         use input.goal
-        use past < 2k
+        use past max 2k
 
         answer = generate({
             input: "Answer the goal using relevant past lessons.",
@@ -28,20 +28,20 @@ main agent Learner {
         }
 
         reflection = reflect({
-            goal: input.goal
+            goal: input.goal,
             answer: answer
         })
 
         Lessons.add({
-            kind: "lesson"
-            text: reflection.insight
-            goal: input.goal
+            kind: "lesson",
+            text: reflection.insight,
+            goal: input.goal,
             ok: answer.ok
         })
 
         {
-            ok: answer.ok
-            answer: answer.answer
+            ok: answer.ok,
+            answer: answer.answer,
             lessons: past.length
         }
     }

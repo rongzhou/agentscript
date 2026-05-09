@@ -31,7 +31,7 @@ main agent PlanAndExecute {
             }
         ]
 
-        for step in steps < 6 {
+        for step in steps max 6 {
             outcome = run_step(input.goal, step, results)
             results.add(outcome.result)
 
@@ -73,7 +73,7 @@ main agent PlanAndExecute {
 
     func finish(goal, results) {
         use goal
-        use results.summary < 2k
+        use results.summary max 2k
 
         generate({ input: "Create the final answer from executed steps", max_output: 800 }) -> {
             ok boolean
@@ -91,7 +91,7 @@ agent Planner {
     main func(input) {
         use input.goal
         use input.problem
-        use input.previous < 1k
+        use input.previous max 1k
 
         generate({ input: "Create a three step plan", max_output: 600 }) -> {
             step1 string
@@ -109,7 +109,7 @@ agent Executor {
     main func(input) {
         use input.goal
         use input.step
-        use input.previous < 1k
+        use input.previous max 1k
 
         query = Search.query(input.goal, input.step, input.previous)
         raw = Search.search(query)

@@ -10,7 +10,7 @@
 
 ```agentscript
 use input.question as user question
-use scratch.summary < 2k as observations
+use scratch.summary max 2k as observations
 ```
 
 含义是：
@@ -25,9 +25,9 @@ use scratch.summary < 2k as observations
 
 ```agentscript
 use expr
-use expr < budget
+use expr max budget
 use expr as label
-use expr < budget as label
+use expr max budget as label
 ```
 
 固定顺序是：
@@ -40,8 +40,8 @@ use expr < budget as label
 
 ```agentscript
 use input.question as user question
-use docs.summary < 4k as retrieved evidence
-use scratch.summary < 2k as observations
+use docs.summary max 4k as retrieved evidence
+use scratch.summary max 2k as observations
 ```
 
 ## Context label
@@ -50,7 +50,7 @@ use scratch.summary < 2k as observations
 
 ```agentscript
 use docs as evidence
-use docs.summary < 4k as retrieved evidence
+use docs.summary max 4k as retrieved evidence
 use input.question as user
 ```
 
@@ -92,7 +92,7 @@ developer
 ```agentscript
 main func(input) {
     scratch = []
-    use scratch.summary < 2k as observations
+    use scratch.summary max 2k as observations
 
     scratch.add({ fact: "A" })
     scratch.add({ fact: "B" })
@@ -150,15 +150,15 @@ use helper
 
 ```agentscript
 results = Search.search(input.question)
-use results < 4k as search results
+use results max 4k as search results
 ```
 
 ## Budget 语义
 
-`use expr < budget` 是 context item budget，限制该 source 渲染进 prompt 的大小。
+`use expr max budget` 是 context item budget，限制该 source 渲染进 prompt 的大小。
 
 ```agentscript
-use docs.summary < 4k as evidence
+use docs.summary max 4k as evidence
 ```
 
 这不同于 `generate({ max_output: ... })` 的 output generation budget。详见 [`generate`](./generate.md)。

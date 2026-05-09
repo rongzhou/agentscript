@@ -3,7 +3,7 @@ import { tokenize } from "../src/parser/tokenizer.js";
 
 describe("tokenize", () => {
   it("tokenizes AgentScript symbols, strings, identifiers, and budgets", () => {
-    const tokens = tokenize('repeat * 2 { for item in items < 3 { if ok == true and not stale { use scratch.summary < 2k } else { message != "hello" } } }');
+    const tokens = tokenize('repeat * 2 { for item in items max 3 { if count < 10 and ok == true and not stale { use scratch.summary max 2k } else { message != "hello" } } }');
     expect(tokens.map((token) => token.value)).toEqual([
       "repeat",
       "*",
@@ -13,10 +13,14 @@ describe("tokenize", () => {
       "item",
       "in",
       "items",
-      "<",
+      "max",
       "3",
       "{",
       "if",
+      "count",
+      "<",
+      "10",
+      "and",
       "ok",
       "==",
       "true",
@@ -28,7 +32,7 @@ describe("tokenize", () => {
       "scratch",
       ".",
       "summary",
-      "<",
+      "max",
       "2k",
       "}",
       "else",

@@ -67,7 +67,7 @@ Agent calls create a stronger boundary. A called agent does not see the caller's
 
 ```agentscript
 result = Worker({
-    goal: input.goal
+    goal: input.goal,
     previous: results.summary
 })
 ```

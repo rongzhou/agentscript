@@ -140,7 +140,7 @@ describe("interpreter", () => {
 
         main func(input) {
           use input.question as user
-          use input.docs < 2k as retrieved evidence
+          use input.docs max 2k as retrieved evidence
 
           generate({ input: "answer" }) -> {
               ok boolean
@@ -469,7 +469,7 @@ describe("interpreter", () => {
           question string
         }) {
           return {
-            question: input.question
+            question: input.question,
             input: input
           }
         }
@@ -552,6 +552,21 @@ describe("interpreter", () => {
 
 
 
+
+
+  it("evaluates less-than comparisons", async () => {
+    const ast = parse(`
+      main agent A {
+        main func(input) {
+          return input.count < 3
+        }
+      }
+    `);
+
+    await expect(executeAgent(ast, { count: 2 })).resolves.toMatchObject({ value: true });
+    await expect(executeAgent(ast, { count: 3 })).resolves.toMatchObject({ value: false });
+  });
+
   it("executes for-in list traversal with a hard iteration cap", async () => {
     const ast = parse(`
       main agent A {
@@ -563,7 +578,7 @@ describe("interpreter", () => {
           ]
           results = []
 
-          for item in items < 2 {
+          for item in items max 2 {
             results.add(item.value)
           }
 
@@ -593,7 +608,7 @@ describe("interpreter", () => {
     const ast = parse(`
       main agent A {
         main func(input) {
-          for item in input.value < 2 {
+          for item in input.value max 2 {
             return item
           }
 

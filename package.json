@@ -9,6 +9,7 @@
   "files": [
     "dist",
     "examples",
+    "recipes",
     "tutorials",
     "docs",
     "README.md",

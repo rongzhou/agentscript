@@ -16,7 +16,7 @@ After the package is published:
 
 ```bash
 npm install -g @rong/agentscript
-agentscript examples/review.as --input '{"path":"src"}'
+agentscript recipes/code-review.as --input '{"path":"src"}'
 ```
 
 ## Run with npx
@@ -24,7 +24,7 @@ agentscript examples/review.as --input '{"path":"src"}'
 After the package is published:
 
 ```bash
-npx @rong/agentscript examples/review.as --input '{"path":"src"}'
+npx @rong/agentscript recipes/code-review.as --input '{"path":"src"}'
 ```
 
 ## Run from source
@@ -34,15 +34,15 @@ git clone https://github.com/<owner>/<repo>.git
 cd <repo>
 npm install
 npm run build
-npm run execute -- examples/review.as --input '{"path":"src"}'
+npm run execute -- recipes/code-review.as --input '{"path":"src"}'
 ```
 
 During local development, prefer:
 
 ```bash
 npm run execute -- tutorials/react.as --input '{"question":"What is AgentScript?"}'
-npm run check -- examples/review.as
-npm run parse -- examples/review.as
+npm run check -- examples/react.as
+npm run parse -- examples/react.as
 ```
 
 ## Real LLM providers
@@ -53,7 +53,7 @@ By default, AgentScript uses a mock LLM provider for local flow checks. Add `--r
 
 ```bash
 export OPENAI_API_KEY="..."
-agentscript examples/review.as --input '{"path":"src"}' --real-llm
+agentscript recipes/code-review.as --input '{"path":"src"}' --real-llm
 ```
 
 Use an AgentScript import such as:
@@ -66,7 +66,7 @@ import llm OpenAI from "openai://gpt-4.1-mini"
 
 ```bash
 export ANTHROPIC_API_KEY="..."
-agentscript examples/review.as --input '{"path":"src"}' --real-llm
+agentscript recipes/code-review.as --input '{"path":"src"}' --real-llm
 ```
 
 Use an AgentScript import such as:

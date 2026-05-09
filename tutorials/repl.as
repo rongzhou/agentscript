@@ -5,7 +5,7 @@ main agent ReplGuide {
     main func(input {}) {
         commands = [
             {
-                command: ":load examples/repl.as",
+                command: ":load tutorials/repl.as",
                 purpose: "Load this teaching agent into the REPL session."
             },
             {

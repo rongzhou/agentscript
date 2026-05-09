@@ -7,8 +7,8 @@ import { MockMemoryProvider, MockToolProvider } from "../src/providers/mock/inde
 import type { JsonObject } from "../src/runtime/types.js";
 import { analyze } from "../src/semantic/analyzer.js";
 
-describe("examples", () => {
-  for (const dir of ["examples", "tutorials"]) {
+describe("sample programs", () => {
+  for (const dir of ["examples", "tutorials", "recipes"]) {
     for (const file of readdirSync(dir).filter((item) => item.endsWith(".as")).sort()) {
       it(`parses, checks, and executes ${join(dir, file)}`, async () => {
         const program = loadProgram(join(dir, file));
@@ -32,25 +32,41 @@ function inputFor(file: string): JsonObject {
         name: "Rong",
         request: "Say hello from AgentScript"
       };
-    case "extract.as":
+    case "extract-api-data.as":
       return {
         url: "/users/1"
+      };
+    case "structured-generate.as":
+      return {
+        request: "Summarize this issue"
+      };
+    case "use-context.as":
+      return {
+        question: "What is AgentScript?",
+        docs: {
+          summary: "AgentScript makes prompt context explicit."
+        }
+      };
+    case "research-brief.as":
+      return {
+        question: "What is AgentScript?",
+        search_url: "/search?q=AgentScript"
       };
     case "react.as":
       return {
         question: "What is AgentScript?"
       };
-    case "review.as":
+    case "code-review.as":
       return {
         path: "src"
       };
     case "repl.as":
       return {};
-    case "summarize.as":
+    case "summarize-file.as":
       return {
         path: "README.md"
       };
-    case "translate.as":
+    case "translate-docs.as":
       return {
         path: "docs",
         target_language: "English"

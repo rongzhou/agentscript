@@ -36,23 +36,23 @@ agentscript --help
 或者免安装运行：
 
 ```bash
-npx @rong/agentscript examples/review.as --input '{"path":"src"}'
+npx @rong/agentscript recipes/code-review.as --input '{"path":"src"}'
 ```
 
 ## 快速开始
 
 ```bash
 # 使用 mock LLM（默认，无需 API key）
-agentscript examples/summarize.as --input '{"path":"README.md"}'
+agentscript recipes/summarize-file.as --input '{"path":"README.md"}'
 
 # 使用真实 LLM
-agentscript examples/summarize.as --input '{"path":"README.md"}' --real-llm
+agentscript recipes/summarize-file.as --input '{"path":"README.md"}' --real-llm
 ```
 
-`summarize.as` 读取本地文件，将其放入 LLM 上下文，并返回结构化摘要：
+`recipes/summarize-file.as` 读取本地文件，将其放入 LLM 上下文，并返回结构化摘要：
 
 ```agentscript
--- examples/summarize.as
+-- recipes/summarize-file.as
 import llm Qwen from "ollama://localhost:11434/qwen3.6"
 import tool File from "file://workspace"
 
@@ -98,6 +98,14 @@ main agent FileSummarizer {
 加上 `--real-llm` 后，字段将由模型填充。
 
 `generate` 后面的 block 是返回结构 schema，不是普通对象构造。
+
+## Examples、Tutorials 和 Recipes
+
+- `examples/` 放最小化示例，每个文件只演示一个语言特性或 agent pattern。
+- `tutorials/` 放更完整的 walkthrough 程序，用于学习端到端的多步骤 agent pattern。
+- `recipes/` 放可直接复制改造的实际工作流，例如 code review、changelog、文件摘要、文档翻译、API 数据抽取和 research brief。
+
+先看 `examples/structured-generate.as` 学语法，再读 `tutorials/` 理解模式，最后到 `recipes/` 找接近真实任务的模板。
 
 ## 解决什么问题
 
@@ -212,7 +220,7 @@ main agent ResearchAgent {
 }
 ```
 
-## 五个核心概念
+## 六个核心概念
 
 1. **`use` 显式声明上下文** —— 未被 `use` 的变量不会进入 LLM prompt；`as label` 标注 context section
 2. **`generate` 是唯一的 LLM 调用点** —— 必须包含 input 指令，可选择声明输出 shape
@@ -235,11 +243,11 @@ Python 和 TypeScript 是优秀的通用工具，但它们没有"prompt 上下�
 ## CLI
 
 ```bash
-agentscript examples/review.as                       # 使用 mock LLM
-agentscript examples/review.as --check               # 仅解析+语义检查
-agentscript examples/review.as --parse               # 解析并输出 AST
-agentscript examples/review.as --trace pretty        # 可读 trace
-agentscript examples/review.as --quiet               # 仅输出最终值
+agentscript recipes/code-review.as --input '{"path":"src"}'
+agentscript recipes/code-review.as --check
+agentscript examples/react.as --parse
+agentscript recipes/code-review.as --trace pretty
+agentscript recipes/code-review.as --quiet
 ```
 
 | 选项 | 说明 |

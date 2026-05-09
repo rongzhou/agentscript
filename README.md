@@ -36,23 +36,23 @@ agentscript --help
 Or run without installing:
 
 ```bash
-npx @rong/agentscript examples/review.as --input '{"path":"src"}'
+npx @rong/agentscript recipes/code-review.as --input '{"path":"src"}'
 ```
 
 ## Quick start
 
 ```bash
 # Run with mock LLM (default, no API key needed)
-agentscript examples/summarize.as --input '{"path":"README.md"}'
+agentscript recipes/summarize-file.as --input '{"path":"README.md"}'
 
 # Run with real LLM
-agentscript examples/summarize.as --input '{"path":"README.md"}' --real-llm
+agentscript recipes/summarize-file.as --input '{"path":"README.md"}' --real-llm
 ```
 
-The `summarize.as` file reads a local file, includes it in the LLM context, and returns a structured summary:
+The `recipes/summarize-file.as` recipe reads a local file, includes it in the LLM context, and returns a structured summary:
 
 ```agentscript
--- examples/summarize.as
+-- recipes/summarize-file.as
 import llm Qwen from "ollama://localhost:11434/qwen3.6"
 import tool File from "file://workspace"
 
@@ -98,6 +98,14 @@ Expected output (with mock LLM):
 With `--real-llm`, the fields are populated by the model.
 
 The optional block after `generate` is an output schema, not ordinary object construction.
+
+## Examples, tutorials, and recipes
+
+- `examples/` contains minimal examples. Each file demonstrates one language feature or agent pattern.
+- `tutorials/` contains longer walkthrough programs for learning multi-step agent patterns end to end.
+- `recipes/` contains practical workflows you can copy and adapt, such as code review, changelog drafting, file summarization, document translation, API extraction, and research briefs.
+
+Start with `examples/structured-generate.as` to learn the syntax, read `tutorials/` for pattern walkthroughs, then use `recipes/` when you want something closer to a real task.
 
 ## What problem it solves
 
@@ -235,11 +243,11 @@ Python and TypeScript are excellent general-purpose tools, but they have no conc
 ## CLI
 
 ```bash
-agentscript examples/review.as                       # run with mock LLM
-agentscript examples/review.as --check               # parse + semantic check only
-agentscript examples/review.as --parse               # parse and output AST
-agentscript examples/review.as --trace pretty        # human-readable trace
-agentscript examples/review.as --quiet               # value only, no trace
+agentscript recipes/code-review.as --input '{"path":"src"}'
+agentscript recipes/code-review.as --check
+agentscript examples/react.as --parse
+agentscript recipes/code-review.as --trace pretty
+agentscript recipes/code-review.as --quiet
 ```
 
 | Option | Description |

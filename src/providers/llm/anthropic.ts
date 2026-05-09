@@ -43,7 +43,10 @@ function readAnthropicText(value: JsonValue): string {
   if (!value || typeof value !== "object" || Array.isArray(value) || !Array.isArray(value.content)) {
     throw new RuntimeError("Anthropic response is missing content");
   }
-  return value.content.filter(isAnthropicTextBlock).map((block) => block.text).join("");
+  return value.content
+    .filter(isAnthropicTextBlock)
+    .map((block) => block.text)
+    .join("");
 }
 
 function isAnthropicTextBlock(block: JsonValue): block is { type: "text"; text: string } {

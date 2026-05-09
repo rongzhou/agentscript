@@ -20,7 +20,7 @@ main agent PlanExecuteExample {
         }
 
         use input.goal as goal
-        use results.summary max 2k as step results
+        use results.summary max 2k as "step results"
         generate({ input: "Write the final answer from the executed steps", max_output: 600 }) -> {
             answer string
             completed_steps list[string]

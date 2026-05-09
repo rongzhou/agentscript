@@ -86,10 +86,12 @@ class Interpreter {
     this.llmProvider = options.llmProvider ?? new MockLlmProvider();
     this.inputProvider = options.inputProvider;
     this.toolProvider = options.toolProvider ?? createDefaultToolProvider(options.workspaceRoot);
-    this.memoryProvider = options.memoryProvider ?? createDefaultMemoryProvider({
-      baseDir: this.programSourceDir(),
-      workspaceRoot: options.workspaceRoot ?? this.programSourceDir(),
-    });
+    this.memoryProvider =
+      options.memoryProvider ??
+      createDefaultMemoryProvider({
+        baseDir: this.programSourceDir(),
+        workspaceRoot: options.workspaceRoot ?? this.programSourceDir(),
+      });
     const generateRuntime = new GenerateRuntime(this.llmProvider, this.trace, {
       currentAgent: () => this.currentAgent,
       evaluate: (expr, scope) => this.evaluator.evaluate(expr, scope),
@@ -333,7 +335,7 @@ class Interpreter {
           const item = iterable[index]!;
           this.trace.push({
             kind: "for",
-            data: { item: stmt.itemName, index, value: sanitizeForJson(item) }
+            data: { item: stmt.itemName, index, value: sanitizeForJson(item) },
           });
           const child = scope.child();
           child.define(stmt.itemName, item);

@@ -28,20 +28,24 @@ describe("generate", () => {
       }
     `);
 
-    await executeAgent(ast, { question: "q" }, {
-      llmProvider: {
-        async generate(request) {
-          requests.push(request);
-          return buildValueFromRequestShape(request);
-        }
-      }
-    });
+    await executeAgent(
+      ast,
+      { question: "q" },
+      {
+        llmProvider: {
+          async generate(request) {
+            requests.push(request);
+            return buildValueFromRequestShape(request);
+          },
+        },
+      },
+    );
 
     expect(requests).toHaveLength(1);
     expect(requests[0]!.maxOutput).toEqual({ amount: 300 });
     expect(requests[0]!.model).toMatchObject({
       name: "Qwen",
-      uri: "openai://gpt-4.1-mini"
+      uri: "openai://gpt-4.1-mini",
     });
     expect(requests[0]!.context).toHaveLength(1);
     expect(requests[0]!.context[0]!.budget).toEqual({ amount: 2, unit: "k" });
@@ -80,21 +84,25 @@ describe("generate", () => {
       }
     `);
 
-    await executeAgent(ast, {}, {
-      llmProvider: {
-        async generate(request) {
-          requests.push(request);
-          return { ok: true };
-        }
-      }
-    });
+    await executeAgent(
+      ast,
+      {},
+      {
+        llmProvider: {
+          async generate(request) {
+            requests.push(request);
+            return { ok: true };
+          },
+        },
+      },
+    );
 
     expect(requests[0]).toMatchObject({
       maxOutput: { amount: 2, unit: "k" },
       temperature: 0.2,
       think: "medium",
       strict: true,
-      debug: false
+      debug: false,
     });
   });
 
@@ -117,13 +125,17 @@ describe("generate", () => {
     `);
 
     try {
-      await executeAgent(ast, {}, {
-        llmProvider: {
-          async generate(request) {
-            return buildValueFromRequestShape(request);
-          }
-        }
-      });
+      await executeAgent(
+        ast,
+        {},
+        {
+          llmProvider: {
+            async generate(request) {
+              return buildValueFromRequestShape(request);
+            },
+          },
+        },
+      );
       expect(debug).toHaveBeenCalledWith(expect.stringContaining("AgentScript generate debug"));
       expect(debug).toHaveBeenCalledWith(expect.stringContaining("Final user message:"));
     } finally {
@@ -149,19 +161,23 @@ describe("generate", () => {
       }
     `);
 
-    const result = await executeAgent(ast, {}, {
-      llmProvider: {
-        async generate(request) {
-          requests.push(request);
-          return requests.length === 1 ? { ok: "maybe" } : { ok: true };
-        }
-      }
-    });
+    const result = await executeAgent(
+      ast,
+      {},
+      {
+        llmProvider: {
+          async generate(request) {
+            requests.push(request);
+            return requests.length === 1 ? { ok: "maybe" } : { ok: true };
+          },
+        },
+      },
+    );
 
     expect(result.value).toEqual({ ok: true });
     expect(requests).toHaveLength(2);
     expect(requests[1]!.instruction).toContain("Previous generation failed.");
-    expect(requests[1]!.instruction).toContain("\"ok\": \"maybe\"");
+    expect(requests[1]!.instruction).toContain('"ok": "maybe"');
     expect(result.trace.find((event) => event.kind === "generate")?.data.attempts).toBe(2);
   });
 
@@ -183,28 +199,40 @@ describe("generate", () => {
       }
     `);
 
-    await expect(executeAgent(ast, {}, {
-      llmProvider: {
-        async generate(request) {
-          parseFailureRequests.push(request);
-          if (parseFailureRequests.length === 1) {
-            throw new RuntimeError("LLM provider did not return JSON: not json");
-          }
-          return { ok: true };
-        }
-      }
-    })).resolves.toMatchObject({ value: { ok: true } });
+    await expect(
+      executeAgent(
+        ast,
+        {},
+        {
+          llmProvider: {
+            async generate(request) {
+              parseFailureRequests.push(request);
+              if (parseFailureRequests.length === 1) {
+                throw new RuntimeError("LLM provider did not return JSON: not json");
+              }
+              return { ok: true };
+            },
+          },
+        },
+      ),
+    ).resolves.toMatchObject({ value: { ok: true } });
     expect(parseFailureRequests).toHaveLength(2);
 
     const infrastructureRequests: GenerateRequest[] = [];
-    await expect(executeAgent(ast, {}, {
-      llmProvider: {
-        async generate(request) {
-          infrastructureRequests.push(request);
-          throw new RuntimeError("LLM provider request failed: socket closed");
-        }
-      }
-    })).rejects.toThrow(/socket closed/);
+    await expect(
+      executeAgent(
+        ast,
+        {},
+        {
+          llmProvider: {
+            async generate(request) {
+              infrastructureRequests.push(request);
+              throw new RuntimeError("LLM provider request failed: socket closed");
+            },
+          },
+        },
+      ),
+    ).rejects.toThrow(/socket closed/);
     expect(infrastructureRequests).toHaveLength(1);
   });
 
@@ -251,21 +279,24 @@ describe("generate", () => {
       }
     `);
 
-    await executeAgent(ast, {}, {
-      llmProvider: {
-        async generate(request) {
-          requests.push(request);
-          return buildValueFromRequestShape(request);
-        }
-      }
-    });
+    await executeAgent(
+      ast,
+      {},
+      {
+        llmProvider: {
+          async generate(request) {
+            requests.push(request);
+            return buildValueFromRequestShape(request);
+          },
+        },
+      },
+    );
 
     expect(requests[0]!.context[0]).toMatchObject({
       source: "scratch.summary",
-      value: [{ fact: "A" }, { fact: "B" }]
+      value: [{ fact: "A" }, { fact: "B" }],
     });
   });
-
 
   it("rejects LLM results that do not match generate return shape", async () => {
     const ast = parse(`
@@ -285,13 +316,17 @@ describe("generate", () => {
     `);
 
     await expect(
-      executeAgent(ast, {}, {
-        llmProvider: {
-          async generate(): Promise<RuntimeValue> {
-            return { ok: "yes" };
-          }
-        }
-      })
+      executeAgent(
+        ast,
+        {},
+        {
+          llmProvider: {
+            async generate(): Promise<RuntimeValue> {
+              return { ok: "yes" };
+            },
+          },
+        },
+      ),
     ).rejects.toThrow(RuntimeError);
   });
 
@@ -316,26 +351,30 @@ describe("generate", () => {
       }
     `);
 
-    const result = await executeAgent(ast, {}, {
-      llmProvider: {
-        async generate(): Promise<RuntimeValue> {
-          return {
-            ok: "true",
-            count: "42",
-            flags: ["false", "true"],
-            scores: ["1", "2.5"],
-            text: "42"
-          };
-        }
-      }
-    });
+    const result = await executeAgent(
+      ast,
+      {},
+      {
+        llmProvider: {
+          async generate(): Promise<RuntimeValue> {
+            return {
+              ok: "true",
+              count: "42",
+              flags: ["false", "true"],
+              scores: ["1", "2.5"],
+              text: "42",
+            };
+          },
+        },
+      },
+    );
 
     expect(result.value).toEqual({
       ok: true,
       count: 42,
       flags: [false, true],
       scores: [1, 2.5],
-      text: "42"
+      text: "42",
     });
   });
 
@@ -357,13 +396,17 @@ describe("generate", () => {
     `);
 
     await expect(
-      executeAgent(ast, {}, {
-        llmProvider: {
-          async generate(): Promise<RuntimeValue> {
-            return { ok: "true" };
-          }
-        }
-      })
+      executeAgent(
+        ast,
+        {},
+        {
+          llmProvider: {
+            async generate(): Promise<RuntimeValue> {
+              return { ok: "true" };
+            },
+          },
+        },
+      ),
     ).rejects.toThrow(/must be a boolean/);
   });
 
@@ -410,22 +453,25 @@ describe("generate", () => {
     `);
 
     const requests: GenerateRequest[] = [];
-    await executeAgent(ast, {}, {
-      sourcePath: scriptFile,
-      llmProvider: {
-        async generate(request) {
-          requests.push(request);
-          return buildValueFromRequestShape(request);
-        }
-      }
-    });
+    await executeAgent(
+      ast,
+      {},
+      {
+        sourcePath: scriptFile,
+        llmProvider: {
+          async generate(request) {
+            requests.push(request);
+            return buildValueFromRequestShape(request);
+          },
+        },
+      },
+    );
 
     expect(requests[0]!.context[0]).toMatchObject({
       value: "Build a focused AgentScript runtime.",
-      budget: { amount: 100 }
+      budget: { amount: 100 },
     });
   });
-
 });
 
 function buildValueFromRequestShape(request: GenerateRequest): RuntimeValue {

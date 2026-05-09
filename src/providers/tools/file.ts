@@ -18,7 +18,10 @@ export class FileToolProvider implements ToolProvider {
 
     switch (request.method) {
       case "read":
-        return readFileSync(this.workspace.resolveWorkspacePath(readRequiredString(args.path, "File.read.path")), "utf8");
+        return readFileSync(
+          this.workspace.resolveWorkspacePath(readRequiredString(args.path, "File.read.path")),
+          "utf8",
+        );
       case "list": {
         const path = this.workspace.resolveWorkspacePath(readRequiredString(args.path, "File.list.path"));
         return readdirSync(path).map((entry: string) => entry);

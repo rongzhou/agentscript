@@ -44,11 +44,15 @@ describe("memory", () => {
         record: {
           kind: "lesson",
           text: "AgentScript keeps context explicit",
-          goal: "memory"
-        }
-      }
+          goal: "memory",
+        },
+      },
     ]);
-    expect(result.trace.filter((event) => event.kind === "memory").map((event) => event.data.operation)).toEqual(["add", "add", "query"]);
+    expect(result.trace.filter((event) => event.kind === "memory").map((event) => event.data.operation)).toEqual([
+      "add",
+      "add",
+      "query",
+    ]);
     expect(result.trace.find((event) => event.kind === "memory" && event.data.operation === "add")).toMatchObject({
       data: {
         memory: "Lessons",
@@ -56,11 +60,13 @@ describe("memory", () => {
         record: {
           kind: "lesson",
           text: "AgentScript keeps context explicit",
-          goal: "memory"
-        }
-      }
+          goal: "memory",
+        },
+      },
     });
-    expect(readFileSync(join(dir, ".agentscript", "lessons.jsonl"), "utf8")).toContain("AgentScript keeps context explicit");
+    expect(readFileSync(join(dir, ".agentscript", "lessons.jsonl"), "utf8")).toContain(
+      "AgentScript keeps context explicit",
+    );
   });
 
   it("requires memory where fields to exist on the record", async () => {
@@ -106,7 +112,9 @@ describe("memory", () => {
       }
     `);
 
-    await expect(executeAgent(ast, {}, { sourcePath: join(dir, "main.as"), workspaceRoot: dir })).rejects.toThrow(/Invalid memory JSONL .*:1/);
+    await expect(executeAgent(ast, {}, { sourcePath: join(dir, "main.as"), workspaceRoot: dir })).rejects.toThrow(
+      /Invalid memory JSONL .*:1/,
+    );
   });
 
   it("adds and queries sqlite memory records by namespace", async () => {
@@ -147,11 +155,10 @@ describe("memory", () => {
       {
         record: {
           text: "sqlite memory keeps namespaces separate",
-          goal: "sqlite"
-        }
-      }
+          goal: "sqlite",
+        },
+      },
     ]);
     expect(result.trace.filter((event) => event.kind === "memory")).toHaveLength(3);
   });
-
 });

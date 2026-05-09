@@ -14,7 +14,7 @@ main agent MemoryExample {
             limit: 3
         })
         use input.topic
-        use past max 1k as relevant lessons
+        use past max 1k as "relevant lessons"
 
         answer = generate({ input: "Answer using relevant lessons", max_output: 500 }) -> {
             response string

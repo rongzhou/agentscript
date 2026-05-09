@@ -81,11 +81,19 @@ describe("agentscript CLI", () => {
     expect(code).toBe(0);
     const output = JSON.parse(logSpy.mock.calls[0]![0] as string);
     expect(output.trace).toEqual({ file: traceFile });
-    expect(JSON.parse(readFileSync(traceFile, "utf8"))).toEqual(expect.arrayContaining([expect.objectContaining({ kind: "agent" })]));
+    expect(JSON.parse(readFileSync(traceFile, "utf8"))).toEqual(
+      expect.arrayContaining([expect.objectContaining({ kind: "agent" })]),
+    );
   });
 
   it("prints a readable trace", async () => {
-    const code = await main(["tutorials/cli.as", "--input", '{"name":"Rong","request":"Say hello"}', "--trace", "pretty"]);
+    const code = await main([
+      "tutorials/cli.as",
+      "--input",
+      '{"name":"Rong","request":"Say hello"}',
+      "--trace",
+      "pretty",
+    ]);
 
     expect(code).toBe(0);
     expect(logSpy.mock.calls[1]![0]).toContain("- generate");
@@ -138,7 +146,9 @@ describe("agentscript CLI", () => {
     const dir = mkdtempSync(join(tmpdir(), "agentscript-"));
     const scriptFile = join(dir, "agent.as");
     writeFileSync(join(dir, "doc.txt"), "relative file content");
-    writeFileSync(scriptFile, `
+    writeFileSync(
+      scriptFile,
+      `
       import file Doc from "./doc.txt"
 
       main agent A {
@@ -146,7 +156,8 @@ describe("agentscript CLI", () => {
           return Doc
         }
       }
-    `);
+    `,
+    );
 
     const code = await main([scriptFile, "--input", "{}"]);
 
@@ -158,7 +169,9 @@ describe("agentscript CLI", () => {
   it("runs a script with file memory relative to the script path", async () => {
     const dir = mkdtempSync(join(tmpdir(), "agentscript-memory-cli-"));
     const scriptFile = join(dir, "agent.as");
-    writeFileSync(scriptFile, `
+    writeFileSync(
+      scriptFile,
+      `
       import memory Notes from "file://./.agentscript/notes.jsonl"
 
       main agent A {
@@ -174,7 +187,8 @@ describe("agentscript CLI", () => {
           })
         }
       }
-    `);
+    `,
+    );
 
     const code = await main([scriptFile, "--input", '{"topic":"memory"}']);
 
@@ -188,7 +202,9 @@ describe("agentscript CLI", () => {
     const dir = mkdtempSync(join(tmpdir(), "agentscript-"));
     const scriptFile = join(dir, "main.as");
     const workerFile = join(dir, "worker.as");
-    writeFileSync(workerFile, `
+    writeFileSync(
+      workerFile,
+      `
       agent Worker {
         main func(input) {
           return {
@@ -197,8 +213,11 @@ describe("agentscript CLI", () => {
           }
         }
       }
-    `);
-    writeFileSync(scriptFile, `
+    `,
+    );
+    writeFileSync(
+      scriptFile,
+      `
       import agent Worker from "./worker.as"
 
       main agent App {
@@ -206,7 +225,8 @@ describe("agentscript CLI", () => {
           return Worker(input)
         }
       }
-    `);
+    `,
+    );
 
     const code = await main([scriptFile, "--input", '{"value":"loaded"}']);
 
@@ -214,7 +234,7 @@ describe("agentscript CLI", () => {
     const output = JSON.parse(logSpy.mock.calls[0]![0] as string);
     expect(output.value).toEqual({
       ok: true,
-      value: "loaded"
+      value: "loaded",
     });
   });
 
@@ -225,25 +245,25 @@ describe("agentscript CLI", () => {
       write(chunk, _encoding, callback) {
         chunks.push(String(chunk));
         callback();
-      }
+      },
     });
 
     const running = runRepl({ input, output });
     for (const line of [
       "main agent {",
-      "  role \"Assistant\"",
-      "  description \"Return hello.\"",
+      '  role "Assistant"',
+      '  description "Return hello."',
       "  main func(input {}) {",
       "    return {",
       "      ok: true,",
-      "      text: \"hello\"",
+      '      text: "hello"',
       "    }",
       "  }",
       "}",
       ":check",
       ":run {}",
       ":trace pretty",
-      ":exit"
+      ":exit",
     ]) {
       input.write(`${line}\n`);
       await new Promise((resolve) => setImmediate(resolve));
@@ -254,7 +274,7 @@ describe("agentscript CLI", () => {
     expect(errorSpy).not.toHaveBeenCalled();
     expect(code).toBe(0);
     expect(logSpy.mock.calls.flat().join("\n")).toContain("ok");
-    expect(logSpy.mock.calls.flat().join("\n")).toContain("\"text\": \"hello\"");
+    expect(logSpy.mock.calls.flat().join("\n")).toContain('"text": "hello"');
   });
 
   it("loads a file into the REPL session", async () => {
@@ -262,15 +282,11 @@ describe("agentscript CLI", () => {
     const output = new Writable({
       write(_chunk, _encoding, callback) {
         callback();
-      }
+      },
     });
 
     const running = runRepl({ input, output });
-    for (const line of [
-      ":load tutorials/helloworld.as",
-      ":check",
-      ":exit"
-    ]) {
+    for (const line of [":load tutorials/helloworld.as", ":check", ":exit"]) {
       input.write(`${line}\n`);
       await new Promise((resolve) => setImmediate(resolve));
     }

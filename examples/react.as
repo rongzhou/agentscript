@@ -9,7 +9,7 @@ main agent ReActExample {
     main func(input {
         question string
     }) {
-        use input.question as user question
+        use input.question as "user question"
         scratch = []
         done = false
 

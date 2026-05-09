@@ -9,7 +9,7 @@ For the larger mental model, see [Context Engineering](./context-engineering.md)
 `use` is not a variable read, assignment, or namespace import. It declares a prompt context source.
 
 ```agentscript
-use input.question as user question
+use input.question as "user question"
 use scratch.summary max 2k as observations
 ```
 
@@ -30,6 +30,8 @@ use expr as label
 use expr max budget as label
 ```
 
+`label` must be either a single identifier or a string literal. Use a string literal for labels that contain spaces.
+
 The fixed order is:
 
 ```text
@@ -39,8 +41,8 @@ what to select -> how much to include -> what role it plays as context
 Examples:
 
 ```agentscript
-use input.question as user question
-use docs.summary max 4k as retrieved evidence
+use input.question as "user question"
+use docs.summary max 4k as "retrieved evidence"
 use scratch.summary max 2k as observations
 ```
 
@@ -50,7 +52,7 @@ The label after `as` is literal label text. It is not an expression, is not eval
 
 ```agentscript
 use docs as evidence
-use docs.summary max 4k as retrieved evidence
+use docs.summary max 4k as "retrieved evidence"
 use input.question as user
 ```
 
@@ -112,7 +114,7 @@ This keeps `use` as a context contract instead of a value copy.
 A `use` declaration is visible to later `generate` calls in the same scope and child scopes.
 
 ```agentscript
-use input.question as user question
+use input.question as "user question"
 
 if input.needs_detail {
     use input.detail as detail
@@ -150,7 +152,7 @@ Use the data returned by these capabilities instead:
 
 ```agentscript
 results = Search.search(input.question)
-use results max 4k as search results
+use results max 4k as "search results"
 ```
 
 ## Budget semantics

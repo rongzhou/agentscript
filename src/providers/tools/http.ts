@@ -37,9 +37,7 @@ function resolveHttpUrl(importUri: string, requestedUrl: string): string {
   const base = new URL(importUri);
   const target = new URL(requestedUrl, base);
   if (target.origin !== base.origin) {
-    throw new RuntimeError(
-      `HTTP tool URL origin '${target.origin}' does not match import origin '${base.origin}'`,
-    );
+    throw new RuntimeError(`HTTP tool URL origin '${target.origin}' does not match import origin '${base.origin}'`);
   }
   return target.toString();
 }

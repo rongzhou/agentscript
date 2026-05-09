@@ -22,9 +22,9 @@ main agent CodeReviewAssistant {
             max: 100
         })
 
-        use input.path as source path
-        use todos max 4k as todo findings
-        use fixmes max 4k as fixme findings
+        use input.path as "source path"
+        use todos max 4k as "todo findings"
+        use fixmes max 4k as "fixme findings"
 
         generate({ input: "Turn TODO and FIXME scan results into prioritized repair suggestions", max_output: 1200 }) -> {
             summary string

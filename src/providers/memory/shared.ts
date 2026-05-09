@@ -58,9 +58,6 @@ export function isMemoryEnvelope(value: unknown): value is MemoryEnvelope {
 
 function matchesText(record: RuntimeObject, text: string): boolean {
   const needle = text.toLowerCase();
-  const candidates = [
-    typeof record.text === "string" ? record.text : "",
-    JSON.stringify(sanitizeForJson(record)),
-  ];
+  const candidates = [typeof record.text === "string" ? record.text : "", JSON.stringify(sanitizeForJson(record))];
   return candidates.some((candidate) => candidate.toLowerCase().includes(needle));
 }

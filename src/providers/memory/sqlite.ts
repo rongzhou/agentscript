@@ -73,9 +73,7 @@ export class SqliteMemoryBackend {
       const sqlParams = needPostFilter ? params : [...params, limit];
       const rows = db.prepare(sql).all(...sqlParams) as unknown as SqliteMemoryRow[];
 
-      const records = rows
-        .map((row) => rowToEnvelope(row))
-        .filter((item) => matchesQuery(item.record, query));
+      const records = rows.map((row) => rowToEnvelope(row)).filter((item) => matchesQuery(item.record, query));
 
       return records.slice(0, limit);
     } finally {

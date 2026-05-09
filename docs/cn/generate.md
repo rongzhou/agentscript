@@ -109,7 +109,7 @@ Agent `role` 是 AgentScript 的身份概念，不等同于 `system`、`user`、
 Selected context 来自可见的 `use` 声明：
 
 ```agentscript
-use input.question as user question
+use input.question as "user question"
 use scratch.summary max 2k as observations
 ```
 
@@ -452,7 +452,7 @@ Trace 要能回答：
 
 ```agentscript
 func answer(question) {
-    use question as user question
+    use question as "user question"
 
     generate({ input: "Answer" }) -> {
         answer string

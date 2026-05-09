@@ -12,26 +12,23 @@ import type { GenerateRequest, RuntimeValue } from "../src/runtime/types.js";
 describe("interpreter", () => {
   it("executes the V0 regression fixture with mock providers", async () => {
     const source = readFileSync("fixtures/v0.as", "utf8");
-    const result = await executeAgent(parse(source), {
-      question: "What is AgentScript?"
-    }, { toolProvider: new MockToolProvider() });
+    const result = await executeAgent(
+      parse(source),
+      {
+        question: "What is AgentScript?",
+      },
+      { toolProvider: new MockToolProvider() },
+    );
 
     expect(result.value).toMatchObject({
       ok: true,
       text: "",
-      error: ""
+      error: "",
     });
     expect(result.trace.some((event) => event.kind === "tool")).toBe(true);
     expect(result.trace.some((event) => event.kind === "generate")).toBe(true);
     expect(result.trace.some((event) => event.kind === "use")).toBe(true);
   });
-
-
-
-
-
-
-
 
   it("serializes circular runtime values safely", async () => {
     const value: Record<string, RuntimeValue> = {};
@@ -42,13 +39,15 @@ describe("interpreter", () => {
   });
 
   it("serializes runtime resource bindings into stable JSON", () => {
-    expect(sanitizeForJson({
-      __agentScriptResource: "tool",
-      name: "Search",
-      uri: "mcp://tools/search"
-    })).toEqual({
+    expect(
+      sanitizeForJson({
+        __agentScriptResource: "tool",
+        name: "Search",
+        uri: "mcp://tools/search",
+      }),
+    ).toEqual({
       tool: "Search",
-      uri: "mcp://tools/search"
+      uri: "mcp://tools/search",
     });
   });
 
@@ -109,22 +108,26 @@ describe("interpreter", () => {
       }
     `);
 
-    await executeAgent(ast, {}, {
-      llmProvider: {
-        async generate(request) {
-          requests.push(request);
-          if (!request.returnShape) {
-            throw new Error("unexpected missing return shape");
-          }
-          return buildValueFromShape(request.returnShape);
-        }
-      }
-    });
+    await executeAgent(
+      ast,
+      {},
+      {
+        llmProvider: {
+          async generate(request) {
+            requests.push(request);
+            if (!request.returnShape) {
+              throw new Error("unexpected missing return shape");
+            }
+            return buildValueFromShape(request.returnShape);
+          },
+        },
+      },
+    );
 
     expect(requests[0]!.model).toMatchObject({ name: "Strong", uri: "openai://strong" });
     expect(requests[0]!.identity).toMatchObject({
       role: "Specialist",
-      description: "Specialized function description."
+      description: "Specialized function description.",
     });
   });
 
@@ -140,7 +143,7 @@ describe("interpreter", () => {
 
         main func(input) {
           use input.question as user
-          use input.docs max 2k as retrieved evidence
+          use input.docs max 2k as "retrieved evidence"
 
           generate({ input: "answer" }) -> {
               ok boolean
@@ -149,30 +152,34 @@ describe("interpreter", () => {
       }
     `);
 
-    const result = await executeAgent(ast, {
-      question: "What is AgentScript?",
-      docs: "AgentScript keeps context explicit."
-    }, {
-      llmProvider: {
-        async generate(request) {
-          requests.push(request);
-          if (!request.returnShape) {
-            throw new Error("unexpected missing return shape");
-          }
-          return buildValueFromShape(request.returnShape);
-        }
-      }
-    });
+    const result = await executeAgent(
+      ast,
+      {
+        question: "What is AgentScript?",
+        docs: "AgentScript keeps context explicit.",
+      },
+      {
+        llmProvider: {
+          async generate(request) {
+            requests.push(request);
+            if (!request.returnShape) {
+              throw new Error("unexpected missing return shape");
+            }
+            return buildValueFromShape(request.returnShape);
+          },
+        },
+      },
+    );
 
     expect(result.trace).toContainEqual(
       expect.objectContaining({
         kind: "use",
-        data: expect.objectContaining({ source: "input.question", label: "user" })
-      })
+        data: expect.objectContaining({ source: "input.question", label: "user" }),
+      }),
     );
     expect(requests[0]!.context).toEqual([
       expect.objectContaining({ source: "input.question", label: "user" }),
-      expect.objectContaining({ source: "input.docs", label: "retrieved evidence" })
+      expect.objectContaining({ source: "input.docs", label: "retrieved evidence" }),
     ]);
     expect(requests[0]!.builtContext.context[0]).toMatchObject({ label: "user" });
     expect(requests[0]!.builtContext.finalUserMessage).toContain("[retrieved evidence]");
@@ -205,10 +212,6 @@ describe("interpreter", () => {
 
     expect(result.value).toEqual({ value: "" });
   });
-
-
-
-
 
   it("returns none when a function has no explicit return or final expression", async () => {
     const ast = parse(`
@@ -312,11 +315,11 @@ describe("interpreter", () => {
     await expect(executeAgent(objectAst, { fact: "ok", source: "test" })).resolves.toMatchObject({
       value: {
         facts: ["ok"],
-        source: "test"
-      }
+        source: "test",
+      },
     });
     await expect(executeAgent(listAst, { a: 1, b: 2 })).resolves.toMatchObject({
-      value: [1, 2]
+      value: [1, 2],
     });
   });
 
@@ -333,8 +336,6 @@ describe("interpreter", () => {
 
     await expect(executeAgent(ast, {})).rejects.toThrow(/list.add expects exactly one argument/);
   });
-
-
 
   it("calls another agent with AgentName(input) shorthand", async () => {
     const ast = parse(`
@@ -359,8 +360,8 @@ describe("interpreter", () => {
     expect(result.value).toEqual({ ok: true, value: "done" });
     expect(result.trace).toContainEqual(
       expect.objectContaining({
-        kind: "agent"
-      })
+        kind: "agent",
+      }),
     );
   });
 
@@ -388,13 +389,13 @@ describe("interpreter", () => {
       kind: "agent",
       data: {
         agent: "Worker",
-        function: "search"
-      }
+        function: "search",
+      },
     });
     expect(result.trace[0]!.data.trace).toEqual([
       expect.objectContaining({
-        kind: "tool"
-      })
+        kind: "tool",
+      }),
     ]);
   });
 
@@ -455,10 +456,10 @@ describe("interpreter", () => {
     `);
 
     await expect(executeAgent(ast, { value: "ok", skip: false })).resolves.toMatchObject({
-      value: { ok: true }
+      value: { ok: true },
     });
     await expect(executeAgent(ast, { value: "ok", skip: true })).resolves.toMatchObject({
-      value: { ok: false }
+      value: { ok: false },
     });
   });
 
@@ -476,25 +477,29 @@ describe("interpreter", () => {
       }
     `);
 
-    const result = await executeAgent(ast, {}, {
-      inputProvider: {
-        async read(request) {
-          expect(request.path).toEqual(["input", "question"]);
-          return "interactive question";
-        }
-      }
-    });
+    const result = await executeAgent(
+      ast,
+      {},
+      {
+        inputProvider: {
+          async read(request) {
+            expect(request.path).toEqual(["input", "question"]);
+            return "interactive question";
+          },
+        },
+      },
+    );
 
     expect(result.value).toEqual({
       question: "interactive question",
       input: {
-        question: "interactive question"
-      }
+        question: "interactive question",
+      },
     });
     expect(result.trace).toContainEqual(
       expect.objectContaining({
-        kind: "input"
-      })
+        kind: "input",
+      }),
     );
   });
 
@@ -509,13 +514,17 @@ describe("interpreter", () => {
       }
     `);
 
-    const result = await executeAgent(ast, { question: "provided" }, {
-      inputProvider: {
-        async read() {
-          throw new Error("should not read");
-        }
-      }
-    });
+    const result = await executeAgent(
+      ast,
+      { question: "provided" },
+      {
+        inputProvider: {
+          async read() {
+            throw new Error("should not read");
+          },
+        },
+      },
+    );
 
     expect(result.value).toBe("provided");
   });
@@ -547,12 +556,6 @@ describe("interpreter", () => {
 
     await expect(executeAgent(ast, { question: false })).rejects.toThrow(/must be a string/);
   });
-
-
-
-
-
-
 
   it("evaluates less-than comparisons", async () => {
     const ast = parse(`
@@ -597,10 +600,10 @@ describe("interpreter", () => {
           data: expect.objectContaining({
             item: "item",
             index: 0,
-            value: { value: "a" }
-          })
-        })
-      ])
+            value: { value: "a" },
+          }),
+        }),
+      ]),
     );
   });
 
@@ -641,7 +644,7 @@ describe("interpreter", () => {
 
     expect(result.value).toEqual({
       first: "first",
-      second: "second"
+      second: "second",
     });
   });
 
@@ -662,7 +665,9 @@ describe("interpreter", () => {
         }
       }
     `);
-    await expect(executeAgent(nonInteger, { items: ["a", "b"] })).rejects.toThrow(/List index must be a non-negative integer/);
+    await expect(executeAgent(nonInteger, { items: ["a", "b"] })).rejects.toThrow(
+      /List index must be a non-negative integer/,
+    );
 
     const outOfRange = parse(`
       main agent A {
@@ -686,7 +691,6 @@ describe("interpreter", () => {
     await expect(executeAgent(ast, {})).rejects.toThrow(/Unknown object property 'missing'/);
   });
 
-
   it("loads imported json files as json values", async () => {
     const dir = mkdtempSync(join(tmpdir(), "agentscript-"));
     const scriptFile = join(dir, "agent.as");
@@ -709,7 +713,7 @@ describe("interpreter", () => {
 
     expect(result.value).toEqual({
       title: "AgentScript",
-      firstTag: "agent"
+      firstTag: "agent",
     });
   });
 });

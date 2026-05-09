@@ -15,9 +15,9 @@ main agent ResearchBriefWriter {
             timeout: 10000
         })
 
-        use input.question as research question
-        use input.search_url as search endpoint
-        use search max 8k as search results
+        use input.question as "research question"
+        use input.search_url as "search endpoint"
+        use search max 8k as "search results"
 
         generate({ input: "Write a concise research brief with citations and open questions", max_output: 1200 }) -> {
             answer string

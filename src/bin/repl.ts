@@ -34,14 +34,14 @@ export async function runRepl(options: ReplOptions = {}): Promise<number> {
   const reader = createInterface({
     input: options.input ?? inputStream,
     output: options.output ?? outputStream,
-    terminal: isTty(options.input ?? inputStream)
+    terminal: isTty(options.input ?? inputStream),
   });
   const session: ReplSession = {
     agentSources: new Map(),
     importSources: [],
     lastTrace: [],
     realLlm: false,
-    sourcePath: undefined
+    sourcePath: undefined,
   };
 
   try {
@@ -245,10 +245,10 @@ async function runSession(session: ReplSession, inputJson: string, reader: ReplR
       async read(request) {
         const answer = await reader.question(`${request.path.join(".")}: `);
         return parseInteractiveInputValue(answer);
-      }
+      },
     },
     llmProvider: session.realLlm ? new ProtocolLlmProvider() : undefined,
-    sourcePath: session.sourcePath
+    sourcePath: session.sourcePath,
   });
   session.lastTrace = result.trace;
   console.log(JSON.stringify({ value: sanitizeForJson(result.value), trace: result.trace }, null, 2));
@@ -287,7 +287,7 @@ function printHelp(): void {
     ":trace [pretty]",
     ":real-llm on|off",
     ":reset",
-    ":exit"
+    ":exit",
   ];
   console.log(`Commands:\n${lines.join("\n")}`);
 }

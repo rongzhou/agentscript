@@ -37,7 +37,9 @@ describe("tool URI providers", () => {
       provider: "sh",
       tool: "Find",
     });
-    await expect(provider.call({ ...request, uri: "mcp://tools/search" })).rejects.toThrow(/Unsupported tool URI scheme 'mcp'/);
+    await expect(provider.call({ ...request, uri: "mcp://tools/search" })).rejects.toThrow(
+      /Unsupported tool URI scheme 'mcp'/,
+    );
   });
 
   it("runs concrete workspace shell and file tools without a general shell", async () => {
@@ -47,11 +49,15 @@ describe("tool URI providers", () => {
     writeFileSync(join(dir, "src", "b.md"), "notes\n");
     const provider = new HostToolProvider(dir);
 
-    await expect(provider.call({ ...request, args: [{ path: "src", name: "*.ts", type: "file", max: 10 }] })).resolves.toEqual({
+    await expect(
+      provider.call({ ...request, args: [{ path: "src", name: "*.ts", type: "file", max: 10 }] }),
+    ).resolves.toEqual({
       ok: true,
       files: ["src/a.ts"],
     });
-    await expect(provider.call({ ...request, uri: "sh://grep", args: [{ path: "src", pattern: "generate", include: "*.ts" }] })).resolves.toEqual({
+    await expect(
+      provider.call({ ...request, uri: "sh://grep", args: [{ path: "src", pattern: "generate", include: "*.ts" }] }),
+    ).resolves.toEqual({
       ok: true,
       matches: [{ path: "src/a.ts", line: 1, text: "const value = generate();" }],
     });
@@ -128,12 +134,14 @@ describe("tool URI providers", () => {
   it("rejects HTTP tool requests to origins outside the imported URI", async () => {
     const provider = new HostToolProvider();
 
-    await expect(provider.call({
-      toolName: "Http",
-      uri: "https://api.example.com",
-      method: "get",
-      args: [{ url: "https://metadata.example.net/latest" }],
-    })).rejects.toThrow(/does not match import origin/);
+    await expect(
+      provider.call({
+        toolName: "Http",
+        uri: "https://api.example.com",
+        method: "get",
+        args: [{ url: "https://metadata.example.net/latest" }],
+      }),
+    ).rejects.toThrow(/does not match import origin/);
   });
 
   it("does not follow symlinks that escape the workspace", async () => {
@@ -143,17 +151,21 @@ describe("tool URI providers", () => {
     symlinkSync(outside, join(workspace, "outside"));
     const provider = new HostToolProvider(workspace);
 
-    await expect(provider.call({
-      toolName: "File",
-      uri: "file://workspace",
-      method: "read",
-      args: [{ path: "outside/secret.txt" }],
-    })).rejects.toThrow(/Path escapes workspace/);
+    await expect(
+      provider.call({
+        toolName: "File",
+        uri: "file://workspace",
+        method: "read",
+        args: [{ path: "outside/secret.txt" }],
+      }),
+    ).rejects.toThrow(/Path escapes workspace/);
 
-    await expect(provider.call({
-      ...request,
-      args: [{ path: ".", name: "secret.txt", type: "file", max: 10 }],
-    })).resolves.toEqual({
+    await expect(
+      provider.call({
+        ...request,
+        args: [{ path: ".", name: "secret.txt", type: "file", max: 10 }],
+      }),
+    ).resolves.toEqual({
       ok: true,
       files: [],
     });
@@ -163,14 +175,18 @@ describe("tool URI providers", () => {
     const dir = mkdtempSync(join(tmpdir(), "agentscript-"));
     const provider = new HostToolProvider(dir);
 
-    await expect(provider.call({
-      ...request,
-      args: [{}],
-    })).rejects.toThrow(/Find.run.path is required/);
-    await expect(provider.call({
-      ...request,
-      args: [{ path: ".", max: 0 }],
-    })).rejects.toThrow(/Expected a positive integer/);
+    await expect(
+      provider.call({
+        ...request,
+        args: [{}],
+      }),
+    ).rejects.toThrow(/Find.run.path is required/);
+    await expect(
+      provider.call({
+        ...request,
+        args: [{ path: ".", max: 0 }],
+      }),
+    ).rejects.toThrow(/Expected a positive integer/);
   });
 
   it("records tool effects in runtime trace", async () => {

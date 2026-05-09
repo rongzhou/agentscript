@@ -84,13 +84,14 @@ export class GenerateRuntime {
         }
         lastError = error;
         repair = {
-          error: errorMessage(error)
+          error: errorMessage(error),
         };
         continue;
       }
 
       try {
-        const result = expr.returnShape && !options.strict ? coerceValueToShape(rawResult, expr.returnShape) : rawResult;
+        const result =
+          expr.returnShape && !options.strict ? coerceValueToShape(rawResult, expr.returnShape) : rawResult;
         if (expr.returnShape) {
           validateValueAgainstShape(result, expr.returnShape, expr.range, { rejectExtraFields: options.strict });
         }

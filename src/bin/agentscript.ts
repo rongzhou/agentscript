@@ -81,7 +81,7 @@ function parseArgs(argv: string[]): CliOptions {
     realLlm: false,
     tracePretty: false,
     verbose: false,
-    version: false
+    version: false,
   };
 
   const positional: string[] = [];
@@ -245,18 +245,20 @@ class TerminalInputProvider implements CliInputProvider {
 }
 
 function printUsage(write: (message: string) => void): void {
-  write([
-    "Usage:",
-    "  agentscript <file.as> --input '{\"question\":\"...\"}'",
-    "  agentscript <file.as>",
-    "  agentscript <file.as> --input-file input.json --agent AgentName",
-    "  agentscript <file.as> --input '{}' --quiet",
-    "  agentscript <file.as> --input '{}' --verbose",
-    "  agentscript <file.as> --input '{}' --trace pretty",
-    "  agentscript <file.as> --check",
-    "  agentscript <file.as> --parse",
-    "  agentscript",
-  ].join("\n"));
+  write(
+    [
+      "Usage:",
+      '  agentscript <file.as> --input \'{"question":"..."}\'',
+      "  agentscript <file.as>",
+      "  agentscript <file.as> --input-file input.json --agent AgentName",
+      "  agentscript <file.as> --input '{}' --quiet",
+      "  agentscript <file.as> --input '{}' --verbose",
+      "  agentscript <file.as> --input '{}' --trace pretty",
+      "  agentscript <file.as> --check",
+      "  agentscript <file.as> --parse",
+      "  agentscript",
+    ].join("\n"),
+  );
 }
 
 function readPackageVersion(): string {

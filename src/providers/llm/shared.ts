@@ -116,12 +116,12 @@ function extractFirstJsonObject(text: string): string | undefined {
         escaped = false;
       } else if (char === "\\") {
         escaped = true;
-      } else if (char === "\"") {
+      } else if (char === '"') {
         inString = false;
       }
       continue;
     }
-    if (start >= 0 && char === "\"") {
+    if (start >= 0 && char === '"') {
       inString = true;
       continue;
     }

@@ -13,13 +13,13 @@ describe("parse", () => {
       kind: "ImportDecl",
       resourceKind: "llm",
       name: "Qwen",
-      uri: "ollama://localhost:11434/qwen3.6"
+      uri: "ollama://localhost:11434/qwen3.6",
     });
     expect(ast.imports[1]).toMatchObject({
       kind: "ImportDecl",
       resourceKind: "tool",
       name: "Search",
-      uri: "mcp://tools/search"
+      uri: "mcp://tools/search",
     });
 
     expect(ast.agents).toHaveLength(1);
@@ -29,16 +29,9 @@ describe("parse", () => {
     expect(agent.config.map((item) => item.key)).toEqual(["model", "role", "description"]);
     expect(agent.config[0]).toMatchObject({
       kind: "ConfigDecl",
-      key: "model"
+      key: "model",
     });
-    expect(agent.functions.map((fn) => fn.name)).toEqual([
-      "__main",
-      "reason",
-      "act",
-      "observe",
-      "enough",
-      "answer"
-    ]);
+    expect(agent.functions.map((fn) => fn.name)).toEqual(["__main", "reason", "act", "observe", "enough", "answer"]);
 
     const act = agent.functions[0]!;
     expect(act.isMain).toBe(true);
@@ -47,8 +40,8 @@ describe("parse", () => {
       name: "question",
       type: {
         kind: "NamedShapeType",
-        name: "string"
-      }
+        name: "string",
+      },
     });
     expect(act.body.some((stmt) => stmt.kind === "LoopUntilStmt")).toBe(true);
   });
@@ -137,7 +130,7 @@ describe("parse", () => {
       agent A {
         func act(input) {
           use input.question as user
-          use docs.summary max 4k as retrieved evidence
+          use docs.summary max 4k as "retrieved evidence"
           return input
         }
       }
@@ -171,12 +164,10 @@ describe("parse", () => {
     if (stmt.kind !== "IfStmt") return;
     expect(stmt.condition).toMatchObject({
       kind: "BinaryExpr",
-      operator: "and"
+      operator: "and",
     });
     expect(stmt.elseBody).toHaveLength(1);
   });
-
-
 
   it("parses less-than as a comparison expression", () => {
     const ast = parse(`
@@ -195,7 +186,7 @@ describe("parse", () => {
     if (stmt.kind !== "IfStmt") return;
     expect(stmt.condition).toMatchObject({
       kind: "BinaryExpr",
-      operator: "<"
+      operator: "<",
     });
   });
   it("parses for-in list traversal", () => {
@@ -217,13 +208,13 @@ describe("parse", () => {
     expect(stmt.maxIterations).toBe(6);
     expect(stmt.iterable.kind).toBe("MemberExpr");
     expect(stmt.body[0]).toMatchObject({
-      kind: "UseStmt"
+      kind: "UseStmt",
     });
   });
 
-
   it("rejects object literals with missing commas", () => {
-    expect(() => parse(`
+    expect(() =>
+      parse(`
       agent A {
         func act(input) {
           return {
@@ -232,7 +223,8 @@ describe("parse", () => {
           }
         }
       }
-    `)).toThrow(ParseError);
+    `),
+    ).toThrow(ParseError);
   });
 
   it("parses list index access as a postfix expression", () => {
@@ -254,22 +246,23 @@ describe("parse", () => {
         kind: "IndexExpr",
         index: {
           kind: "NumberExpr",
-          value: 0
-        }
-      }
+          value: 0,
+        },
+      },
     });
   });
 
-
   it("rejects list index assignment at parse time", () => {
-    expect(() => parse(`
+    expect(() =>
+      parse(`
       agent A {
         func act(input) {
           list[0] = "x"
           return input
         }
       }
-    `)).toThrow(ParseError);
+    `),
+    ).toThrow(ParseError);
   });
 
   it("parses input shape on function parameters", () => {
@@ -300,11 +293,11 @@ describe("parse", () => {
 
     expect(ast.agents[0]).toMatchObject({
       name: "__main_agent",
-      isMain: true
+      isMain: true,
     });
     expect(ast.agents[0]!.functions[0]).toMatchObject({
       name: "__main",
-      isMain: true
+      isMain: true,
     });
   });
 
@@ -327,12 +320,12 @@ describe("parse", () => {
     expect(ast.imports[0]).toMatchObject({
       resourceKind: "llm",
       name: "Qwen",
-      uri: "openai://gpt-4.1-mini"
+      uri: "openai://gpt-4.1-mini",
     });
     expect(ast.agents[0]!.config.map((item) => item.key)).toEqual(["model", "role", "description"]);
     expect(ast.agents[0]!.functions[0]!.body[0]).toMatchObject({
       kind: "ConfigStmt",
-      key: "model"
+      key: "model",
     });
   });
 
@@ -352,7 +345,7 @@ describe("parse", () => {
       kind: "ImportDecl",
       resourceKind: "file",
       name: "Requirements",
-      uri: "./requirements.md"
+      uri: "./requirements.md",
     });
   });
 
@@ -371,7 +364,7 @@ describe("parse", () => {
       kind: "ImportDecl",
       resourceKind: "memory",
       name: "Lessons",
-      uri: "file://./.agentscript/lessons.jsonl"
+      uri: "file://./.agentscript/lessons.jsonl",
     });
   });
 
@@ -390,7 +383,7 @@ describe("parse", () => {
       kind: "ImportDecl",
       resourceKind: "agent",
       name: "Planner",
-      uri: "./agents/planner.as"
+      uri: "./agents/planner.as",
     });
   });
 

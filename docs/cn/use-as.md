@@ -9,7 +9,7 @@
 `use` 不是变量读取、赋值或命名空间导入。它声明一个 prompt context source。
 
 ```agentscript
-use input.question as user question
+use input.question as "user question"
 use scratch.summary max 2k as observations
 ```
 
@@ -39,8 +39,8 @@ use expr max budget as label
 示例：
 
 ```agentscript
-use input.question as user question
-use docs.summary max 4k as retrieved evidence
+use input.question as "user question"
+use docs.summary max 4k as "retrieved evidence"
 use scratch.summary max 2k as observations
 ```
 
@@ -50,7 +50,7 @@ use scratch.summary max 2k as observations
 
 ```agentscript
 use docs as evidence
-use docs.summary max 4k as retrieved evidence
+use docs.summary max 4k as "retrieved evidence"
 use input.question as user
 ```
 
@@ -112,7 +112,7 @@ main func(input) {
 `use` 声明对同一作用域和子作用域中后续的 `generate` 可见。
 
 ```agentscript
-use input.question as user question
+use input.question as "user question"
 
 if input.needs_detail {
     use input.detail as detail
@@ -150,7 +150,7 @@ use helper
 
 ```agentscript
 results = Search.search(input.question)
-use results max 4k as search results
+use results max 4k as "search results"
 ```
 
 ## Budget 语义

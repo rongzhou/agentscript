@@ -64,21 +64,21 @@ const SHAPE_TYPE_CONFIG: Record<string, ShapeTypeConfig> = {
     default: "",
     validate: (value, range, errorPrefix = "LLM result field") => {
       if (typeof value !== "string") throw new RuntimeError(`${errorPrefix} must be a string`, range);
-    }
+    },
   },
   number: {
     default: 0,
     validate: (value, range, errorPrefix = "LLM result field") => {
       if (typeof value !== "number") throw new RuntimeError(`${errorPrefix} must be a number`, range);
     },
-    coerce: coerceStringToNumber
+    coerce: coerceStringToNumber,
   },
   boolean: {
     default: true,
     validate: (value, range, errorPrefix = "LLM result field") => {
       if (typeof value !== "boolean") throw new RuntimeError(`${errorPrefix} must be a boolean`, range);
     },
-    coerce: coerceStringToBoolean
+    coerce: coerceStringToBoolean,
   },
   json: {
     default: {},

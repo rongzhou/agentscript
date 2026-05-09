@@ -109,7 +109,7 @@ Agent `role` is an AgentScript identity concept. It is not the same as a provide
 Selected context comes from visible `use` declarations:
 
 ```agentscript
-use input.question as user question
+use input.question as "user question"
 use scratch.summary max 2k as observations
 ```
 
@@ -452,7 +452,7 @@ A `generate` expression can be the final top-level expression in a function body
 
 ```agentscript
 func answer(question) {
-    use question as user question
+    use question as "user question"
 
     generate({ input: "Answer" }) -> {
         answer string

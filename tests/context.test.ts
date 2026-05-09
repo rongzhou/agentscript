@@ -26,7 +26,7 @@ describe("buildContext", () => {
       instruction: "answer",
       returnShape: generate.value.returnShape,
       uses: [{ source: "input.text", label: "evidence", value: "abcdefghijklmnopqrstuvwxyz", budget: { amount: 5 } }],
-      maxOutput: { amount: 100 }
+      maxOutput: { amount: 100 },
     });
 
     expect(context.system).toContain("You are Researcher.");
@@ -36,7 +36,7 @@ describe("buildContext", () => {
       label: "evidence",
       clipped: true,
       originalSize: 26,
-      clippedSize: 5
+      clippedSize: 5,
     });
     expect(context.finalUserMessage).toContain("[evidence]");
     expect(context.finalUserMessage).toContain("source: input.text");
@@ -44,7 +44,7 @@ describe("buildContext", () => {
     expect(context.finalUserMessage).toContain("Return JSON matching this schema:");
     expect(context.returnSchema).toMatchObject({
       type: "object",
-      additionalProperties: false
+      additionalProperties: false,
     });
   });
 
@@ -70,8 +70,8 @@ describe("buildContext", () => {
       returnShape: generate.value.returnShape,
       uses: [
         { source: "items", value: ["alpha", "beta", "gamma"], budget: { amount: 25 } },
-        { source: "object", value: { first: "alpha", second: "beta" }, budget: { amount: 25 } }
-      ]
+        { source: "object", value: { first: "alpha", second: "beta" }, budget: { amount: 25 } },
+      ],
     });
 
     expect(context.context[0]!.value).toEqual(["alpha", "beta"]);
@@ -106,14 +106,14 @@ describe("shapeToSchema", () => {
       properties: {
         items: {
           type: "array",
-          items: { type: "string" }
+          items: { type: "string" },
         },
         score: {
-          type: "number"
+          type: "number",
         },
-        data: {}
+        data: {},
       },
-      required: ["items", "score", "data"]
+      required: ["items", "score", "data"],
     });
   });
 });

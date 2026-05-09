@@ -12,10 +12,12 @@ describe("regression fixtures", () => {
     const program = loadProgram("fixtures/v0.as");
 
     expect(analyze(program).diagnostics).toEqual([]);
-    await expect(executeAgent(program, { question: "What is AgentScript?" }, { toolProvider: new MockToolProvider() })).resolves.toMatchObject({
+    await expect(
+      executeAgent(program, { question: "What is AgentScript?" }, { toolProvider: new MockToolProvider() }),
+    ).resolves.toMatchObject({
       value: {
-        ok: true
-      }
+        ok: true,
+      },
     });
   });
 
@@ -27,8 +29,8 @@ describe("regression fixtures", () => {
       value: {
         ok: true,
         first: "step-1",
-        count: 2
-      }
+        count: 2,
+      },
     });
   });
 
@@ -41,11 +43,13 @@ describe("regression fixtures", () => {
     const program = loadProgramSource(source, { sourcePath });
 
     expect(analyze(program).diagnostics).toEqual([]);
-    await expect(executeAgent(program, { goal: "Ship V2 memory" }, { sourcePath, workspaceRoot: dir })).resolves.toMatchObject({
+    await expect(
+      executeAgent(program, { goal: "Ship V2 memory" }, { sourcePath, workspaceRoot: dir }),
+    ).resolves.toMatchObject({
       value: {
         ok: true,
-        lessons: 0
-      }
+        lessons: 0,
+      },
     });
     expect(readFileSync(join(dir, ".agentscript", "lessons.jsonl"), "utf8")).toContain("Ship V2 memory");
   });

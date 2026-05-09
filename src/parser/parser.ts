@@ -38,7 +38,7 @@ import type {
   Stmt,
   StringExpr,
   UnaryExpr,
-  UseStmt
+  UseStmt,
 } from "../ast/types.js";
 import { ParseError } from "./errors.js";
 import { SHAPE_TYPE_NAMES } from "../ast/constants.js";
@@ -77,7 +77,7 @@ class Parser {
       kind: "Program",
       imports,
       agents,
-      range: { start, end: this.previous().range.end }
+      range: { start, end: this.previous().range.end },
     };
   }
 
@@ -100,7 +100,7 @@ class Parser {
       resourceKind,
       name,
       uri,
-      range: { start, end: this.previous().range.end }
+      range: { start, end: this.previous().range.end },
     };
   }
 
@@ -135,7 +135,7 @@ class Parser {
       isMain,
       config,
       functions,
-      range: { start, end: this.previous().range.end }
+      range: { start, end: this.previous().range.end },
     };
   }
 
@@ -146,7 +146,7 @@ class Parser {
       kind: "ConfigDecl",
       key: key.value,
       value,
-      range: { start: key.range.start, end: value.range.end }
+      range: { start: key.range.start, end: value.range.end },
     };
   }
 
@@ -157,7 +157,7 @@ class Parser {
       kind: "ConfigStmt",
       key: key.value,
       value,
-      range: { start: key.range.start, end: value.range.end }
+      range: { start: key.range.start, end: value.range.end },
     };
   }
 
@@ -181,7 +181,7 @@ class Parser {
       isMain,
       params,
       body,
-      range: { start, end: this.previous().range.end }
+      range: { start, end: this.previous().range.end },
     };
   }
 
@@ -192,7 +192,7 @@ class Parser {
       kind: "FuncParam",
       name: token.value,
       shape,
-      range: { start: token.range.start, end: (shape ?? token).range.end }
+      range: { start: token.range.start, end: (shape ?? token).range.end },
     };
   }
 
@@ -241,20 +241,24 @@ class Parser {
       value,
       budget,
       label,
-      range: { start, end: this.previous().range.end }
+      range: { start, end: this.previous().range.end },
     };
   }
 
   private parseUseLabel(): string {
-    const tokens: Token[] = [];
     const line = this.previous().range.start.line;
-    while (!this.isAtEnd() && !this.check("}") && this.peek().range.start.line === line) {
-      tokens.push(this.advance());
+    let label: string;
+    if (this.matchKind("string")) {
+      label = this.previous().value;
+    } else if (this.matchKind("identifier") || this.matchKind("keyword")) {
+      label = this.previous().value;
+    } else {
+      throw this.error("Expected identifier or string context label after 'as'");
     }
-    if (tokens.length === 0) {
-      throw this.error("Expected context label after 'as'");
+    if (!this.isAtEnd() && !this.check("}") && this.peek().range.start.line === line) {
+      throw this.error("Expected newline after context label");
     }
-    return stringifyLabelTokens(tokens);
+    return label;
   }
 
   private parseConfigValue(key: ConfigKey): Expr {
@@ -270,7 +274,7 @@ class Parser {
     return {
       kind: "ReturnStmt",
       value,
-      range: { start, end: value.range.end }
+      range: { start, end: value.range.end },
     };
   }
 
@@ -283,7 +287,7 @@ class Parser {
       kind: "RepeatStmt",
       maxAttempts,
       body,
-      range: { start, end: this.previous().range.end }
+      range: { start, end: this.previous().range.end },
     };
   }
 
@@ -302,7 +306,7 @@ class Parser {
       iterable,
       maxIterations,
       body,
-      range: { start, end: this.previous().range.end }
+      range: { start, end: this.previous().range.end },
     };
   }
 
@@ -318,7 +322,7 @@ class Parser {
       condition,
       maxIterations,
       body,
-      range: { start, end: this.previous().range.end }
+      range: { start, end: this.previous().range.end },
     };
   }
 
@@ -332,7 +336,7 @@ class Parser {
       condition,
       thenBody,
       elseBody,
-      range: { start, end: this.previous().range.end }
+      range: { start, end: this.previous().range.end },
     };
   }
 
@@ -347,14 +351,14 @@ class Parser {
         kind: "AssignStmt",
         target: expr,
         value,
-        range: { start: expr.range.start, end: value.range.end }
+        range: { start: expr.range.start, end: value.range.end },
       };
     }
 
     return {
       kind: "ExprStmt",
       expr,
-      range: expr.range
+      range: expr.range,
     };
   }
 
@@ -388,7 +392,7 @@ class Parser {
         operator,
         left: expr,
         right,
-        range: { start: expr.range.start, end: right.range.end }
+        range: { start: expr.range.start, end: right.range.end },
       } satisfies BinaryExpr;
     }
     return expr;
@@ -402,7 +406,7 @@ class Parser {
         kind: "UnaryExpr",
         operator: "not",
         value,
-        range: { start, end: value.range.end }
+        range: { start, end: value.range.end },
       } satisfies UnaryExpr;
     }
     return this.parsePostfix();
@@ -418,7 +422,7 @@ class Parser {
           kind: "MemberExpr",
           object: expr,
           property,
-          range: { start: expr.range.start, end: this.previous().range.end }
+          range: { start: expr.range.start, end: this.previous().range.end },
         } satisfies MemberExpr;
         continue;
       }
@@ -430,7 +434,7 @@ class Parser {
           kind: "CallExpr",
           callee: expr,
           args,
-          range: { start: expr.range.start, end: this.previous().range.end }
+          range: { start: expr.range.start, end: this.previous().range.end },
         } satisfies CallExpr;
         continue;
       }
@@ -442,7 +446,7 @@ class Parser {
           kind: "IndexExpr",
           object: expr,
           index,
-          range: { start: expr.range.start, end: this.previous().range.end }
+          range: { start: expr.range.start, end: this.previous().range.end },
         } satisfies IndexExpr;
         continue;
       }
@@ -464,7 +468,7 @@ class Parser {
       return {
         kind: "StringExpr",
         value: token.value,
-        range: token.range
+        range: token.range,
       } satisfies StringExpr;
     }
 
@@ -473,7 +477,7 @@ class Parser {
         kind: "NumberExpr",
         value: Number.parseFloat(token.value),
         raw: token.value,
-        range: token.range
+        range: token.range,
       } satisfies NumberExpr;
     }
 
@@ -481,14 +485,14 @@ class Parser {
       return {
         kind: "BooleanExpr",
         value: token.value === "true",
-        range: token.range
+        range: token.range,
       } satisfies BooleanExpr;
     }
 
     if (this.match("none")) {
       return {
         kind: "NullExpr",
-        range: token.range
+        range: token.range,
       } satisfies NullExpr;
     }
 
@@ -504,7 +508,7 @@ class Parser {
       return {
         kind: "IdentifierExpr",
         name: token.value,
-        range: token.range
+        range: token.range,
       } satisfies IdentifierExpr;
     }
 
@@ -522,7 +526,7 @@ class Parser {
       kind: "GenerateExpr",
       options,
       returnShape,
-      range: { start, end: this.previous().range.end }
+      range: { start, end: this.previous().range.end },
     };
   }
 
@@ -549,7 +553,7 @@ class Parser {
           kind: "NumberExpr",
           value: Number.parseFloat(token.value),
           raw: token.value,
-          range: token.range
+          range: token.range,
         } satisfies NumberExpr;
       } else {
         value = this.parseExpression();
@@ -558,7 +562,7 @@ class Parser {
         kind: "ObjectProperty",
         key,
         value,
-        range: { start: propStart, end: value.range.end }
+        range: { start: propStart, end: value.range.end },
       });
       if (key === "input") {
         input = value;
@@ -587,7 +591,7 @@ class Parser {
       think,
       strict,
       debug,
-      range: { start, end: this.previous().range.end }
+      range: { start, end: this.previous().range.end },
     };
   }
 
@@ -604,7 +608,7 @@ class Parser {
         kind: "ObjectProperty",
         key,
         value,
-        range: { start: propStart, end: value.range.end }
+        range: { start: propStart, end: value.range.end },
       });
       this.consumePropertySeparator("}");
     }
@@ -613,7 +617,7 @@ class Parser {
     return {
       kind: "ObjectExpr",
       properties,
-      range: { start, end: this.previous().range.end }
+      range: { start, end: this.previous().range.end },
     };
   }
 
@@ -629,7 +633,7 @@ class Parser {
     return {
       kind: "ListExpr",
       items,
-      range: { start, end: this.previous().range.end }
+      range: { start, end: this.previous().range.end },
     };
   }
 
@@ -641,7 +645,7 @@ class Parser {
     return {
       kind: "ShapeObjectExpr",
       fields,
-      range: { start, end: this.previous().range.end }
+      range: { start, end: this.previous().range.end },
     };
   }
 
@@ -653,7 +657,7 @@ class Parser {
       kind: "ShapeField",
       name,
       type,
-      range: { start, end: type.range.end }
+      range: { start, end: type.range.end },
     };
   }
 
@@ -666,7 +670,7 @@ class Parser {
       return {
         kind: "ListShapeType",
         itemType,
-        range: { start, end: this.previous().range.end }
+        range: { start, end: this.previous().range.end },
       } satisfies ListShapeType;
     }
     if (!SHAPE_TYPE_NAMES.has(name)) {
@@ -675,7 +679,7 @@ class Parser {
     return {
       kind: "NamedShapeType",
       name: name as NamedShapeType["name"],
-      range: { start, end: this.previous().range.end }
+      range: { start, end: this.previous().range.end },
     } satisfies NamedShapeType;
   }
 
@@ -691,7 +695,7 @@ class Parser {
     }
     return {
       amount: Number.parseFloat(match[1] ?? raw),
-      unit: match[2]
+      unit: match[2],
     };
   }
 
@@ -810,17 +814,4 @@ class Parser {
 
 function isImportResourceKind(value: string): value is ImportResourceKind {
   return IMPORT_RESOURCE_KINDS.has(value as ImportResourceKind);
-}
-
-function stringifyLabelTokens(tokens: Token[]): string {
-  let label = tokens[0]?.value ?? "";
-  for (let index = 1; index < tokens.length; index += 1) {
-    const previous = tokens[index - 1]!;
-    const current = tokens[index]!;
-    if (current.range.start.column > previous.range.end.column) {
-      label += " ";
-    }
-    label += current.value;
-  }
-  return label;
 }

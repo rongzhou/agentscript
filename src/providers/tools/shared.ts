@@ -88,7 +88,10 @@ export function readPositiveInteger(value: RuntimeValue | undefined, fallback: n
 }
 
 export function globMatcher(pattern: string): (value: string) => boolean {
-  const escaped = pattern.replace(/[.+^${}()|[\]\\]/g, "\\$&").replace(/\*/g, ".*").replace(/\?/g, ".");
+  const escaped = pattern
+    .replace(/[.+^${}()|[\]\\]/g, "\\$&")
+    .replace(/\*/g, ".*")
+    .replace(/\?/g, ".");
   const regex = new RegExp(`(^|/)${escaped}$`);
   return (value) => regex.test(value);
 }

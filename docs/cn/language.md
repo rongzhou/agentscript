@@ -183,7 +183,7 @@ use docs.summary max 4k as evidence
 
 ```agentscript
 use docs as evidence
-use docs.summary max 4k as retrieved evidence
+use docs.summary max 4k as "retrieved evidence"
 use input.question as user
 ```
 

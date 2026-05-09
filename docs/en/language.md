@@ -183,7 +183,7 @@ The label after `as` is literal label text. It is not an expression, is not eval
 
 ```agentscript
 use docs as evidence
-use docs.summary max 4k as retrieved evidence
+use docs.summary max 4k as "retrieved evidence"
 use input.question as user
 ```
 

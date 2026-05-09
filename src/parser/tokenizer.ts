@@ -1,13 +1,7 @@
 import type { SourceLocation, SourceRange } from "../ast/types.js";
 import { ParseError } from "./errors.js";
 
-export type TokenKind =
-  | "identifier"
-  | "keyword"
-  | "string"
-  | "number"
-  | "symbol"
-  | "eof";
+export type TokenKind = "identifier" | "keyword" | "string" | "number" | "symbol" | "eof";
 
 export interface Token {
   kind: TokenKind;
@@ -42,25 +36,10 @@ const KEYWORDS = new Set([
   "boolean",
   "json",
   "list",
-  "max"
+  "max",
 ]);
 
-const SYMBOLS = new Set([
-  "{",
-  "}",
-  "(",
-  ")",
-  "[",
-  "]",
-  ".",
-  ",",
-  ":",
-  "=",
-  "!",
-  "<",
-  "-",
-  "*"
-]);
+const SYMBOLS = new Set(["{", "}", "(", ")", "[", "]", ".", ",", ":", "=", "!", "<", "-", "*"]);
 
 export function tokenize(source: string): Token[] {
   const scanner = new Scanner(source);
@@ -109,7 +88,7 @@ class Scanner {
           tokens.push({
             kind: "symbol",
             value: twoChar,
-            range: { start, end: this.location() }
+            range: { start, end: this.location() },
           });
           continue;
         }
@@ -117,7 +96,7 @@ class Scanner {
         tokens.push({
           kind: "symbol",
           value: char,
-          range: { start, end: this.location() }
+          range: { start, end: this.location() },
         });
         continue;
       }
@@ -129,7 +108,7 @@ class Scanner {
     tokens.push({
       kind: "eof",
       value: "",
-      range: { start: location, end: location }
+      range: { start: location, end: location },
     });
 
     return tokens;
@@ -158,7 +137,7 @@ class Scanner {
     return {
       kind: "string",
       value,
-      range: { start, end: this.location() }
+      range: { start, end: this.location() },
     };
   }
 
@@ -210,7 +189,7 @@ class Scanner {
     return {
       kind: "number",
       value,
-      range: { start, end: this.location() }
+      range: { start, end: this.location() },
     };
   }
 
@@ -225,7 +204,7 @@ class Scanner {
     return {
       kind: KEYWORDS.has(value) ? "keyword" : "identifier",
       value,
-      range: { start, end: this.location() }
+      range: { start, end: this.location() },
     };
   }
 
@@ -272,7 +251,7 @@ class Scanner {
     return {
       line: this.line,
       column: this.column,
-      offset: this.offset
+      offset: this.offset,
     };
   }
 }

@@ -65,8 +65,8 @@ main agent FileSummarizer {
         content = File.read({
             path: input.path
         })
-        use input.path as source path
-        use content max 8k as file content
+        use input.path as "source path"
+        use content max 8k as "file content"
 
         generate({
             input: "Summarize the file for a busy teammate",
@@ -190,7 +190,7 @@ main agent ResearchAgent {
     main func(input {
         question string
     }) {
-        use input.question as user question
+        use input.question as "user question"
 
         scratch = []
         use scratch.summary max 2k as observations
@@ -207,7 +207,7 @@ main agent ResearchAgent {
     }
 
     func answer(question, scratch) {
-        use question as user question
+        use question as "user question"
         use scratch.summary max 2k as observations
         generate({
             input: "Answer using only the observations"

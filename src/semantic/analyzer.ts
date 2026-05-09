@@ -474,15 +474,17 @@ class Analyzer {
         hasInput = true;
       } else if (property.key === "attempts") {
         const isPositiveInteger =
-          property.value.kind === "NumberExpr" &&
-          Number.isInteger(property.value.value) &&
-          property.value.value > 0;
+          property.value.kind === "NumberExpr" && Number.isInteger(property.value.value) && property.value.value > 0;
         if (!isPositiveInteger) {
           this.error("INVALID_GENERATE_ATTEMPTS", "generate attempts must be a positive integer", property.value.range);
         }
       } else if (property.key === "max_output") {
         if (!expr.options.maxOutput || expr.options.maxOutput.amount <= 0) {
-          this.error("INVALID_GENERATE_MAX_OUTPUT", "generate max_output must be a positive budget", property.value.range);
+          this.error(
+            "INVALID_GENERATE_MAX_OUTPUT",
+            "generate max_output must be a positive budget",
+            property.value.range,
+          );
         }
       } else if (property.key === "temperature") {
         if (property.value.kind !== "NumberExpr") {
@@ -490,10 +492,13 @@ class Analyzer {
         }
       } else if (property.key === "think") {
         const validThinkString =
-          property.value.kind === "StringExpr" &&
-          ["auto", "low", "medium", "high"].includes(property.value.value);
+          property.value.kind === "StringExpr" && ["auto", "low", "medium", "high"].includes(property.value.value);
         if (property.value.kind !== "BooleanExpr" && !validThinkString) {
-          this.error("INVALID_GENERATE_THINK", "generate think must be a boolean or one of auto, low, medium, high", property.value.range);
+          this.error(
+            "INVALID_GENERATE_THINK",
+            "generate think must be a boolean or one of auto, low, medium, high",
+            property.value.range,
+          );
         }
       } else if (property.key === "strict") {
         if (property.value.kind !== "BooleanExpr") {

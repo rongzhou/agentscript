@@ -2,14 +2,7 @@ import { assertNever } from "../utils/assert.js";
 import type { AgentDecl, CallExpr, ConfigDecl, ConfigStmt, Expr, MemberExpr, SourceRange } from "../ast/types.js";
 import { RuntimeError } from "./errors.js";
 import { GenerateRuntime } from "./generate.js";
-import {
-  isAgentBinding,
-  isFunctionBinding,
-  isLlmBinding,
-  isMemoryBinding,
-  isObject,
-  isToolBinding,
-} from "./guards.js";
+import { isAgentBinding, isFunctionBinding, isLlmBinding, isMemoryBinding, isObject, isToolBinding } from "./guards.js";
 import { runtimeValuesEqual, sanitizeForJson } from "./json.js";
 import type { RuntimeScope } from "./scope.js";
 import { uriScheme } from "./uri.js";
@@ -38,7 +31,7 @@ export class Evaluator {
     private readonly memoryProvider: MemoryProvider,
     private readonly trace: TraceEvent[],
     private readonly generateRuntime: GenerateRuntime,
-    private readonly host: EvaluatorHost
+    private readonly host: EvaluatorHost,
   ) {}
 
   async evaluateConfig(config: ConfigDecl | ConfigStmt, scope: RuntimeScope): Promise<RuntimeValue> {
@@ -125,7 +118,11 @@ export class Evaluator {
       case "!=":
         return !this.valuesEqual(await this.evaluate(expr.left, scope), await this.evaluate(expr.right, scope));
       case "<":
-        return this.evaluateLessThan(await this.evaluate(expr.left, scope), await this.evaluate(expr.right, scope), expr.range);
+        return this.evaluateLessThan(
+          await this.evaluate(expr.left, scope),
+          await this.evaluate(expr.right, scope),
+          expr.range,
+        );
     }
   }
 
@@ -232,11 +229,7 @@ export class Evaluator {
     throw new RuntimeError(`Unsupported member call '${callee.property}'`, callee.range);
   }
 
-  private async evaluateToolCall(
-    object: ToolBinding,
-    callee: MemberExpr,
-    args: RuntimeValue[],
-  ): Promise<RuntimeValue> {
+  private async evaluateToolCall(object: ToolBinding, callee: MemberExpr, args: RuntimeValue[]): Promise<RuntimeValue> {
     const request = {
       toolName: object.name,
       uri: object.uri,

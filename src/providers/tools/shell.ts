@@ -87,7 +87,9 @@ export class ShellToolProvider implements ToolProvider {
     const path = this.workspace.resolveWorkspacePath(readRequiredString(args.path, "Sed.run.path"));
     const start = readPositiveInteger(args.start, 1);
     const max = readPositiveInteger(args.max, DEFAULT_MAX_RESULTS);
-    const lines = readFileSync(path, "utf8").split(/\r?\n/).slice(start - 1, start - 1 + max);
+    const lines = readFileSync(path, "utf8")
+      .split(/\r?\n/)
+      .slice(start - 1, start - 1 + max);
     return { ok: true, text: lines.join("\n"), start, end: start + lines.length - 1 };
   }
 }

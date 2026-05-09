@@ -22,7 +22,7 @@ export class MockToolProvider implements ToolProvider {
     return {
       summary: `${request.toolName}.${request.method}`,
       source: request.uri,
-      args: sanitizeForJson(request.args)
+      args: sanitizeForJson(request.args),
     };
   }
 }
@@ -35,7 +35,7 @@ export class MockMemoryProvider implements MemoryProvider {
       id: String(this.records.length + 1),
       created_at: "mock",
       updated_at: "mock",
-      record: request.record
+      record: request.record,
     };
     this.records.push(record);
     return record;

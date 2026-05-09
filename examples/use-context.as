@@ -9,7 +9,7 @@ main agent UseContextExample {
         question string
         docs json
     }) {
-        use input.question as user question
+        use input.question as "user question"
         use input.docs.summary max 2k as evidence
 
         generate({ input: "Answer from the selected evidence", max_output: 500 }) -> {

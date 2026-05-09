@@ -1,22 +1,12 @@
 {
   "name": "@rong/agentscript",
   "version": "0.1.5",
-  "description": "AgentScript context engineering language runtime",
+  "description": "A DSL for explicit, scoped, auditable LLM context",
   "main": "dist/index.js",
   "bin": {
     "agentscript": "dist/bin/agentscript.js"
   },
-  "files": [
-    "dist",
-    "examples",
-    "recipes",
-    "tutorials",
-    "docs",
-    "README.md",
-    "LICENSE",
-    "CHANGELOG.md",
-    "INSTALL.md"
-  ],
+  "files": ["dist", "examples", "recipes", "tutorials", "docs", "README.md", "LICENSE", "CHANGELOG.md", "INSTALL.md"],
   "directories": {
     "doc": "docs"
   },
@@ -30,15 +20,22 @@
     "parse": "npm run agentscript -- --parse",
     "check": "npm run agentscript -- --check",
     "execute": "npm run agentscript --",
-    "execute:llm": "npm run agentscript -- --real-llm"
+    "execute:llm": "npm run agentscript -- --real-llm",
+    "format": "biome format --write .",
+    "format:check": "biome format ."
   },
   "keywords": [
     "agentscript",
     "llm",
+    "llm-agent",
     "agent",
     "ai-agent",
+    "agent-framework",
+    "ai-workflow",
     "multi-agent",
     "context-engineering",
+    "prompt-engineering",
+    "structured-output",
     "dsl",
     "prompt",
     "react-agent",
@@ -61,6 +58,7 @@
     "node": ">=22.5"
   },
   "devDependencies": {
+    "@biomejs/biome": "^1.9.4",
     "@types/node": "^25.6.2",
     "typescript": "^6.0.3",
     "vitest": "^4.1.5"

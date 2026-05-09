@@ -12,7 +12,9 @@ describe("loadProgram", () => {
     const mainFile = join(dir, "main.as");
     const plannerFile = join(dir, "agents", "planner.as");
 
-    writeFileSync(plannerFile, `
+    writeFileSync(
+      plannerFile,
+      `
       agent Planner {
         main func plan(input) {
           return {
@@ -27,8 +29,11 @@ describe("loadProgram", () => {
           return input
         }
       }
-    `);
-    writeFileSync(mainFile, `
+    `,
+    );
+    writeFileSync(
+      mainFile,
+      `
       import agent Planner from "./agents/planner.as"
 
       main agent App {
@@ -36,7 +41,8 @@ describe("loadProgram", () => {
           return Planner(input)
         }
       }
-    `);
+    `,
+    );
 
     const program = loadProgram(mainFile);
 
@@ -47,7 +53,7 @@ describe("loadProgram", () => {
     const result = await executeAgent(program, { goal: "ship v1" });
     expect(result.value).toEqual({
       ok: true,
-      goal: "ship v1"
+      goal: "ship v1",
     });
   });
 
@@ -59,7 +65,9 @@ describe("loadProgram", () => {
     const workerFile = join(dir, "agents", "worker.as");
     writeFileSync(join(dir, "agents", "note.txt"), "dependency context");
 
-    writeFileSync(workerFile, `
+    writeFileSync(
+      workerFile,
+      `
       import file Note from "./note.txt"
 
       agent Worker {
@@ -69,8 +77,11 @@ describe("loadProgram", () => {
           }
         }
       }
-    `);
-    writeFileSync(controllerFile, `
+    `,
+    );
+    writeFileSync(
+      controllerFile,
+      `
       import agent Worker from "./worker.as"
 
       agent Controller {
@@ -78,8 +89,11 @@ describe("loadProgram", () => {
           return Worker(input)
         }
       }
-    `);
-    writeFileSync(mainFile, `
+    `,
+    );
+    writeFileSync(
+      mainFile,
+      `
       import agent Controller from "./agents/controller.as"
 
       main agent App {
@@ -87,14 +101,15 @@ describe("loadProgram", () => {
           return Controller(input)
         }
       }
-    `);
+    `,
+    );
 
     const program = loadProgram(mainFile);
     const result = await executeAgent(program, {});
 
     expect(program.agents.map((agent) => agent.name)).toEqual(["Worker", "Controller", "App"]);
     expect(result.value).toEqual({
-      value: "dependency context"
+      value: "dependency context",
     });
   });
 
@@ -108,7 +123,7 @@ describe("loadProgram", () => {
             return Note
           }
         }
-      `)
+      `),
     ).toThrow(/sourcePath is required/);
   });
 
@@ -116,7 +131,9 @@ describe("loadProgram", () => {
     const dir = mkdtempSync(join(tmpdir(), "agentscript-"));
     const mainFile = join(dir, "main.as");
     const missingFile = join(dir, "missing.as");
-    writeFileSync(mainFile, `
+    writeFileSync(
+      mainFile,
+      `
       import agent Missing from "./missing.as"
 
       main agent App {
@@ -124,7 +141,8 @@ describe("loadProgram", () => {
           return input
         }
       }
-    `);
+    `,
+    );
 
     expect(() => loadProgram(mainFile)).toThrow(new RegExp(missingFile.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
   });

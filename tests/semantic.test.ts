@@ -21,14 +21,14 @@ describe("analyze", () => {
             return input
           }
         }
-      `)
+      `),
     );
 
     expect(result.diagnostics).toContainEqual(
       expect.objectContaining({
         severity: "error",
-        code: "UNKNOWN_IDENTIFIER"
-      })
+        code: "UNKNOWN_IDENTIFIER",
+      }),
     );
   });
 
@@ -47,14 +47,13 @@ describe("analyze", () => {
             return input
           }
         }
-      `)
+      `),
     );
 
     expect(result.diagnostics.map((diagnostic) => diagnostic.code)).toEqual(
-      expect.arrayContaining(["DUPLICATE_FUNCTION", "DUPLICATE_SHAPE_FIELD"])
+      expect.arrayContaining(["DUPLICATE_FUNCTION", "DUPLICATE_SHAPE_FIELD"]),
     );
   });
-
 
   it("reports parameters that shadow imported bindings", () => {
     const result = analyze(
@@ -66,14 +65,14 @@ describe("analyze", () => {
             return Search
           }
         }
-      `)
+      `),
     );
 
     expect(result.diagnostics).toContainEqual(
       expect.objectContaining({
         severity: "error",
-        code: "PARAM_SHADOWS_IMPORT"
-      })
+        code: "PARAM_SHADOWS_IMPORT",
+      }),
     );
   });
 
@@ -86,8 +85,8 @@ describe("analyze", () => {
               return missing
             }
           }
-        `)
-      )
+        `),
+      ),
     ).toThrow(SemanticError);
   });
 
@@ -100,14 +99,14 @@ describe("analyze", () => {
             return input
           }
         }
-      `)
+      `),
     );
 
     expect(result.diagnostics).toContainEqual(
       expect.objectContaining({
         severity: "error",
-        code: "INVALID_BUDGET"
-      })
+        code: "INVALID_BUDGET",
+      }),
     );
   });
 
@@ -120,14 +119,14 @@ describe("analyze", () => {
             return input
           }
         }
-      `)
+      `),
     );
 
     expect(result.diagnostics).toContainEqual(
       expect.objectContaining({
         severity: "error",
-        code: "RESERVED_CONTEXT_LABEL"
-      })
+        code: "RESERVED_CONTEXT_LABEL",
+      }),
     );
   });
 
@@ -142,7 +141,7 @@ describe("analyze", () => {
             return Lessons.query({ kind: "lesson", limit: 5 })
           }
         }
-      `)
+      `),
     );
     expect(valid.diagnostics).toEqual([]);
 
@@ -156,13 +155,13 @@ describe("analyze", () => {
             return input
           }
         }
-      `)
+      `),
     );
     expect(invalidUse.diagnostics).toContainEqual(
       expect.objectContaining({
         severity: "error",
-        code: "INVALID_USE_RESOURCE"
-      })
+        code: "INVALID_USE_RESOURCE",
+      }),
     );
 
     const invalidMethod = analyze(
@@ -174,13 +173,13 @@ describe("analyze", () => {
             return Lessons.delete({ id: "1" })
           }
         }
-      `)
+      `),
     );
     expect(invalidMethod.diagnostics).toContainEqual(
       expect.objectContaining({
         severity: "error",
-        code: "UNKNOWN_MEMORY_METHOD"
-      })
+        code: "UNKNOWN_MEMORY_METHOD",
+      }),
     );
 
     const invalidArity = analyze(
@@ -192,13 +191,13 @@ describe("analyze", () => {
             return Lessons.query()
           }
         }
-      `)
+      `),
     );
     expect(invalidArity.diagnostics).toContainEqual(
       expect.objectContaining({
         severity: "error",
-        code: "INVALID_ARGUMENT_COUNT"
-      })
+        code: "INVALID_ARGUMENT_COUNT",
+      }),
     );
   });
 
@@ -212,14 +211,14 @@ describe("analyze", () => {
             return input
           }
         }
-      `)
+      `),
     );
 
     expect(unknown.diagnostics).toContainEqual(
       expect.objectContaining({
         severity: "error",
-        code: "UNKNOWN_MODEL"
-      })
+        code: "UNKNOWN_MODEL",
+      }),
     );
 
     const wrongKind = analyze(
@@ -233,14 +232,14 @@ describe("analyze", () => {
             return input
           }
         }
-      `)
+      `),
     );
 
     expect(wrongKind.diagnostics).toContainEqual(
       expect.objectContaining({
         severity: "error",
-        code: "INVALID_MODEL"
-      })
+        code: "INVALID_MODEL",
+      }),
     );
 
     const invalidRole = analyze(
@@ -255,13 +254,13 @@ describe("analyze", () => {
             return input
           }
         }
-      `)
+      `),
     );
     expect(invalidRole.diagnostics).toContainEqual(
       expect.objectContaining({
         severity: "error",
-        code: "INVALID_CONFIG"
-      })
+        code: "INVALID_CONFIG",
+      }),
     );
   });
 
@@ -277,7 +276,7 @@ describe("analyze", () => {
             }
           }
         }
-      `)
+      `),
     );
 
     expect(missing.diagnostics.filter((diagnostic) => diagnostic.code === "MISSING_GENERATE_CONFIG")).toHaveLength(3);
@@ -296,7 +295,7 @@ describe("analyze", () => {
             }
           }
         }
-      `)
+      `),
     );
 
     expect(scoped.diagnostics.filter((diagnostic) => diagnostic.severity === "error")).toEqual([]);
@@ -318,24 +317,22 @@ describe("analyze", () => {
             }
           }
         }
-      `)
+      `),
     );
 
     expect(result.diagnostics).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
           severity: "error",
-          code: "INVALID_GENERATE_MAX_OUTPUT"
+          code: "INVALID_GENERATE_MAX_OUTPUT",
         }),
         expect.objectContaining({
           severity: "error",
-          code: "INVALID_GENERATE_DEBUG"
-        })
-      ])
+          code: "INVALID_GENERATE_DEBUG",
+        }),
+      ]),
     );
   });
-
-
 
   it("checks generate temperature, think, and strict options", () => {
     const result = analyze(
@@ -358,15 +355,15 @@ describe("analyze", () => {
             }
           }
         }
-      `)
+      `),
     );
 
     expect(result.diagnostics).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ severity: "error", code: "INVALID_GENERATE_TEMPERATURE" }),
         expect.objectContaining({ severity: "error", code: "INVALID_GENERATE_THINK" }),
-        expect.objectContaining({ severity: "error", code: "INVALID_GENERATE_STRICT" })
-      ])
+        expect.objectContaining({ severity: "error", code: "INVALID_GENERATE_STRICT" }),
+      ]),
     );
   });
 
@@ -384,13 +381,13 @@ describe("analyze", () => {
             return input
           }
         }
-      `)
+      `),
     );
     expect(missingMainAgent.diagnostics).toContainEqual(
       expect.objectContaining({
         severity: "error",
-        code: "MISSING_MAIN_AGENT"
-      })
+        code: "MISSING_MAIN_AGENT",
+      }),
     );
 
     const duplicateMain = analyze(
@@ -406,13 +403,13 @@ describe("analyze", () => {
             return input
           }
         }
-      `)
+      `),
     );
     expect(duplicateMain.diagnostics).toContainEqual(
       expect.objectContaining({
         severity: "error",
-        code: "DUPLICATE_MAIN_AGENT"
-      })
+        code: "DUPLICATE_MAIN_AGENT",
+      }),
     );
 
     const missingMainFunc = analyze(
@@ -422,13 +419,13 @@ describe("analyze", () => {
             return input
           }
         }
-      `)
+      `),
     );
     expect(missingMainFunc.diagnostics).toContainEqual(
       expect.objectContaining({
         severity: "error",
-        code: "MISSING_MAIN_FUNC"
-      })
+        code: "MISSING_MAIN_FUNC",
+      }),
     );
   });
 
@@ -446,7 +443,7 @@ describe("analyze", () => {
             return input
           }
         }
-      `)
+      `),
     );
 
     expect(result.diagnostics.filter((diagnostic) => diagnostic.severity === "error")).toEqual([]);
@@ -466,15 +463,15 @@ describe("analyze", () => {
             return input
           }
         }
-      `)
+      `),
     );
 
     expect(result.diagnostics).toContainEqual(
       expect.objectContaining({
         severity: "error",
         code: "UNKNOWN_FUNCTION",
-        message: "Agent 'Worker' has no callable main func"
-      })
+        message: "Agent 'Worker' has no callable main func",
+      }),
     );
   });
 
@@ -498,7 +495,7 @@ describe("analyze", () => {
             return input
           }
         }
-      `)
+      `),
     );
 
     expect(result.diagnostics.filter((diagnostic) => diagnostic.code === "INVALID_ARGUMENT_COUNT")).toHaveLength(3);
@@ -524,7 +521,7 @@ describe("analyze", () => {
             return input
           }
         }
-      `)
+      `),
     );
 
     expect(result.diagnostics.filter((diagnostic) => diagnostic.code === "INVALID_USE_RESOURCE")).toHaveLength(3);
@@ -541,13 +538,13 @@ describe("analyze", () => {
             return input.question
           }
         }
-      `)
+      `),
     );
     expect(duplicate.diagnostics).toContainEqual(
       expect.objectContaining({
         severity: "error",
-        code: "DUPLICATE_SHAPE_FIELD"
-      })
+        code: "DUPLICATE_SHAPE_FIELD",
+      }),
     );
 
     const invalidType = analyze(
@@ -559,7 +556,7 @@ describe("analyze", () => {
             return input.question
           }
         }
-      `)
+      `),
     );
     expect(invalidType.diagnostics.filter((diagnostic) => diagnostic.severity === "error")).toEqual([]);
 
@@ -576,13 +573,13 @@ describe("analyze", () => {
             return helper(input)
           }
         }
-      `)
+      `),
     );
     expect(nonEntryShape.diagnostics).toContainEqual(
       expect.objectContaining({
         severity: "error",
-        code: "INVALID_PARAM_SHAPE"
-      })
+        code: "INVALID_PARAM_SHAPE",
+      }),
     );
   });
 
@@ -600,14 +597,14 @@ describe("analyze", () => {
             return input
           }
         }
-      `)
+      `),
     );
 
     expect(result.diagnostics).toContainEqual(
       expect.objectContaining({
         severity: "error",
-        code: "DUPLICATE_BINDING"
-      })
+        code: "DUPLICATE_BINDING",
+      }),
     );
   });
 
@@ -622,7 +619,7 @@ describe("analyze", () => {
             return Requirements
           }
         }
-      `)
+      `),
     );
 
     expect(result.diagnostics.filter((diagnostic) => diagnostic.severity === "error")).toEqual([]);
@@ -640,14 +637,14 @@ describe("analyze", () => {
             return item
           }
         }
-      `)
+      `),
     );
 
     expect(result.diagnostics).toContainEqual(
       expect.objectContaining({
         severity: "error",
-        code: "UNKNOWN_IDENTIFIER"
-      })
+        code: "UNKNOWN_IDENTIFIER",
+      }),
     );
   });
 
@@ -660,14 +657,14 @@ describe("analyze", () => {
             return items[missing]
           }
         }
-      `)
+      `),
     );
 
     expect(result.diagnostics).toContainEqual(
       expect.objectContaining({
         severity: "error",
-        code: "UNKNOWN_IDENTIFIER"
-      })
+        code: "UNKNOWN_IDENTIFIER",
+      }),
     );
   });
 });

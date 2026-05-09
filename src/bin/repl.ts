@@ -5,7 +5,6 @@ import { parse } from "../parser/parser.js";
 import { executeAgent } from "../runtime/interpreter.js";
 import { sanitizeForJson } from "../runtime/json.js";
 import { loadProgramSource } from "../runtime/loader.js";
-import { ProtocolLlmProvider } from "../providers/llm/index.js";
 import { formatTrace } from "../runtime/trace.js";
 import type { TraceEvent } from "../runtime/types.js";
 import { analyze } from "../semantic/analyzer.js";
@@ -24,7 +23,6 @@ interface ReplSession {
   agentSources: Map<string, string>;
   importSources: string[];
   lastTrace: TraceEvent[];
-  realLlm: boolean;
   sourcePath?: string;
 }
 
@@ -40,7 +38,6 @@ export async function runRepl(options: ReplOptions = {}): Promise<number> {
     agentSources: new Map(),
     importSources: [],
     lastTrace: [],
-    realLlm: false,
     sourcePath: undefined,
   };
 
@@ -129,9 +126,6 @@ async function handleCommand(commandLine: string, session: ReplSession, reader: 
       } else {
         console.log(JSON.stringify(session.lastTrace, null, 2));
       }
-      return true;
-    case "real-llm":
-      setRealLlm(session, args);
       return true;
     case "reset":
       session.agentSources.clear();
@@ -247,20 +241,10 @@ async function runSession(session: ReplSession, inputJson: string, reader: ReplR
         return parseInteractiveInputValue(answer);
       },
     },
-    llmProvider: session.realLlm ? new ProtocolLlmProvider() : undefined,
     sourcePath: session.sourcePath,
   });
   session.lastTrace = result.trace;
   console.log(JSON.stringify({ value: sanitizeForJson(result.value), trace: result.trace }, null, 2));
-}
-
-function setRealLlm(session: ReplSession, value: string): void {
-  if (value !== "on" && value !== "off") {
-    console.error("Usage: :real-llm on|off");
-    return;
-  }
-  session.realLlm = value === "on";
-  console.log(`real-llm ${value}`);
 }
 
 function printAgents(session: ReplSession): void {
@@ -285,7 +269,6 @@ function printHelp(): void {
     ":parse",
     ":run [json]",
     ":trace [pretty]",
-    ":real-llm on|off",
     ":reset",
     ":exit",
   ];

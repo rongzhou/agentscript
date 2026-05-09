@@ -21,7 +21,6 @@
     "check": "npm run agentscript -- --check",
     "execute": "npm run agentscript -- run",
     "execute:mock": "npm run agentscript -- run --mock",
-    "execute:llm": "npm run agentscript -- run",
     "format": "biome format --write .",
     "format:check": "biome format ."
   },

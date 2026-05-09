@@ -154,6 +154,25 @@ describe("ProtocolLlmProvider", () => {
     expect(calls[0]!.body.format).toMatchObject({ type: "object" });
   });
 
+  it("reports Ollama thinking output without final content", async () => {
+    const provider = new ProtocolLlmProvider({
+      fetch: async () =>
+        jsonResponse({
+          message: {
+            content: "",
+            thinking: "reasoning used all available tokens",
+          },
+        }),
+    });
+
+    await expect(
+      provider.generate({
+        ...makeRequest("ollama://localhost:11434/qwen3.6"),
+        think: true,
+      }),
+    ).rejects.toThrow("Increase generate max_output or disable think");
+  });
+
   it("reports invalid provider JSON with response context", async () => {
     const provider = new ProtocolLlmProvider({
       openaiApiKey: "test-key",

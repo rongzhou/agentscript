@@ -292,7 +292,8 @@ node dist/bin/agentscript.js
 - `--function functionName`
 - `--check`
 - `--parse`
-- `--real-llm`
+- `--mock`
+- `--dry-run`
 - `--trace trace.json`
 - `--trace pretty`
 - `--verbose`

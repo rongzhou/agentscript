@@ -237,7 +237,7 @@ CLI：
 npm run agentscript -- tutorials/react.as --input '{"question":"What is AgentScript?"}'
 npm run agentscript -- tutorials/react.as --check
 npm run agentscript -- tutorials/react.as --parse
-npm run agentscript -- tutorials/react.as --real-llm --input '{"question":"What is AgentScript?"}'
+npm run agentscript -- run tutorials/react.as --input '{"question":"What is AgentScript?"}'
 ```
 
 REPL：

@@ -37,7 +37,6 @@ interface CliOptions {
   mock: boolean;
   parse: boolean;
   quiet: boolean;
-  realLlm: boolean;
   traceFile?: string;
   tracePretty: boolean;
   verbose: boolean;
@@ -73,9 +72,6 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
     if (options.dryRun && options.mock) {
       throw new Error("Use either --dry-run or --mock, not both");
     }
-    if (options.realLlm && options.mock) {
-      throw new Error("Use either --real-llm or --mock, not both");
-    }
     if (options.parse) {
       return runParse(options);
     }
@@ -97,7 +93,6 @@ function parseArgs(argv: string[]): CliOptions {
     mock: false,
     parse: false,
     quiet: false,
-    realLlm: false,
     tracePretty: false,
     verbose: false,
     version: false,
@@ -138,9 +133,6 @@ function parseArgs(argv: string[]): CliOptions {
         break;
       case "--mock":
         options.mock = true;
-        break;
-      case "--real-llm":
-        options.realLlm = true;
         break;
       case "--version":
       case "-v":

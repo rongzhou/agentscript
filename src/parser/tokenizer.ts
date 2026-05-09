@@ -18,6 +18,7 @@ const KEYWORDS = new Set([
   "loop",
   "until",
   "repeat",
+  "parallel",
   "for",
   "in",
   "return",
@@ -39,7 +40,7 @@ const KEYWORDS = new Set([
   "max",
 ]);
 
-const SYMBOLS = new Set(["{", "}", "(", ")", "[", "]", ".", ",", ":", "=", "!", "<", "-", "*"]);
+const SYMBOLS = new Set(["{", "}", "(", ")", "[", "]", ".", ",", ":", "=", "!", "<", ">", "+", "-", "*"]);
 
 export function tokenize(source: string): Token[] {
   const scanner = new Scanner(source);
@@ -82,7 +83,7 @@ class Scanner {
 
       if (SYMBOLS.has(char)) {
         const twoChar = `${char}${this.peekNext()}`;
-        if (twoChar === "==" || twoChar === "!=" || twoChar === "->") {
+        if (twoChar === "==" || twoChar === "!=" || twoChar === "->" || twoChar === "+=" || twoChar === "-=") {
           this.advance();
           this.advance();
           tokens.push({

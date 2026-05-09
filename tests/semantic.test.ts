@@ -301,7 +301,67 @@ describe("analyze", () => {
     expect(scoped.diagnostics.filter((diagnostic) => diagnostic.severity === "error")).toEqual([]);
   });
 
-  it("checks generate max_output and debug options", () => {
+  it("checks parallel for bodies and outer mutations", () => {
+    const noFinalValue = analyze(
+      parse(`
+        main agent A {
+          main func(input) {
+            return parallel for step in input.steps max 2 {
+              use step
+            }
+          }
+        }
+      `),
+    );
+    expect(noFinalValue.diagnostics).toContainEqual(
+      expect.objectContaining({
+        severity: "error",
+        code: "INVALID_PARALLEL_FOR_BODY",
+      }),
+    );
+
+    const outerAssignment = analyze(
+      parse(`
+        main agent A {
+          main func(input) {
+            count = 0
+            return parallel for step in input.steps max 2 {
+              count = step
+              step
+            }
+          }
+        }
+      `),
+    );
+    expect(outerAssignment.diagnostics).toContainEqual(
+      expect.objectContaining({
+        severity: "error",
+        code: "PARALLEL_FOR_OUTER_ASSIGNMENT",
+      }),
+    );
+
+    const outerMutation = analyze(
+      parse(`
+        main agent A {
+          main func(input) {
+            scratch = []
+            return parallel for step in input.steps max 2 {
+              scratch.add(step)
+              step
+            }
+          }
+        }
+      `),
+    );
+    expect(outerMutation.diagnostics).toContainEqual(
+      expect.objectContaining({
+        severity: "error",
+        code: "PARALLEL_FOR_OUTER_MUTATION",
+      }),
+    );
+  });
+
+  it("checks generate options", () => {
     const result = analyze(
       parse(`
         import llm Qwen from "openai://gpt-4.1-mini"

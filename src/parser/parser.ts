@@ -29,6 +29,7 @@ import type {
   NumberExpr,
   ObjectExpr,
   ObjectProperty,
+  ParallelForExpr,
   Program,
   RepeatStmt,
   ReturnStmt,
@@ -342,7 +343,8 @@ class Parser {
 
   private parseAssignmentOrExpressionStatement(): AssignStmt | ExprStmt {
     const expr = this.parseExpression();
-    if (this.match("=")) {
+    if (this.matchAny(["=", "+=", "-="])) {
+      const operator = this.previous().value as AssignStmt["operator"];
       if (expr.kind !== "IdentifierExpr" && expr.kind !== "MemberExpr") {
         throw new ParseError("Assignment target must be an identifier or member expression", expr.range.start);
       }
@@ -350,6 +352,7 @@ class Parser {
       return {
         kind: "AssignStmt",
         target: expr,
+        operator,
         value,
         range: { start: expr.range.start, end: value.range.end },
       };
@@ -379,7 +382,11 @@ class Parser {
   }
 
   private parseComparison(): Expr {
-    return this.parseBinaryExpression(() => this.parseUnary(), "<");
+    return this.parseBinaryExpression(() => this.parseTerm(), "<", ">");
+  }
+
+  private parseTerm(): Expr {
+    return this.parseBinaryExpression(() => this.parseUnary(), "+", "-");
   }
 
   private parseBinaryExpression(parseOperand: () => Expr, ...operators: BinaryExpr["operator"][]): Expr {
@@ -464,6 +471,10 @@ class Parser {
       return this.parseGenerate();
     }
 
+    if (this.check("parallel")) {
+      return this.parseParallelFor();
+    }
+
     if (this.matchKind("string")) {
       return {
         kind: "StringExpr",
@@ -526,6 +537,26 @@ class Parser {
       kind: "GenerateExpr",
       options,
       returnShape,
+      range: { start, end: this.previous().range.end },
+    };
+  }
+
+  private parseParallelFor(): ParallelForExpr {
+    const start = this.consume("parallel").range.start;
+    this.consume("for");
+    const item = this.consumeIdentifier("Expected parallel for item name");
+    this.consume("in");
+    const iterable = this.parseLogicalOr();
+    this.consume("max");
+    const maxIterations = this.parsePositiveInteger("Expected parallel for item count");
+    const body = this.parseBlock();
+    return {
+      kind: "ParallelForExpr",
+      itemName: item.value,
+      itemRange: item.range,
+      iterable,
+      maxIterations,
+      body,
       range: { start, end: this.previous().range.end },
     };
   }

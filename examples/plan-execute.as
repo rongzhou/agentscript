@@ -13,10 +13,8 @@ main agent PlanExecuteExample {
             { step: "draft answer" },
             { step: "check result" }
         ]
-        results = []
-
-        for item in plan max 3 {
-            results.add(run_step(input.goal, item.step))
+        results = parallel for item in plan max 3 {
+            run_step(input.goal, item.step)
         }
 
         use input.goal as goal

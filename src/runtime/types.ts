@@ -116,6 +116,6 @@ export interface InputRequest {
 
 export interface TraceEvent {
   [key: string]: JsonValue;
-  kind: "use" | "generate" | "tool" | "input" | "agent" | "for" | "memory";
+  kind: "use" | "generate" | "tool" | "input" | "agent" | "for" | "parallel_for" | "memory";
   data: JsonObject;
 }

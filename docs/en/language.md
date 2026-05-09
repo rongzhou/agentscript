@@ -11,6 +11,15 @@ This document describes AgentScript v0.1.x.
 - AgentScript keeps pattern names such as planner, executor, verifier, reflect, improve, and evolve as ordinary agent or function names.
 - Trace is for debugging and audit; it is not prompt context.
 
+## Related design documents
+
+This language reference is the compact syntax and feature map. Detailed design documents cover:
+
+- [`use ... as ...`](./use-as.md): prompt context selection, labels, budgets, scope visibility, deferred evaluation, and trace.
+- [`generate`](./generate.md): generation sites, prompt construction, agent identity, output contracts, provider hints, validation, retries, and trace.
+- [`parallel for`](./parallel-for.md): structured parallelism for independent bounded list work.
+- [Final Expression Return](./final-expression-return.md): implicit return from the final top-level expression in a function body.
+
 ## Program structure
 
 A program contains imports and agents. Execution starts from the selected agent and function, or from the program's `main agent` and `main func`.
@@ -97,6 +106,8 @@ result = Worker.run(input)
 ```
 
 `AgentName(input)` calls the target agent's `main func`. `AgentName.funcName(input)` calls a named function.
+
+A function may implicitly return its final top-level expression. See [Final Expression Return](./final-expression-return.md) for the full rule.
 
 ### Entry rules
 
@@ -240,7 +251,7 @@ if answer.ok and not input.dry_run {
 }
 ```
 
-Supported operators: `==`, `!=`, `<`, `and`, `or`, `not`. Context budgets and loop limits use `max`, so `<` remains an ordinary comparison operator like `==`.
+Supported operators: `+`, `-`, `==`, `!=`, `<`, `>`, `and`, `or`, `not`. Compound assignment supports `+=` and `-=`. Context budgets and loop limits use `max`, so `<` remains an ordinary comparison operator like `==`.
 
 ### Loop until
 
@@ -278,6 +289,16 @@ for step in plan.steps max 12 {
 ```
 
 The list is evaluated once at loop start. Each iteration creates a child scope. The loop variable is scoped to the body.
+
+Structured parallel list work is available as an expression:
+
+```agentscript
+results = parallel for step in plan.steps max 10 {
+    Executor(step)
+}
+```
+
+`parallel for` runs independent iterations concurrently, returns results in input order, and forbids shared mutable outer state. See [`parallel for`](./parallel-for.md) for the full design.
 
 ## Lists and JSON helpers
 
@@ -476,7 +497,7 @@ Each agent call creates an isolated scope. Context boundaries are never implicit
 
 ## Reserved words
 
-`import`, `from`, `main`, `agent`, `func`, `use`, `loop`, `until`, `repeat`, `for`, `in`, `return`, `if`, `else`, `and`, `or`, `not`, `generate`, `true`, `false`, `none`, `string`, `number`, `boolean`, `json`, `list`.
+`import`, `from`, `main`, `agent`, `func`, `use`, `as`, `max`, `loop`, `until`, `repeat`, `for`, `in`, `return`, `if`, `else`, `and`, `or`, `not`, `generate`, `true`, `false`, `none`, `string`, `number`, `boolean`, `json`, `list`.
 
 The following are NOT reserved: `input`, `act`, `reason`, `observe`, `reflect`, `answer`, `scratch`, `done`, `task`, `output`, `context`, `repair`.
 

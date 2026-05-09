@@ -31,6 +31,8 @@ export function formatExpressionSource(expr: Expr): string {
       return `${formatExpressionSource(expr.callee)}(${formatItems(expr.args)})`;
     case "GenerateExpr":
       return `generate({ ${formatProperties(expr.options.properties)} })`;
+    case "ParallelForExpr":
+      return `parallel for ${expr.itemName} in ${formatExpressionSource(expr.iterable)} max ${expr.maxIterations}`;
     default:
       assertNever(expr);
   }

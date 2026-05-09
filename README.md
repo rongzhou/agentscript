@@ -121,7 +121,7 @@ The optional block after `generate` is an output schema, not ordinary object con
 - `tutorials/` contains longer walkthrough programs for learning multi-step agent patterns end to end.
 - `recipes/` contains practical workflows you can copy and adapt, such as repo review, code review, changelog drafting, file summarization, document translation, API extraction, and research briefs.
 
-Start with `examples/structured-generate.as` to learn the syntax, read `tutorials/` for pattern walkthroughs, then use `recipes/repo-review.as` when you want a realistic, auditable repository workflow.
+Start with `examples/structured-generate.as` to learn the syntax, `examples/arithmetic.as` for operators, `examples/plan-execute.as` for `parallel for`, read `tutorials/` for pattern walkthroughs, then use `recipes/repo-review.as` when you want a realistic, auditable repository workflow.
 
 `recipes/repo-review.as` shows the core difference: tool results are not automatically prompt context. The recipe explicitly selects only the file tree, TODO/FIXME findings, package metadata, and CI configuration before asking for structured release-readiness output:
 
@@ -274,7 +274,7 @@ agentscript run recipes/code-review.as --input '{"path":"src"}' --mock
 agentscript run recipes/code-review.as --input '{"path":"src"}' --dry-run
 agentscript run recipes/code-review.as --input '{"path":"src"}' --trace
 agentscript recipes/code-review.as --check
-agentscript examples/react.as --parse
+agentscript examples/arithmetic.as --parse
 agentscript run recipes/code-review.as --quiet
 ```
 
@@ -288,6 +288,7 @@ agentscript run recipes/code-review.as --quiet
 | `--parse` | Parse and output AST as JSON |
 | `--mock` | Use deterministic mock providers instead of real model calls |
 | `--dry-run` | Build prompts and trace without model calls |
+| `--concurrency <n>` | Set the runtime concurrency limit for `parallel for` |
 | `--trace <file>` | Write execution trace to file |
 | `--trace` | Print human-readable trace |
 | `--trace pretty` | Backward-compatible alias for `--trace` |
@@ -298,8 +299,8 @@ agentscript run recipes/code-review.as --quiet
 
 | Language | Links |
 |----------|-------|
-| English | [Language Reference](docs/en/language.md) · [Context Engineering](docs/en/context-engineering.md) · [`use ... as ...`](docs/en/use-as.md) · [`generate`](docs/en/generate.md) · [Design History](docs/design-history/) |
-| 中文 | [README-CN](./README-CN.md) · [语言参考](docs/cn/language.md) · [Context Engineering](docs/cn/context-engineering.md) · [`use ... as ...`](docs/cn/use-as.md) · [`generate`](docs/cn/generate.md) |
+| English | [Language Reference](docs/en/language.md) · [Context Engineering](docs/en/context-engineering.md) · [`use ... as ...`](docs/en/use-as.md) · [`generate`](docs/en/generate.md) · [`parallel for`](docs/en/parallel-for.md) · [Final Expression Return](docs/en/final-expression-return.md) · [Design History](docs/design-history/) |
+| 中文 | [README-CN](./README-CN.md) · [语言参考](docs/cn/language.md) · [Context Engineering](docs/cn/context-engineering.md) · [`use ... as ...`](docs/cn/use-as.md) · [`generate`](docs/cn/generate.md) · [`parallel for`](docs/cn/parallel-for.md) · [Final Expression Return](docs/cn/final-expression-return.md) |
 
 ### Design principles
 

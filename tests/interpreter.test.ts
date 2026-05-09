@@ -570,6 +570,48 @@ describe("interpreter", () => {
     await expect(executeAgent(ast, { count: 3 })).resolves.toMatchObject({ value: false });
   });
 
+  it("evaluates arithmetic, greater-than, and compound assignment", async () => {
+    const ast = parse(`
+      main agent A {
+        main func(input) {
+          total = input.start
+          total += 5
+          total -= 2
+          label = "count:"
+          label += total
+
+          return {
+            total: total,
+            label: label,
+            ok: total > 5,
+            delta: total - input.start
+          }
+        }
+      }
+    `);
+
+    await expect(executeAgent(ast, { start: 4 })).resolves.toMatchObject({
+      value: {
+        total: 7,
+        label: "count:7",
+        ok: true,
+        delta: 3,
+      },
+    });
+  });
+
+  it("rejects arithmetic over non-number operands except string plus", async () => {
+    const ast = parse(`
+      main agent A {
+        main func(input) {
+          return input.value - 1
+        }
+      }
+    `);
+
+    await expect(executeAgent(ast, { value: "2" })).rejects.toThrow(/operator '-' requires number operands/);
+  });
+
   it("executes for-in list traversal with a hard iteration cap", async () => {
     const ast = parse(`
       main agent A {
@@ -621,6 +663,82 @@ describe("interpreter", () => {
     `);
 
     await expect(executeAgent(ast, { value: "not-list" })).rejects.toThrow(/for loop requires a list value/);
+  });
+
+  it("executes parallel for expressions with input-order results and trace", async () => {
+    const ast = parse(`
+      main agent A {
+        main func(input) {
+          return parallel for item in input.items max 3 {
+            {
+              id: item.id,
+              value: item.value
+            }
+          }
+        }
+      }
+    `);
+
+    const result = await executeAgent(
+      ast,
+      {
+        items: [
+          { id: "a", value: 1 },
+          { id: "b", value: 2 },
+          { id: "c", value: 3 },
+          { id: "d", value: 4 },
+        ],
+      },
+      { concurrency: 2 },
+    );
+
+    expect(result.value).toEqual([
+      { id: "a", value: 1 },
+      { id: "b", value: 2 },
+      { id: "c", value: 3 },
+    ]);
+    expect(result.trace).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          kind: "parallel_for",
+          data: expect.objectContaining({
+            item: "item",
+            items: 3,
+            concurrency: 2,
+          }),
+        }),
+      ]),
+    );
+  });
+
+  it("rejects parallel for over non-list values", async () => {
+    const ast = parse(`
+      main agent A {
+        main func(input) {
+          return parallel for item in input.value max 2 {
+            item
+          }
+        }
+      }
+    `);
+
+    await expect(executeAgent(ast, { value: "not-list" })).rejects.toThrow(/parallel for source must be a list/);
+  });
+
+  it("waits for all parallel for iterations before reporting failures", async () => {
+    const ast = parse(`
+      main agent A {
+        main func(input) {
+          return parallel for item in input.items max 3 {
+            item.missing
+          }
+        }
+      }
+    `);
+
+    await expect(executeAgent(ast, { items: [{ ok: 1 }, { ok: 2 }, { ok: 3 }] })).rejects.toThrow(
+      /parallel for failed: \[0\].*\[1\].*\[2\]/,
+    );
   });
 
   it("reads list items by index", async () => {

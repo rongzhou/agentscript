@@ -29,6 +29,7 @@ import type {
 
 export interface ExecuteOptions {
   agentName?: string;
+  concurrency?: number;
   functionName?: string;
   llmProvider?: LlmProvider;
   inputProvider?: InputProvider;
@@ -100,6 +101,8 @@ class Interpreter {
     this.evaluator = new Evaluator(this.toolProvider, this.memoryProvider, this.trace, generateRuntime, {
       callAgent: (agentName, functionName, args, range) => this.callAgent(agentName, functionName, args, range),
       callFunction: (agent, name, args, range) => this.callFunction(agent, name, args, range),
+      concurrency: () => this.options.concurrency ?? 4,
+      evaluateBlockFinalValue: (statements, scope) => this.evaluateBlockFinalValue(statements, scope),
       requireAgent: (name, range) => this.requireAgent(name, range),
       resolveMainFunction: (agent) => this.resolveMainFunction(agent),
     });
@@ -274,6 +277,14 @@ class Interpreter {
     return undefined;
   }
 
+  private async evaluateBlockFinalValue(statements: Stmt[], scope: RuntimeScope): Promise<RuntimeValue> {
+    const signal = await this.executeBlock(statements, scope, true);
+    if (!signal) {
+      throw new RuntimeError("parallel for body must end with a value expression");
+    }
+    return signal.value;
+  }
+
   private async executeStatement(stmt: Stmt, scope: RuntimeScope): Promise<StatementResult> {
     switch (stmt.kind) {
       case "ConfigStmt":
@@ -291,7 +302,7 @@ class Interpreter {
       }
 
       case "AssignStmt": {
-        const value = await this.evaluator.evaluate(stmt.value, scope);
+        const value = await this.evaluator.evaluateAssignmentValue(stmt, scope);
         if (stmt.target.kind === "IdentifierExpr") {
           scope.set(stmt.target.name, value);
           return undefined;

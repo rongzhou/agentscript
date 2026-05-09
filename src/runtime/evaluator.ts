@@ -1,5 +1,16 @@
 import { assertNever } from "../utils/assert.js";
-import type { AgentDecl, CallExpr, ConfigDecl, ConfigStmt, Expr, MemberExpr, SourceRange } from "../ast/types.js";
+import { formatExpressionSource } from "../ast/format.js";
+import type {
+  AgentDecl,
+  CallExpr,
+  ConfigDecl,
+  ConfigStmt,
+  Expr,
+  MemberExpr,
+  ParallelForExpr,
+  SourceRange,
+  Stmt,
+} from "../ast/types.js";
 import { RuntimeError } from "./errors.js";
 import { GenerateRuntime } from "./generate.js";
 import { isAgentBinding, isFunctionBinding, isLlmBinding, isMemoryBinding, isObject, isToolBinding } from "./guards.js";
@@ -21,6 +32,8 @@ import {
 export interface EvaluatorHost {
   callAgent(agentName: string, functionName: string, args: RuntimeValue[], range: SourceRange): Promise<RuntimeValue>;
   callFunction(agent: AgentDecl, name: string, args: RuntimeValue[], range?: SourceRange): Promise<RuntimeValue>;
+  concurrency(): number;
+  evaluateBlockFinalValue(statements: Stmt[], scope: RuntimeScope): Promise<RuntimeValue>;
   requireAgent(name: string, range?: SourceRange): AgentDecl;
   resolveMainFunction(agent: AgentDecl): { name: string };
 }
@@ -52,6 +65,18 @@ export class Evaluator {
         return value;
       }
     }
+  }
+
+  async evaluateAssignmentValue(
+    stmt: Extract<Stmt, { kind: "AssignStmt" }>,
+    scope: RuntimeScope,
+  ): Promise<RuntimeValue> {
+    const right = await this.evaluate(stmt.value, scope);
+    if (stmt.operator === "=") {
+      return right;
+    }
+    const left = await this.evaluate(stmt.target, scope);
+    return this.evaluateArithmetic(stmt.operator === "+=" ? "+" : "-", left, right, stmt.range);
   }
 
   async evaluate(expr: Expr, scope: RuntimeScope): Promise<RuntimeValue> {
@@ -89,9 +114,68 @@ export class Evaluator {
         return this.evaluateCall(expr, scope);
       case "GenerateExpr":
         return this.generateRuntime.evaluateGenerate(expr, scope);
+      case "ParallelForExpr":
+        return this.evaluateParallelFor(expr, scope);
       default:
         assertNever(expr);
     }
+  }
+
+  private async evaluateParallelFor(expr: ParallelForExpr, scope: RuntimeScope): Promise<RuntimeValue[]> {
+    const iterable = await this.evaluate(expr.iterable, scope);
+    if (!Array.isArray(iterable)) {
+      throw new RuntimeError("parallel for source must be a list", expr.iterable.range);
+    }
+    const selected = iterable.slice(0, expr.maxIterations);
+    const concurrency = Math.max(1, Math.floor(this.host.concurrency()));
+    const start = Date.now();
+    this.trace.push({
+      kind: "parallel_for",
+      data: {
+        item: expr.itemName,
+        source: formatExpressionSource(expr.iterable),
+        max_items: expr.maxIterations,
+        items: selected.length,
+        concurrency,
+      },
+    });
+
+    const result = await mapLimitWaitAll(selected, concurrency, async (item) => {
+      const child = scope.child();
+      child.define(expr.itemName, item);
+      return this.host.evaluateBlockFinalValue(expr.body, child);
+    });
+    if (result.failures.length > 0) {
+      this.trace.push({
+        kind: "parallel_for",
+        data: {
+          item: expr.itemName,
+          source: formatExpressionSource(expr.iterable),
+          items: selected.length,
+          concurrency,
+          duration_ms: Date.now() - start,
+          ok: false,
+          failed_indices: result.failures.map((failure) => failure.index),
+        },
+      });
+      throw new RuntimeError(
+        `parallel for failed: ${result.failures.map((failure) => `[${failure.index}] ${failure.message}`).join("; ")}`,
+        expr.range,
+      );
+    }
+
+    this.trace.push({
+      kind: "parallel_for",
+      data: {
+        item: expr.itemName,
+        source: formatExpressionSource(expr.iterable),
+        items: selected.length,
+        concurrency,
+        duration_ms: Date.now() - start,
+        ok: true,
+      },
+    });
+    return result.values;
   }
 
   async resolveContextUses(scope: RuntimeScope): Promise<ContextUse[]> {
@@ -107,7 +191,10 @@ export class Evaluator {
     return uses;
   }
 
-  private async evaluateBinary(expr: Extract<Expr, { kind: "BinaryExpr" }>, scope: RuntimeScope): Promise<boolean> {
+  private async evaluateBinary(
+    expr: Extract<Expr, { kind: "BinaryExpr" }>,
+    scope: RuntimeScope,
+  ): Promise<RuntimeValue> {
     switch (expr.operator) {
       case "and":
         return isTruthy(await this.evaluate(expr.left, scope)) && isTruthy(await this.evaluate(expr.right, scope));
@@ -118,7 +205,17 @@ export class Evaluator {
       case "!=":
         return !this.valuesEqual(await this.evaluate(expr.left, scope), await this.evaluate(expr.right, scope));
       case "<":
-        return this.evaluateLessThan(
+      case ">":
+        return this.evaluateComparison(
+          expr.operator,
+          await this.evaluate(expr.left, scope),
+          await this.evaluate(expr.right, scope),
+          expr.range,
+        );
+      case "+":
+      case "-":
+        return this.evaluateArithmetic(
+          expr.operator,
           await this.evaluate(expr.left, scope),
           await this.evaluate(expr.right, scope),
           expr.range,
@@ -126,11 +223,31 @@ export class Evaluator {
     }
   }
 
-  private evaluateLessThan(left: RuntimeValue, right: RuntimeValue, range: SourceRange): boolean {
+  private evaluateComparison(
+    operator: "<" | ">",
+    left: RuntimeValue,
+    right: RuntimeValue,
+    range: SourceRange,
+  ): boolean {
     if (typeof left !== "number" || typeof right !== "number") {
-      throw new RuntimeError("operator '<' requires number operands", range);
+      throw new RuntimeError(`operator '${operator}' requires number operands`, range);
     }
-    return left < right;
+    return operator === "<" ? left < right : left > right;
+  }
+
+  private evaluateArithmetic(
+    operator: "+" | "-",
+    left: RuntimeValue,
+    right: RuntimeValue,
+    range: SourceRange,
+  ): RuntimeValue {
+    if (operator === "+" && (typeof left === "string" || typeof right === "string")) {
+      return `${formatArithmeticOperand(left)}${formatArithmeticOperand(right)}`;
+    }
+    if (typeof left !== "number" || typeof right !== "number") {
+      throw new RuntimeError(`operator '${operator}' requires number operands`, range);
+    }
+    return operator === "+" ? left + right : left - right;
   }
 
   private valuesEqual(left: RuntimeValue, right: RuntimeValue): boolean {
@@ -330,4 +447,40 @@ export class Evaluator {
     }
     return null;
   }
+}
+
+function formatArithmeticOperand(value: RuntimeValue): string {
+  return typeof value === "string" ? value : JSON.stringify(sanitizeForJson(value));
+}
+
+interface MapLimitFailure {
+  index: number;
+  message: string;
+}
+
+async function mapLimitWaitAll<T, R>(
+  items: T[],
+  concurrency: number,
+  mapper: (item: T, index: number) => Promise<R>,
+): Promise<{ values: R[]; failures: MapLimitFailure[] }> {
+  const results = new Array<R>(items.length);
+  const failures: MapLimitFailure[] = [];
+  let nextIndex = 0;
+
+  async function worker(): Promise<void> {
+    while (nextIndex < items.length) {
+      const index = nextIndex;
+      nextIndex += 1;
+      try {
+        results[index] = await mapper(items[index]!, index);
+      } catch (error) {
+        failures.push({ index, message: error instanceof Error ? error.message : String(error) });
+      }
+    }
+  }
+
+  const workerCount = Math.min(concurrency, items.length);
+  await Promise.all(Array.from({ length: workerCount }, () => worker()));
+  failures.sort((left, right) => left.index - right.index);
+  return { values: results, failures };
 }

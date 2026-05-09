@@ -28,6 +28,7 @@ import type { Program } from "../ast/types.js";
 interface CliOptions {
   agentName?: string;
   check: boolean;
+  concurrency?: number;
   dryRun: boolean;
   file?: string;
   functionName?: string;
@@ -115,6 +116,9 @@ function parseArgs(argv: string[]): CliOptions {
       case "--input-file":
         options.inputFile = readOptionValue(args, ++index, arg);
         break;
+      case "--concurrency":
+        options.concurrency = readPositiveIntegerOption(args, ++index, arg);
+        break;
       case "--dry-run":
         options.dryRun = true;
         break;
@@ -181,6 +185,15 @@ function readOptionValue(args: string[], index: number, option: string): string 
   return value;
 }
 
+function readPositiveIntegerOption(args: string[], index: number, option: string): number {
+  const raw = readOptionValue(args, index, option);
+  const value = Number.parseInt(raw, 10);
+  if (!Number.isInteger(value) || value <= 0 || String(value) !== raw) {
+    throw new Error(`${option} must be a positive integer`);
+  }
+  return value;
+}
+
 function readOptionalOptionValue(args: string[], index: number): string | undefined {
   const value = args[index];
   if (!value || value.startsWith("--")) {
@@ -207,6 +220,7 @@ async function runAgent(options: CliOptions): Promise<number> {
   const inputProvider = terminalInputProvider();
   const result = await executeAgent(loadCliProgram(options), input, {
     agentName: options.agentName,
+    concurrency: options.concurrency,
     functionName: options.functionName,
     inputProvider,
     llmProvider: createCliLlmProvider(options),
@@ -299,6 +313,7 @@ function printUsage(write: (message: string) => void): void {
       "  agentscript run <file.as> --mock",
       "  agentscript run <file.as> --dry-run",
       "  agentscript run <file.as> --trace",
+      "  agentscript run <file.as> --concurrency 4",
       "  agentscript run <file.as> --input-file input.json --agent AgentName",
       "  agentscript run <file.as> --input '{}' --quiet",
       "  agentscript <file.as> --check",

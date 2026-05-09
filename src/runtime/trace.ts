@@ -35,6 +35,8 @@ function formatEvent(event: TraceEvent, depth: number): string {
       return `${indent}- input ${readString(event.data.path)}`;
     case "for":
       return `${indent}- for ${readString(event.data.item)}[${summarize(event.data.index)}]`;
+    case "parallel_for":
+      return `${indent}- parallel for ${readString(event.data.item)} (${summarize(event.data.items)} items, concurrency ${summarize(event.data.concurrency)})`;
     case "use":
       return `${indent}- use ${summarize(event.data.source)}`;
     default:

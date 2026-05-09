@@ -177,6 +177,37 @@ describe("agentscript CLI", () => {
     expect(logSpy.mock.calls[1]![0]).toContain("- generate");
   });
 
+  it("passes --concurrency to parallel for execution", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "agentscript-cli-"));
+    const scriptFile = join(dir, "parallel.as");
+    writeFileSync(
+      scriptFile,
+      `
+      main agent A {
+        main func(input) {
+          return parallel for item in input.items max 3 {
+            item
+          }
+        }
+      }
+    `,
+    );
+
+    const code = await main(["run", scriptFile, "--input", '{"items":["a","b","c"]}', "--concurrency", "2"]);
+
+    expect(code).toBe(0);
+    const output = JSON.parse(logSpy.mock.calls[0]![0] as string);
+    expect(output.value).toEqual(["a", "b", "c"]);
+    expect(output.trace).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          kind: "parallel_for",
+          data: expect.objectContaining({ concurrency: 2 }),
+        }),
+      ]),
+    );
+  });
+
   it("prints only the final value with --quiet", async () => {
     const code = await main([fixture, "--input", fixtureInput, "--quiet"]);
 

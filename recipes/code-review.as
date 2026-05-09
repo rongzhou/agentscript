@@ -9,22 +9,18 @@ main agent CodeReviewAssistant {
     main func(input {
         path string
     }) {
-        todos = Grep.run({
-            path: input.path,
-            pattern: "TODO",
-            include: "*",
-            max: 100
-        })
-        fixmes = Grep.run({
-            path: input.path,
-            pattern: "FIXME",
-            include: "*",
-            max: 100
-        })
+        findings = parallel for marker in ["TODO", "FIXME"] max 2 {
+            Grep.run({
+                path: input.path,
+                pattern: marker,
+                include: "*",
+                max: 100
+            })
+        }
 
         use input.path as "source path"
-        use todos max 4k as "todo findings"
-        use fixmes max 4k as "fixme findings"
+        use findings[0] max 4k as "todo findings"
+        use findings[1] max 4k as "fixme findings"
 
         generate({ input: "Turn TODO and FIXME scan results into prioritized repair suggestions", max_output: 1200 }) -> {
             summary string

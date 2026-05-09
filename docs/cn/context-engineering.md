@@ -6,13 +6,12 @@ AgentScript 有变量、函数、循环、工具、memory 和 Agent 调用，但
 
 ## 文档结构
 
-Context engineering 设计拆成三篇：
+Context engineering 的细化语义拆成两篇：
 
-- **Context Engineering**：本文，总览核心模型和不变量。
 - **[`use ... as ...`](./use-as.md)**：说明如何选择数据作为 prompt context，label 如何工作，budget 如何应用，以及 scope 如何影响可见性。
 - **[`generate`](./generate.md)**：说明 generation site、prompt 构造、agent identity、输出契约、预算、重试和 trace。
 
-语言参考仍然是紧凑语法说明；这些设计文档定义语义边界。
+本文总览核心模型和不变量。语言参考仍然是紧凑语法说明。
 
 ## 核心模型
 

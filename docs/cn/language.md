@@ -11,6 +11,15 @@
 - planner、executor、verifier、reflect、improve 和 evolve 等模式名保持为普通标识符。
 - Trace 是调试和审计产物，不是 prompt context。
 
+## 相关设计文档
+
+本文档是紧凑的语法和语言特性索引。详细设计文档包括：
+
+- [`use ... as ...`](./use-as.md)：prompt context 选择、label、budget、scope 可见性、延迟求值和 trace。
+- [`generate`](./generate.md)：generation site、prompt 构造、agent identity、输出契约、provider hint、校验、重试和 trace。
+- [`parallel for`](./parallel-for.md)：面向独立有界 list 工作的结构化并行。
+- [Final Expression Return](./final-expression-return.md)：函数体最后一个顶层表达式的隐式返回规则。
+
 ## 程序结构
 
 程序由 import 声明和 agent 声明组成。执行从选定的 agent 和函数开始，或者从程序的 `main agent` 和 `main func` 开始。
@@ -97,6 +106,8 @@ result = Worker.run(input)
 ```
 
 `AgentName(input)` 调用目标 agent 的 `main func`。`AgentName.funcName(input)` 调用指定的命名函数。
+
+函数可以隐式返回最后一个顶层表达式。完整规则见 [Final Expression Return](./final-expression-return.md)。
 
 ### 入口规则
 
@@ -240,7 +251,7 @@ if answer.ok and not input.dry_run {
 }
 ```
 
-支持的运算符：`==`、`!=`、`<`、`and`、`or`、`not`。Context budget 和循环上限使用 `max`，因此 `<` 恢复为类似 `==` 的普通比较运算符。
+支持的运算符：`+`、`-`、`==`、`!=`、`<`、`>`、`and`、`or`、`not`。复合赋值支持 `+=` 和 `-=`。Context budget 和循环上限使用 `max`，因此 `<` 恢复为类似 `==` 的普通比较运算符。
 
 ### Loop until
 
@@ -278,6 +289,16 @@ for step in plan.steps max 12 {
 ```
 
 列表在循环开始时只求值一次。每次迭代创建子作用域。循环变量作用域限定在循环体内。
+
+结构化并行 list 工作可写成表达式：
+
+```agentscript
+results = parallel for step in plan.steps max 10 {
+    Executor(step)
+}
+```
+
+`parallel for` 并发运行相互独立的 iteration，按输入顺序返回结果，并禁止共享可变外层状态。完整设计见 [`parallel for`](./parallel-for.md)。
 
 ## 列表和 JSON 辅助
 
@@ -476,7 +497,7 @@ main agent Controller {
 
 ## 保留词
 
-`import`、`from`、`main`、`agent`、`func`、`use`、`loop`、`until`、`repeat`、`for`、`in`、`return`、`if`、`else`、`and`、`or`、`not`、`generate`、`true`、`false`、`none`、`string`、`number`、`boolean`、`json`、`list`。
+`import`、`from`、`main`、`agent`、`func`、`use`、`as`、`max`、`loop`、`until`、`repeat`、`for`、`in`、`return`、`if`、`else`、`and`、`or`、`not`、`generate`、`true`、`false`、`none`、`string`、`number`、`boolean`、`json`、`list`。
 
 以下不是保留词：`input`、`act`、`reason`、`observe`、`reflect`、`answer`、`scratch`、`done`、`task`、`output`、`context`、`repair`。
 

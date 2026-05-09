@@ -1,6 +1,6 @@
-# AgentScript 隐式返回规范草案
+# AgentScript Final Expression Return
 
-本文档描述 AgentScript 函数的隐式返回规则草案。
+本文档描述 AgentScript 函数的隐式返回规则。
 
 ## 1. 基本规则
 

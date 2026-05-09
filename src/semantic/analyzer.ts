@@ -49,6 +49,10 @@ class SemanticScope {
     return this.bindings.has(name);
   }
 
+  isLocalToThisScope(name: string): boolean {
+    return this.bindings.has(name);
+  }
+
   resolve(name: string): Binding | undefined {
     return this.bindings.get(name) ?? this.parent?.resolve(name);
   }
@@ -371,6 +375,72 @@ class Analyzer {
       case "GenerateExpr":
         this.checkGenerate(expr, scope);
         break;
+      case "ParallelForExpr":
+        this.checkParallelFor(expr, scope);
+        break;
+    }
+  }
+
+  private checkParallelFor(expr: Extract<Expr, { kind: "ParallelForExpr" }>, scope: SemanticScope): void {
+    this.checkExpression(expr.iterable, scope);
+    if (expr.maxIterations <= 0) {
+      this.error("INVALID_PARALLEL_FOR_LIMIT", "parallel for item count must be greater than 0", expr.range);
+    }
+    if (!this.blockEndsWithExpression(expr.body)) {
+      this.error("INVALID_PARALLEL_FOR_BODY", "parallel for body must end with a value expression", expr.range);
+    }
+    const child = scope.child();
+    child.define(expr.itemName, { kind: "local", range: expr.itemRange });
+    this.checkParallelForBody(expr.body, child);
+  }
+
+  private blockEndsWithExpression(statements: Stmt[]): boolean {
+    return statements.length > 0 && statements[statements.length - 1]?.kind === "ExprStmt";
+  }
+
+  private checkParallelForBody(statements: Stmt[], scope: SemanticScope): void {
+    for (const stmt of statements) {
+      if (stmt.kind === "AssignStmt" && stmt.target.kind === "IdentifierExpr") {
+        const binding = scope.resolve(stmt.target.name);
+        if (binding && !scope.isLocalToThisScope(stmt.target.name)) {
+          this.error(
+            "PARALLEL_FOR_OUTER_ASSIGNMENT",
+            `parallel for body cannot assign to outer variable '${stmt.target.name}'`,
+            stmt.target.range,
+          );
+        }
+      }
+      if (
+        stmt.kind === "ExprStmt" &&
+        stmt.expr.kind === "CallExpr" &&
+        stmt.expr.callee.kind === "MemberExpr" &&
+        stmt.expr.callee.object.kind === "IdentifierExpr"
+      ) {
+        const root = stmt.expr.callee.object.name;
+        const binding = scope.resolve(root);
+        if (binding?.kind === "memory" && stmt.expr.callee.property === "add") {
+          this.error(
+            "PARALLEL_FOR_EFFECTFUL_CALL",
+            `effectful operation '${root}.${stmt.expr.callee.property}' is not allowed inside parallel for`,
+            stmt.expr.callee.range,
+          );
+        }
+        if (binding?.kind === "tool" && EFFECTFUL_TOOL_METHODS.has(stmt.expr.callee.property)) {
+          this.error(
+            "PARALLEL_FOR_EFFECTFUL_CALL",
+            `effectful operation '${root}.${stmt.expr.callee.property}' is not allowed inside parallel for`,
+            stmt.expr.callee.range,
+          );
+        }
+        if (binding && !scope.isLocalToThisScope(root) && stmt.expr.callee.property === "add") {
+          this.error(
+            "PARALLEL_FOR_OUTER_MUTATION",
+            `parallel for body cannot mutate outer variable '${root}'`,
+            stmt.expr.callee.range,
+          );
+        }
+      }
+      this.checkStatement(stmt, scope);
     }
   }
 
@@ -628,6 +698,7 @@ class Analyzer {
 const IMPORTED_BINDING_KINDS = new Set<BindingKind>(["tool", "llm", "file", "agent", "memory"]);
 const NON_CONTEXT_BINDING_KINDS = new Set<BindingKind>(["tool", "llm", "agent", "function", "memory"]);
 const VALID_MEMORY_METHODS = new Set(["add", "query"]);
+const EFFECTFUL_TOOL_METHODS = new Set(["write", "patch", "delete", "post", "put"]);
 const RESERVED_CONTEXT_LABELS = new Set(["system", "assistant", "tool", "developer"]);
 
 function functionBinding(agentName: string, fn: FuncDecl): Binding {

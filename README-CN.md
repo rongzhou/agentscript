@@ -111,7 +111,7 @@ main agent FileSummarizer {
 - `tutorials/` 放更完整的 walkthrough 程序，用于学习端到端的多步骤 agent pattern。
 - `recipes/` 放可直接复制改造的实际工作流，例如 repo review、code review、changelog、文件摘要、文档翻译、API 数据抽取和 research brief。
 
-先看 `examples/structured-generate.as` 学语法，再读 `tutorials/` 理解模式，最后用 `recipes/repo-review.as` 体验更真实、可审计的仓库工作流。
+先看 `examples/structured-generate.as` 学语法，再看 `examples/arithmetic.as` 理解运算符，接着看 `examples/plan-execute.as` 理解 `parallel for`，然后读 `tutorials/` 理解模式，最后用 `recipes/repo-review.as` 体验更真实、可审计的仓库工作流。
 
 `recipes/repo-review.as` 展示了 AgentScript 的核心差异：工具结果不会自动进入 prompt。这个 recipe 会显式选择 file tree、TODO/FIXME findings、package metadata 和 CI configuration，然后生成结构化的 release readiness 结果：
 
@@ -278,6 +278,7 @@ agentscript run recipes/code-review.as --quiet
 | `--parse` | 解析并输出 AST 为 JSON |
 | `--mock` | 使用确定性的 mock provider，不调用真实模型 |
 | `--dry-run` | 构建 prompt 和 trace，但不调用模型 |
+| `--concurrency <n>` | 设置 `parallel for` 的运行时并发上限 |
 | `--trace <文件>` | 将 trace 写入文件 |
 | `--trace` | 打印可读的 trace |
 | `--trace pretty` | `--trace` 的兼容别名 |
@@ -288,8 +289,8 @@ agentscript run recipes/code-review.as --quiet
 
 | 语言 | 链接 |
 |------|------|
-| 中文 | [README-CN](./README-CN.md) · [语言参考](docs/cn/language.md) · [Context Engineering](docs/cn/context-engineering.md) · [`use ... as ...`](docs/cn/use-as.md) · [`generate`](docs/cn/generate.md) |
-| English | [Language Reference](docs/en/language.md) · [Context Engineering](docs/en/context-engineering.md) · [`use ... as ...`](docs/en/use-as.md) · [`generate`](docs/en/generate.md) · [Design History](docs/design-history/) |
+| 中文 | [README-CN](./README-CN.md) · [语言参考](docs/cn/language.md) · [Context Engineering](docs/cn/context-engineering.md) · [`use ... as ...`](docs/cn/use-as.md) · [`generate`](docs/cn/generate.md) · [`parallel for`](docs/cn/parallel-for.md) · [Final Expression Return](docs/cn/final-expression-return.md) |
+| English | [Language Reference](docs/en/language.md) · [Context Engineering](docs/en/context-engineering.md) · [`use ... as ...`](docs/en/use-as.md) · [`generate`](docs/en/generate.md) · [`parallel for`](docs/en/parallel-for.md) · [Final Expression Return](docs/en/final-expression-return.md) · [Design History](docs/design-history/) |
 
 ### 设计原则
 

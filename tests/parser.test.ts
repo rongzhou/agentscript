@@ -189,6 +189,29 @@ describe("parse", () => {
       operator: "<",
     });
   });
+
+  it("parses arithmetic before comparison", () => {
+    const ast = parse(`
+      agent A {
+        func act(input) {
+          return input.count + 1 > 3
+        }
+      }
+    `);
+
+    const stmt = ast.agents[0]!.functions[0]!.body[0]!;
+    expect(stmt.kind).toBe("ReturnStmt");
+    if (stmt.kind !== "ReturnStmt") return;
+    expect(stmt.value).toMatchObject({
+      kind: "BinaryExpr",
+      operator: ">",
+      left: {
+        kind: "BinaryExpr",
+        operator: "+",
+      },
+    });
+  });
+
   it("parses for-in list traversal", () => {
     const ast = parse(`
       agent A {
@@ -209,6 +232,31 @@ describe("parse", () => {
     expect(stmt.iterable.kind).toBe("MemberExpr");
     expect(stmt.body[0]).toMatchObject({
       kind: "UseStmt",
+    });
+  });
+
+  it("parses parallel for expressions", () => {
+    const ast = parse(`
+      agent A {
+        func act(input) {
+          results = parallel for step in input.steps max 3 {
+            step.name
+          }
+          return results
+        }
+      }
+    `);
+
+    const stmt = ast.agents[0]!.functions[0]!.body[0]!;
+    expect(stmt.kind).toBe("AssignStmt");
+    if (stmt.kind !== "AssignStmt") return;
+    expect(stmt.value.kind).toBe("ParallelForExpr");
+    if (stmt.value.kind !== "ParallelForExpr") return;
+    expect(stmt.value.itemName).toBe("step");
+    expect(stmt.value.maxIterations).toBe(3);
+    expect(stmt.value.iterable.kind).toBe("MemberExpr");
+    expect(stmt.value.body.at(-1)).toMatchObject({
+      kind: "ExprStmt",
     });
   });
 

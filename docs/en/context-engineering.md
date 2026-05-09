@@ -6,13 +6,12 @@ AgentScript has variables, functions, loops, tools, memory, and agent calls, but
 
 ## Document structure
 
-The context engineering design is split into three documents:
+Detailed context-engineering semantics are split into two documents:
 
-- **Context Engineering**: this overview; explains the mental model and invariants.
 - **[`use ... as ...`](./use-as.md)**: explains how data is selected as prompt context, how labels work, how budgets are applied, and how scope affects visibility.
 - **[`generate`](./generate.md)**: explains generation sites, prompt construction, agent identity, output contracts, budgets, retries, and trace output.
 
-The language reference remains the compact syntax reference. These design documents define the intended semantics.
+This overview explains the mental model and invariants. The language reference remains the compact syntax reference.
 
 ## Core model
 

@@ -86,6 +86,7 @@ export interface UseStmt extends NodeBase {
 export interface AssignStmt extends NodeBase {
   kind: "AssignStmt";
   target: Expr;
+  operator: "=" | "+=" | "-=";
   value: Expr;
 }
 
@@ -142,7 +143,8 @@ export type Expr =
   | CallExpr
   | UnaryExpr
   | BinaryExpr
-  | GenerateExpr;
+  | GenerateExpr
+  | ParallelForExpr;
 
 export interface IdentifierExpr extends NodeBase {
   kind: "IdentifierExpr";
@@ -234,7 +236,7 @@ export interface UnaryExpr extends NodeBase {
 
 export interface BinaryExpr extends NodeBase {
   kind: "BinaryExpr";
-  operator: "==" | "!=" | "<" | "and" | "or";
+  operator: "==" | "!=" | "<" | ">" | "+" | "-" | "and" | "or";
   left: Expr;
   right: Expr;
 }
@@ -243,6 +245,15 @@ export interface GenerateExpr extends NodeBase {
   kind: "GenerateExpr";
   options: GenerateOptionsExpr;
   returnShape?: ShapeObjectExpr;
+}
+
+export interface ParallelForExpr extends NodeBase {
+  kind: "ParallelForExpr";
+  itemName: string;
+  itemRange: SourceRange;
+  iterable: Expr;
+  maxIterations: number;
+  body: Stmt[];
 }
 
 export interface GenerateOptionsExpr extends NodeBase {

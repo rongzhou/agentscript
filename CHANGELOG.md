@@ -2,6 +2,27 @@
 
 All notable changes to AgentScript will be documented in this file.
 
+## 0.1.7 - 2026-05-09
+
+### Added
+
+- Added `parallel for` as a structured parallel expression for independent bounded list work.
+- Added runtime concurrency control through `--concurrency <n>` and SDK execution options.
+- Added arithmetic and comparison support for `+`, `-`, `<`, and `>`.
+- Added compound assignment with `+=` and `-=`.
+- Added `examples/arithmetic.as` and updated `examples/plan-execute.as` to demonstrate the new language features.
+- Added English and Chinese `parallel for` documentation.
+
+### Changed
+
+- Updated README, README-CN, language references, examples, recipes, and tests for `parallel for` and arithmetic operators.
+- Simplified `recipes/code-review.as` with `parallel for` for independent TODO/FIXME scans.
+- Cleaned user-facing documentation to remove internal implementation details and stale planned wording.
+
+### Verified
+
+- Verified formatting, type checking, full test suite, sample program execution, and production build.
+
 ## 0.1.6 - 2026-05-09
 
 ### Added

@@ -36,17 +36,23 @@ agentscript --help
 Or run without installing:
 
 ```bash
-npx @rong/agentscript recipes/code-review.as --input '{"path":"src"}'
+npx @rong/agentscript run recipes/code-review.as --input '{"path":"src"}'
 ```
 
 ## Quick start
 
 ```bash
-# Run with mock LLM (default, no API key needed)
-agentscript recipes/summarize-file.as --input '{"path":"README.md"}'
+# Real model call by default
+agentscript run recipes/summarize-file.as --input '{"path":"README.md"}'
 
-# Run with real LLM
-agentscript recipes/summarize-file.as --input '{"path":"README.md"}' --real-llm
+# Mock override for deterministic local checks
+agentscript run recipes/summarize-file.as --input '{"path":"README.md"}' --mock
+
+# Dry-run inspection without model calls
+agentscript run recipes/summarize-file.as --input '{"path":"README.md"}' --dry-run
+
+# Audit trace
+agentscript run recipes/summarize-file.as --input '{"path":"README.md"}' --trace
 ```
 
 The `recipes/summarize-file.as` recipe reads a local file, includes it in the LLM context, and returns a structured summary:
@@ -105,7 +111,7 @@ schema                  title, summary, key_points, action_items
 validation              ok
 ```
 
-With `--real-llm`, the fields are populated by the model.
+Use `--mock` when you want deterministic local output. Without `--mock` or `--dry-run`, AgentScript calls the configured real model.
 
 The optional block after `generate` is an output schema, not ordinary object construction.
 
@@ -263,11 +269,13 @@ Python and TypeScript are excellent general-purpose tools, but they have no conc
 ## CLI
 
 ```bash
-agentscript recipes/code-review.as --input '{"path":"src"}'
+agentscript run recipes/code-review.as --input '{"path":"src"}'
+agentscript run recipes/code-review.as --input '{"path":"src"}' --mock
+agentscript run recipes/code-review.as --input '{"path":"src"}' --dry-run
+agentscript run recipes/code-review.as --input '{"path":"src"}' --trace
 agentscript recipes/code-review.as --check
 agentscript examples/react.as --parse
-agentscript recipes/code-review.as --trace pretty
-agentscript recipes/code-review.as --quiet
+agentscript run recipes/code-review.as --quiet
 ```
 
 | Option | Description |
@@ -278,9 +286,11 @@ agentscript recipes/code-review.as --quiet
 | `--function <name>` | Select a specific entry function |
 | `--check` | Parse + semantic analysis (no execution) |
 | `--parse` | Parse and output AST as JSON |
-| `--real-llm` | Use real LLM provider instead of mock |
+| `--mock` | Use deterministic mock providers instead of real model calls |
+| `--dry-run` | Build prompts and trace without model calls |
 | `--trace <file>` | Write execution trace to file |
-| `--trace pretty` | Print human-readable trace |
+| `--trace` | Print human-readable trace |
+| `--trace pretty` | Backward-compatible alias for `--trace` |
 | `--verbose` | Print detailed trace |
 | `--quiet` | Output only the final value |
 

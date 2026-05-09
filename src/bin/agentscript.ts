@@ -7,9 +7,18 @@ import { createInterface } from "node:readline/promises";
 import { executeAgent } from "../runtime/interpreter.js";
 import { loadProgram } from "../runtime/loader.js";
 import { ProtocolLlmProvider } from "../providers/llm/index.js";
+import { MockLlmProvider } from "../providers/mock/index.js";
+import { buildValueFromShape } from "../runtime/shape.js";
 import { sanitizeForJson } from "../runtime/json.js";
 import { formatTrace } from "../runtime/trace.js";
-import type { InputProvider, InputRequest, JsonObject, RuntimeValue } from "../runtime/types.js";
+import type {
+  GenerateRequest,
+  InputProvider,
+  InputRequest,
+  JsonObject,
+  LlmProvider,
+  RuntimeValue,
+} from "../runtime/types.js";
 import { analyze } from "../semantic/analyzer.js";
 import { formatSemanticDiagnostics } from "../semantic/diagnostics.js";
 import { parseInteractiveInputValue, parseJsonObjectInput } from "./input.js";
@@ -19,11 +28,13 @@ import type { Program } from "../ast/types.js";
 interface CliOptions {
   agentName?: string;
   check: boolean;
+  dryRun: boolean;
   file?: string;
   functionName?: string;
   help: boolean;
   input?: string;
   inputFile?: string;
+  mock: boolean;
   parse: boolean;
   quiet: boolean;
   realLlm: boolean;
@@ -59,6 +70,12 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
     if (options.parse && options.check) {
       throw new Error("Use either --parse or --check, not both");
     }
+    if (options.dryRun && options.mock) {
+      throw new Error("Use either --dry-run or --mock, not both");
+    }
+    if (options.realLlm && options.mock) {
+      throw new Error("Use either --real-llm or --mock, not both");
+    }
     if (options.parse) {
       return runParse(options);
     }
@@ -75,7 +92,9 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
 function parseArgs(argv: string[]): CliOptions {
   const options: CliOptions = {
     check: false,
+    dryRun: false,
     help: false,
+    mock: false,
     parse: false,
     quiet: false,
     realLlm: false,
@@ -84,21 +103,25 @@ function parseArgs(argv: string[]): CliOptions {
     version: false,
   };
 
+  const args = argv[0] === "run" ? argv.slice(1) : argv;
   const positional: string[] = [];
-  for (let index = 0; index < argv.length; index += 1) {
-    const arg = argv[index]!;
+  for (let index = 0; index < args.length; index += 1) {
+    const arg = args[index]!;
     switch (arg) {
       case "--agent":
-        options.agentName = readOptionValue(argv, ++index, arg);
+        options.agentName = readOptionValue(args, ++index, arg);
         break;
       case "--function":
-        options.functionName = readOptionValue(argv, ++index, arg);
+        options.functionName = readOptionValue(args, ++index, arg);
         break;
       case "--input":
-        options.input = readOptionValue(argv, ++index, arg);
+        options.input = readOptionValue(args, ++index, arg);
         break;
       case "--input-file":
-        options.inputFile = readOptionValue(argv, ++index, arg);
+        options.inputFile = readOptionValue(args, ++index, arg);
+        break;
+      case "--dry-run":
+        options.dryRun = true;
         break;
       case "--check":
         options.check = true;
@@ -113,6 +136,9 @@ function parseArgs(argv: string[]): CliOptions {
       case "--quiet":
         options.quiet = true;
         break;
+      case "--mock":
+        options.mock = true;
+        break;
       case "--real-llm":
         options.realLlm = true;
         break;
@@ -122,10 +148,14 @@ function parseArgs(argv: string[]): CliOptions {
         break;
       case "--trace":
         {
-          const value = readOptionValue(argv, ++index, arg);
-          if (value === "pretty") {
+          const value = readOptionalOptionValue(args, index + 1);
+          if (!value) {
+            options.tracePretty = true;
+          } else if (value === "pretty") {
+            index += 1;
             options.tracePretty = true;
           } else {
+            index += 1;
             options.traceFile = value;
           }
         }
@@ -159,6 +189,14 @@ function readOptionValue(args: string[], index: number, option: string): string 
   return value;
 }
 
+function readOptionalOptionValue(args: string[], index: number): string | undefined {
+  const value = args[index];
+  if (!value || value.startsWith("--")) {
+    return undefined;
+  }
+  return value;
+}
+
 function runParse(options: CliOptions): number {
   printJson(loadCliProgram(options));
   return 0;
@@ -179,7 +217,7 @@ async function runAgent(options: CliOptions): Promise<number> {
     agentName: options.agentName,
     functionName: options.functionName,
     inputProvider,
-    llmProvider: options.realLlm ? new ProtocolLlmProvider() : undefined,
+    llmProvider: createCliLlmProvider(options),
     sourcePath: options.file,
   }).finally(() => inputProvider?.close?.());
 
@@ -197,6 +235,22 @@ async function runAgent(options: CliOptions): Promise<number> {
     console.log(formatTrace(result.trace));
   }
   return 0;
+}
+
+function createCliLlmProvider(options: CliOptions): LlmProvider {
+  if (options.dryRun) {
+    return new DryRunLlmProvider();
+  }
+  if (options.mock) {
+    return new MockLlmProvider();
+  }
+  return new ProtocolLlmProvider();
+}
+
+class DryRunLlmProvider implements LlmProvider {
+  async generate(request: GenerateRequest): Promise<RuntimeValue> {
+    return request.returnShape ? buildValueFromShape(request.returnShape) : null;
+  }
 }
 
 function loadCliProgram(options: CliOptions): Program {
@@ -248,12 +302,13 @@ function printUsage(write: (message: string) => void): void {
   write(
     [
       "Usage:",
-      '  agentscript <file.as> --input \'{"question":"..."}\'',
-      "  agentscript <file.as>",
-      "  agentscript <file.as> --input-file input.json --agent AgentName",
-      "  agentscript <file.as> --input '{}' --quiet",
-      "  agentscript <file.as> --input '{}' --verbose",
-      "  agentscript <file.as> --input '{}' --trace pretty",
+      '  agentscript run <file.as> --input \'{"question":"..."}\'',
+      "  agentscript run <file.as>",
+      "  agentscript run <file.as> --mock",
+      "  agentscript run <file.as> --dry-run",
+      "  agentscript run <file.as> --trace",
+      "  agentscript run <file.as> --input-file input.json --agent AgentName",
+      "  agentscript run <file.as> --input '{}' --quiet",
       "  agentscript <file.as> --check",
       "  agentscript <file.as> --parse",
       "  agentscript",

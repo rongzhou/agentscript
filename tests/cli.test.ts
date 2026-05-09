@@ -21,6 +21,7 @@ describe("agentscript CLI", () => {
   afterEach(() => {
     logSpy.mockRestore();
     errorSpy.mockRestore();
+    vi.unstubAllEnvs();
   });
 
   it("prints help and version with success exit codes", async () => {
@@ -59,6 +60,82 @@ describe("agentscript CLI", () => {
     expect(output.trace.some((event: { kind: string }) => event.kind === "agent")).toBe(true);
   });
 
+  it("supports the run subcommand", async () => {
+    const code = await main(["run", fixture, "--input", fixtureInput]);
+
+    expect(code).toBe(0);
+    const output = JSON.parse(logSpy.mock.calls[0]![0] as string);
+    expect(output.value).toMatchObject({ ok: true });
+  });
+
+  it("uses real LLM mode by default and allows explicit mock override", async () => {
+    vi.stubEnv("OPENAI_API_KEY", "");
+    const dir = mkdtempSync(join(tmpdir(), "agentscript-cli-"));
+    const scriptFile = join(dir, "agent.as");
+    writeFileSync(
+      scriptFile,
+      `
+      import llm OpenAI from "openai://gpt-4.1-mini"
+
+      main agent A {
+        model OpenAI
+        role "Assistant"
+        description "Answer in a structured object."
+
+        main func(input) {
+          return generate({ input: "answer" }) -> {
+              ok boolean
+          }
+        }
+      }
+    `,
+    );
+
+    const real = await main(["run", scriptFile]);
+    expect(real).toBe(1);
+    expect(errorSpy.mock.calls[0]![0]).toContain("OPENAI_API_KEY is required");
+
+    errorSpy.mockClear();
+    logSpy.mockClear();
+    const mock = await main(["run", scriptFile, "--mock"]);
+    expect(mock).toBe(0);
+    const output = JSON.parse(logSpy.mock.calls[0]![0] as string);
+    expect(output.value).toEqual({ ok: true });
+  });
+
+  it("dry-runs a program without a model provider call", async () => {
+    vi.stubEnv("OPENAI_API_KEY", "");
+    const dir = mkdtempSync(join(tmpdir(), "agentscript-cli-"));
+    const scriptFile = join(dir, "agent.as");
+    writeFileSync(
+      scriptFile,
+      `
+      import llm OpenAI from "openai://gpt-4.1-mini"
+
+      main agent A {
+        model OpenAI
+        role "Inspector"
+        description "Inspect a dry-run prompt without calling a model."
+
+        main func(input) {
+          return generate({ input: "inspect" }) -> {
+              title string
+              items list[string]
+          }
+        }
+      }
+    `,
+    );
+
+    const code = await main(["run", scriptFile, "--dry-run", "--trace"]);
+
+    expect(code).toBe(0);
+    expect(errorSpy).not.toHaveBeenCalled();
+    const output = JSON.parse(logSpy.mock.calls[0]![0] as string);
+    expect(output.value).toEqual({ title: "", items: [] });
+    expect(logSpy.mock.calls[1]![0]).toContain("- generate");
+  });
+
   it("rejects positional input json", async () => {
     const code = await main([fixture, fixtureInput]);
 
@@ -88,11 +165,12 @@ describe("agentscript CLI", () => {
 
   it("prints a readable trace", async () => {
     const code = await main([
+      "run",
       "tutorials/cli.as",
       "--input",
       '{"name":"Rong","request":"Say hello"}',
+      "--mock",
       "--trace",
-      "pretty",
     ]);
 
     expect(code).toBe(0);

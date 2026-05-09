@@ -6,7 +6,7 @@ AgentScript is distributed as an npm package and can also be run from source.
 
 - Node.js >= 22.5.
 - npm.
-- Optional: Ollama, OpenAI, or Anthropic credentials when running with `--real-llm`.
+- Optional: Ollama, OpenAI, or Anthropic credentials for real model calls.
 
 The SQLite memory backend uses Node's built-in `node:sqlite` module, so Node.js 22.5 or newer is required.
 
@@ -16,7 +16,7 @@ After the package is published:
 
 ```bash
 npm install -g @rong/agentscript
-agentscript recipes/code-review.as --input '{"path":"src"}'
+agentscript run recipes/code-review.as --input '{"path":"src"}'
 ```
 
 ## Run with npx
@@ -24,7 +24,7 @@ agentscript recipes/code-review.as --input '{"path":"src"}'
 After the package is published:
 
 ```bash
-npx @rong/agentscript recipes/code-review.as --input '{"path":"src"}'
+npx @rong/agentscript run recipes/code-review.as --input '{"path":"src"}'
 ```
 
 ## Run from source
@@ -47,13 +47,13 @@ npm run parse -- examples/react.as
 
 ## Real LLM providers
 
-By default, AgentScript uses a mock LLM provider for local flow checks. Add `--real-llm` to call a real provider.
+By default, `agentscript run` calls the configured real LLM provider. Use `--mock` for deterministic local flow checks, or `--dry-run` to inspect prompts and trace without model calls.
 
 ### OpenAI
 
 ```bash
 export OPENAI_API_KEY="..."
-agentscript recipes/code-review.as --input '{"path":"src"}' --real-llm
+agentscript run recipes/code-review.as --input '{"path":"src"}'
 ```
 
 Use an AgentScript import such as:
@@ -66,7 +66,7 @@ import llm OpenAI from "openai://gpt-4.1-mini"
 
 ```bash
 export ANTHROPIC_API_KEY="..."
-agentscript recipes/code-review.as --input '{"path":"src"}' --real-llm
+agentscript run recipes/code-review.as --input '{"path":"src"}'
 ```
 
 Use an AgentScript import such as:

@@ -36,17 +36,23 @@ agentscript --help
 或者免安装运行：
 
 ```bash
-npx @rong/agentscript recipes/code-review.as --input '{"path":"src"}'
+npx @rong/agentscript run recipes/code-review.as --input '{"path":"src"}'
 ```
 
 ## 快速开始
 
 ```bash
-# 使用 mock LLM（默认，无需 API key）
-agentscript recipes/summarize-file.as --input '{"path":"README.md"}'
+# 默认调用真实模型
+agentscript run recipes/summarize-file.as --input '{"path":"README.md"}'
 
-# 使用真实 LLM
-agentscript recipes/summarize-file.as --input '{"path":"README.md"}' --real-llm
+# 使用 mock override 做确定性本地检查
+agentscript run recipes/summarize-file.as --input '{"path":"README.md"}' --mock
+
+# Dry-run 检查，不调用模型
+agentscript run recipes/summarize-file.as --input '{"path":"README.md"}' --dry-run
+
+# 审计 trace
+agentscript run recipes/summarize-file.as --input '{"path":"README.md"}' --trace
 ```
 
 `recipes/summarize-file.as` 读取本地文件，将其放入 LLM 上下文，并返回结构化摘要：
@@ -95,7 +101,7 @@ main agent FileSummarizer {
 }
 ```
 
-加上 `--real-llm` 后，字段将由模型填充。
+需要确定性的本地输出时使用 `--mock`。不加 `--mock` 或 `--dry-run` 时，AgentScript 会调用配置的真实模型。
 
 `generate` 后面的 block 是返回结构 schema，不是普通对象构造。
 
@@ -253,11 +259,13 @@ Python 和 TypeScript 是优秀的通用工具，但它们没有"prompt 上下�
 ## CLI
 
 ```bash
-agentscript recipes/code-review.as --input '{"path":"src"}'
+agentscript run recipes/code-review.as --input '{"path":"src"}'
+agentscript run recipes/code-review.as --input '{"path":"src"}' --mock
+agentscript run recipes/code-review.as --input '{"path":"src"}' --dry-run
+agentscript run recipes/code-review.as --input '{"path":"src"}' --trace
 agentscript recipes/code-review.as --check
 agentscript examples/react.as --parse
-agentscript recipes/code-review.as --trace pretty
-agentscript recipes/code-review.as --quiet
+agentscript run recipes/code-review.as --quiet
 ```
 
 | 选项 | 说明 |
@@ -268,9 +276,11 @@ agentscript recipes/code-review.as --quiet
 | `--function <名称>` | 选择入口函数 |
 | `--check` | 解析 + 语义分析（不执行） |
 | `--parse` | 解析并输出 AST 为 JSON |
-| `--real-llm` | 使用真实 LLM provider |
+| `--mock` | 使用确定性的 mock provider，不调用真实模型 |
+| `--dry-run` | 构建 prompt 和 trace，但不调用模型 |
 | `--trace <文件>` | 将 trace 写入文件 |
-| `--trace pretty` | 打印可读的 trace |
+| `--trace` | 打印可读的 trace |
+| `--trace pretty` | `--trace` 的兼容别名 |
 | `--verbose` | 打印详细 trace |
 | `--quiet` | 仅输出最终结果 |
 

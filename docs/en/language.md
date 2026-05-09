@@ -191,6 +191,8 @@ use input.question as user
 
 `use expr < budget` declares a context source, not a snapshot. The expression is re-evaluated when `generate` builds the prompt. This means updates to a variable made after `use` but before `generate` are visible at generation time.
 
+For the full design semantics, see [`use ... as ...`](./use-as.md).
+
 ## Generate
 
 `generate` calls the current model and requires an `input` instruction. A return shape is optional.
@@ -218,6 +220,8 @@ answer = generate({
 - Without `-> { ... }`, the generate output is unconstrained: AgentScript does not add a return schema to the prompt, does not request provider structured output, and does not coerce or validate the returned value.
 - Provider errors (auth, network, timeout, missing model) fail directly without retry.
 - Shape validation includes coercion (e.g. `"true"` -> `true`, `"42"` -> `42`).
+
+For prompt construction, identity, retry, and trace semantics, see [`generate`](./generate.md).
 
 ## Control flow
 

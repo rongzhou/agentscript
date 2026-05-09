@@ -191,6 +191,8 @@ use input.question as user
 
 `use expr < budget` 声明的是 context source，而不是当前值的快照。当 `generate` 构建 prompt 时，表达式会被重新求值。这意味着在 `use` 之后、`generate` 之前对变量的修改在生成时刻是可见的。
 
+完整设计语义见 [`use ... as ...`](./use-as.md)。
+
 ## Generate
 
 `generate` 调用当前模型，需要 `input` 指令。返回 shape 是可选的。
@@ -218,6 +220,8 @@ answer = generate({
 - 不写 `-> { ... }` 时，`generate` 输出无约束：AgentScript 不会在 prompt 中加入返回 schema，不会要求 provider 使用结构化输出，也不会对返回值做类型强制转换或 shape 校验。
 - Provider 错误（认证、网络、超时、模型不存在）直接失败，不做重试。
 - Shape 校验包含类型强制转换（如 `"true"` -> `true`，`"42"` -> `42`）。
+
+Prompt 构造、identity、retry 和 trace 语义见 [`generate`](./generate.md)。
 
 ## 控制流
 

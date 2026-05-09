@@ -254,8 +254,8 @@ agentscript examples/review.as --quiet               # 仅输出最终值
 
 | 语言 | 链接 |
 |------|------|
-| 中文 | [README-CN](./README-CN.md) · [语言参考](docs/cn/language.md) · [Context Engineering](docs/cn/context-engineering.md) |
-| English | [Language Reference](docs/en/language.md) · [Context Engineering](docs/en/context-engineering.md) · [Design History](docs/design-history/) |
+| 中文 | [README-CN](./README-CN.md) · [语言参考](docs/cn/language.md) · [Context Engineering](docs/cn/context-engineering.md) · [`use ... as ...`](docs/cn/use-as.md) · [`generate`](docs/cn/generate.md) |
+| English | [Language Reference](docs/en/language.md) · [Context Engineering](docs/en/context-engineering.md) · [`use ... as ...`](docs/en/use-as.md) · [`generate`](docs/en/generate.md) · [Design History](docs/design-history/) |
 
 ### 设计原则
 

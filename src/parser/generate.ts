@@ -1,13 +1,4 @@
-import type {
-  BooleanExpr,
-  Budget,
-  Expr,
-  GenerateExpr,
-  GenerateOptionsExpr,
-  NumberExpr,
-  ObjectProperty,
-  StringExpr,
-} from "../ast/types.js";
+import type { Budget, Expr, GenerateExpr, GenerateOptionsExpr, NumberExpr, ObjectProperty } from "../ast/types.js";
 import type { Token } from "./tokenizer.js";
 import { parseShapeObject, type ShapeParserHost } from "./shape.js";
 
@@ -37,13 +28,7 @@ export function parseGenerate(parser: GenerateParserHost): GenerateExpr {
 function parseGenerateOptions(parser: GenerateParserHost): GenerateOptionsExpr {
   const start = parser.consume("{").range.start;
   const properties: ObjectProperty[] = [];
-  let input: Expr | undefined;
-  let attempts: NumberExpr | undefined;
   let maxOutput: Budget | undefined;
-  let temperature: NumberExpr | undefined;
-  let think: BooleanExpr | StringExpr | undefined;
-  let strict: BooleanExpr | undefined;
-  let debug: BooleanExpr | undefined;
 
   while (!parser.check("}") && parser.peek().kind !== "eof") {
     const propStart = parser.peek().range.start;
@@ -68,33 +53,13 @@ function parseGenerateOptions(parser: GenerateParserHost): GenerateOptionsExpr {
       value,
       range: { start: propStart, end: value.range.end },
     });
-    if (key === "input") {
-      input = value;
-    } else if (key === "attempts" && value.kind === "NumberExpr") {
-      attempts = value;
-    } else if (key === "temperature" && value.kind === "NumberExpr") {
-      temperature = value;
-    } else if (key === "think" && (value.kind === "BooleanExpr" || value.kind === "StringExpr")) {
-      think = value;
-    } else if (key === "strict" && value.kind === "BooleanExpr") {
-      strict = value;
-    } else if (key === "debug" && value.kind === "BooleanExpr") {
-      debug = value;
-    }
     parser.consumePropertySeparator("}");
   }
-
   parser.consume("}");
   return {
     kind: "GenerateOptionsExpr",
     properties,
-    input,
-    attempts,
     maxOutput,
-    temperature,
-    think,
-    strict,
-    debug,
     range: { start, end: parser.previous().range.end },
   };
 }

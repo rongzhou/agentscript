@@ -4,6 +4,7 @@ import type {
   LlmBinding,
   MemoryBinding,
   RuntimeObject,
+  RuntimeResource,
   RuntimeValue,
   ToolBinding,
 } from "./types.js";
@@ -31,8 +32,6 @@ export function isMemoryBinding(value: RuntimeValue): value is MemoryBinding {
 export function isObject(value: RuntimeValue): value is RuntimeObject {
   return typeof value === "object" && value !== null && !Array.isArray(value) && !isRuntimeResource(value);
 }
-
-type RuntimeResource = ToolBinding | LlmBinding | FunctionBinding | AgentBinding | MemoryBinding;
 
 export function isRuntimeResource(value: RuntimeValue): value is RuntimeResource {
   return typeof value === "object" && value !== null && !Array.isArray(value) && "__agentScriptResource" in value;

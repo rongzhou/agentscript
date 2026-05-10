@@ -1,3 +1,4 @@
+import { formatSourceRangeStart } from "../ast/format.js";
 import type { SourceRange } from "../ast/types.js";
 
 export type DiagnosticSeverity = "error" | "warning";
@@ -13,6 +14,10 @@ export interface SemanticResult {
   diagnostics: SemanticDiagnostic[];
 }
 
+export function errorDiagnostic(code: string, message: string, range: SourceRange): SemanticDiagnostic {
+  return { severity: "error", code, message, range };
+}
+
 export class SemanticError extends Error {
   readonly diagnostics: SemanticDiagnostic[];
 
@@ -25,9 +30,9 @@ export class SemanticError extends Error {
 
 export function formatSemanticDiagnostics(diagnostics: SemanticDiagnostic[]): string {
   return diagnostics
-    .map((diagnostic) => {
-      const { line, column } = diagnostic.range.start;
-      return `${diagnostic.severity.toUpperCase()} ${diagnostic.code} at ${line}:${column}: ${diagnostic.message}`;
-    })
+    .map(
+      (diagnostic) =>
+        `${diagnostic.severity.toUpperCase()} ${diagnostic.code} at ${formatSourceRangeStart(diagnostic.range)}: ${diagnostic.message}`,
+    )
     .join("\n");
 }

@@ -1,5 +1,5 @@
 import { assertNever } from "../utils/assert.js";
-import type { AgentDecl, CallExpr, ConfigDecl, ConfigStmt, Expr, MemberExpr, SourceRange, Stmt } from "../ast/types.js";
+import type { AgentDecl, CallExpr, ConfigDecl, Expr, MemberExpr, SourceRange, Stmt } from "../ast/types.js";
 import { RuntimeError } from "./errors.js";
 import { GenerateRuntime } from "./generate.js";
 import { isAgentBinding, isFunctionBinding, isLlmBinding, isMemoryBinding, isObject, isToolBinding } from "./guards.js";
@@ -37,7 +37,7 @@ export class Evaluator {
     private readonly host: EvaluatorHost,
   ) {}
 
-  async evaluateConfig(config: ConfigDecl | ConfigStmt, scope: RuntimeScope): Promise<RuntimeValue> {
+  async evaluateConfig(config: ConfigDecl, scope: RuntimeScope): Promise<RuntimeValue> {
     switch (config.key) {
       case "model": {
         const value = await this.evaluate(config.value, scope);

@@ -15,18 +15,8 @@ import { isTruthy } from "./truth.js";
 import { createDefaultMemoryProvider } from "../providers/memory/index.js";
 import { MockLlmProvider } from "../providers/mock/index.js";
 import { createDefaultToolProvider } from "../providers/tools/index.js";
-import { isDisposable } from "./types.js";
-import type {
-  InputProvider,
-  LlmBinding,
-  LlmProvider,
-  MemoryBinding,
-  MemoryProvider,
-  RuntimeValue,
-  ToolBinding,
-  ToolProvider,
-  TraceEvent,
-} from "./types.js";
+import { isDisposable } from "./disposable.js";
+import type { InputProvider, LlmProvider, MemoryProvider, RuntimeValue, ToolProvider, TraceEvent } from "./types.js";
 
 export interface ExecuteOptions {
   agentName?: string;
@@ -47,6 +37,12 @@ export interface ExecuteResult {
 
 interface ReturnSignal {
   kind: "return";
+  value: RuntimeValue;
+}
+
+interface ImportBinding {
+  name: string;
+  kind: "tool" | "llm" | "file" | "memory";
   value: RuntimeValue;
 }
 
@@ -75,10 +71,7 @@ class Interpreter {
   private readonly agent: AgentDecl;
   private currentAgent: AgentDecl;
   private readonly agents = new Map<string, AgentDecl>();
-  private readonly files = new Map<string, RuntimeValue>();
-  private readonly tools = new Map<string, ToolBinding>();
-  private readonly llms = new Map<string, LlmBinding>();
-  private readonly memories = new Map<string, MemoryBinding>();
+  private readonly imports: ImportBinding[] = [];
   private callDepth = 0;
 
   constructor(
@@ -121,16 +114,32 @@ class Interpreter {
     for (const imported of program.imports) {
       switch (imported.resourceKind) {
         case "tool":
-          this.tools.set(imported.name, { __agentScriptResource: "tool", name: imported.name, uri: imported.uri });
+          this.imports.push({
+            name: imported.name,
+            kind: "tool",
+            value: { __agentScriptResource: "tool", name: imported.name, uri: imported.uri },
+          });
           break;
         case "llm":
-          this.llms.set(imported.name, { __agentScriptResource: "llm", name: imported.name, uri: imported.uri });
+          this.imports.push({
+            name: imported.name,
+            kind: "llm",
+            value: { __agentScriptResource: "llm", name: imported.name, uri: imported.uri },
+          });
           break;
         case "file":
-          this.files.set(imported.name, this.loadImportedFile(imported.uri));
+          this.imports.push({
+            name: imported.name,
+            kind: "file",
+            value: this.loadImportedFile(imported.uri),
+          });
           break;
         case "memory":
-          this.memories.set(imported.name, { __agentScriptResource: "memory", name: imported.name, uri: imported.uri });
+          this.imports.push({
+            name: imported.name,
+            kind: "memory",
+            value: { __agentScriptResource: "memory", name: imported.name, uri: imported.uri },
+          });
           break;
       }
     }
@@ -233,17 +242,8 @@ class Interpreter {
     for (const agentName of this.agents.keys()) {
       scope.define(agentName, { __agentScriptResource: "agent", name: agentName }, "agent");
     }
-    for (const [toolName, tool] of this.tools) {
-      scope.define(toolName, tool, "tool");
-    }
-    for (const [llmName, llm] of this.llms) {
-      scope.define(llmName, llm, "llm");
-    }
-    for (const [fileName, file] of this.files) {
-      scope.define(fileName, file, "file");
-    }
-    for (const [memoryName, memory] of this.memories) {
-      scope.define(memoryName, memory, "memory");
+    for (const binding of this.imports) {
+      scope.define(binding.name, binding.value, binding.kind);
     }
     for (const func of agent.functions) {
       scope.define(
@@ -292,7 +292,7 @@ class Interpreter {
 
   private async executeStatement(stmt: Stmt, scope: RuntimeScope): Promise<StatementResult> {
     switch (stmt.kind) {
-      case "ConfigStmt":
+      case "ConfigDecl":
         scope.setConfig(stmt.key, await this.evaluator.evaluateConfig(stmt, scope));
         return undefined;
 

@@ -1,6 +1,6 @@
-import type { SourceRange, Stmt } from "../ast/types.js";
+import type { Stmt } from "../ast/types.js";
 import { uriScheme } from "../runtime/uri.js";
-import type { SemanticDiagnostic } from "./diagnostics.js";
+import { errorDiagnostic as error, type SemanticDiagnostic } from "./diagnostics.js";
 
 interface BindingLike {
   kind: string;
@@ -75,15 +75,6 @@ export function checkParallelForBodyRules(statements: Stmt[], scope: ParallelFor
   }
 
   return diagnostics;
-}
-
-function error(code: string, message: string, range: SourceRange): SemanticDiagnostic {
-  return {
-    severity: "error",
-    code,
-    message,
-    range,
-  };
 }
 
 function isEffectfulToolCall(binding: BindingLike, method: string): boolean {

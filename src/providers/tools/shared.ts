@@ -5,6 +5,9 @@ import { isObject } from "../../runtime/guards.js";
 import { sanitizeForJson } from "../../runtime/json.js";
 import type { RuntimeValue } from "../../runtime/types.js";
 
+import { type Disposable, isDisposable } from "../../runtime/disposable.js";
+import type { ToolProvider } from "../../runtime/types.js";
+
 export const DEFAULT_MAX_RESULTS = 100;
 
 export interface WorkspaceContext {
@@ -114,4 +117,10 @@ export function parseJsonOrNull(text: string): RuntimeValue {
   } catch {
     return null;
   }
+}
+
+export async function closeDisposableProviders(providers: Record<string, ToolProvider>): Promise<void> {
+  const unique = new Set(Object.values(providers));
+  const disposables: Disposable[] = [...unique].filter(isDisposable);
+  await Promise.all(disposables.map((provider) => provider.close()));
 }

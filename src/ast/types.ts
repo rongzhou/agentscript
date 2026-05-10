@@ -60,7 +60,7 @@ export interface FuncParam extends NodeBase {
 }
 
 export type Stmt =
-  | ConfigStmt
+  | ConfigDecl
   | UseStmt
   | AssignStmt
   | ExprStmt
@@ -69,12 +69,6 @@ export type Stmt =
   | LoopUntilStmt
   | RepeatStmt
   | ReturnStmt;
-
-export interface ConfigStmt extends NodeBase {
-  kind: "ConfigStmt";
-  key: ConfigKey;
-  value: Expr;
-}
 
 export interface UseStmt extends NodeBase {
   kind: "UseStmt";
@@ -198,11 +192,17 @@ export interface ShapeField extends NodeBase {
   type: ShapeTypeExpr;
 }
 
+const NAMED_SHAPE_TYPE_NAMES = ["string", "number", "boolean", "json", "list"] as const;
+
+export type NamedShapeTypeName = (typeof NAMED_SHAPE_TYPE_NAMES)[number];
+
+export const SHAPE_TYPE_NAMES: ReadonlySet<string> = new Set(NAMED_SHAPE_TYPE_NAMES);
+
 export type ShapeTypeExpr = NamedShapeType | ListShapeType;
 
 export interface NamedShapeType extends NodeBase {
   kind: "NamedShapeType";
-  name: "string" | "number" | "boolean" | "json" | "list";
+  name: NamedShapeTypeName;
 }
 
 export interface ListShapeType extends NodeBase {
@@ -259,13 +259,12 @@ export interface ParallelForExpr extends NodeBase {
 export interface GenerateOptionsExpr extends NodeBase {
   kind: "GenerateOptionsExpr";
   properties: ObjectProperty[];
-  input?: Expr;
-  attempts?: NumberExpr;
+  /**
+   * Parsed from the `max_output` property when present. It's the only derived
+   * field because budget parsing needs to split `2k` into amount + unit; all
+   * other options are accessed via `properties`.
+   */
   maxOutput?: Budget;
-  temperature?: NumberExpr;
-  think?: BooleanExpr | StringExpr;
-  strict?: BooleanExpr;
-  debug?: BooleanExpr;
 }
 
 export interface Budget {

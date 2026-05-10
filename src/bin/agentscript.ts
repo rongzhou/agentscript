@@ -17,7 +17,6 @@ import { uriScheme } from "../runtime/uri.js";
 import type {
   GenerateRequest,
   InputProvider,
-  InputRequest,
   JsonObject,
   LlmProvider,
   RuntimeValue,
@@ -26,7 +25,7 @@ import type {
 } from "../runtime/types.js";
 import { analyze } from "../semantic/analyzer.js";
 import { formatSemanticDiagnostics } from "../semantic/diagnostics.js";
-import { parseInteractiveInputValue, parseJsonObjectInput } from "./input.js";
+import { createReadlineInputProvider, parseJsonObjectInput } from "./input.js";
 import { runRepl } from "./repl.js";
 import type { Program } from "../ast/types.js";
 
@@ -47,10 +46,6 @@ interface CliOptions {
   tracePretty: boolean;
   verbose: boolean;
   version: boolean;
-}
-
-interface CliInputProvider extends InputProvider {
-  close?(): void;
 }
 
 export async function main(argv = process.argv.slice(2)): Promise<number> {
@@ -265,16 +260,18 @@ class DryRunLlmProvider implements LlmProvider {
 }
 
 class DryRunToolProvider implements ToolProvider {
+  private readonly registry = loadNpmRegistry(process.cwd());
+
   constructor(private readonly fallback: ToolProvider) {}
 
   async call(request: ToolCallRequest): Promise<RuntimeValue> {
     const scheme = uriScheme(request.uri);
     if (scheme === "npm") {
-      checkNpmImport(request.uri, loadNpmRegistry(process.cwd()));
+      checkNpmImport(request.uri, this.registry);
       return null;
     }
     if (scheme === "node") {
-      checkNodeImport(request.uri, loadNpmRegistry(process.cwd()));
+      checkNodeImport(request.uri, this.registry);
       return null;
     }
     return this.fallback.call(request);
@@ -305,29 +302,15 @@ function readInput(options: CliOptions): JsonObject {
   return {};
 }
 
-function terminalInputProvider(): CliInputProvider | undefined {
+function terminalInputProvider(): (InputProvider & { close(): void }) | undefined {
   if (!inputStream.isTTY || !outputStream.isTTY) {
     return undefined;
   }
-  return new TerminalInputProvider();
-}
-
-class TerminalInputProvider implements CliInputProvider {
-  private interface?: ReturnType<typeof createInterface>;
-
-  async read(request: InputRequest): Promise<RuntimeValue> {
-    const answer = await this.reader().question(`${request.path.join(".")}: `);
-    return parseInteractiveInputValue(answer);
-  }
-
-  private reader(): ReturnType<typeof createInterface> {
-    this.interface ??= createInterface({ input: inputStream, output: outputStream });
-    return this.interface;
-  }
-
-  close(): void {
-    this.interface?.close();
-  }
+  const reader = createInterface({ input: inputStream, output: outputStream });
+  return {
+    ...createReadlineInputProvider(reader),
+    close: () => reader.close(),
+  };
 }
 
 function printUsage(write: (message: string) => void): void {

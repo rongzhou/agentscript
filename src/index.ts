@@ -6,7 +6,6 @@ export type {
   CallExpr,
   ConfigDecl,
   ConfigKey,
-  ConfigStmt,
   Expr,
   ExprStmt,
   ForInStmt,

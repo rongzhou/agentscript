@@ -1,6 +1,5 @@
-import { RuntimeError } from "../../runtime/errors.js";
 import type { GenerateRequest, JsonObject, RuntimeValue } from "../../runtime/types.js";
-import { budgetToTokenLimit, parseJsonText, postJson, readPath } from "./shared.js";
+import { budgetToTokenLimit, parseJsonText, postJson, readPath, requireApiKey } from "./shared.js";
 import type { FetchLike, ParsedLlmUri, ProtocolLlmProviderOptions } from "./types.js";
 
 export async function callOpenAI(
@@ -11,10 +10,7 @@ export async function callOpenAI(
   timeoutMs: number,
   baseUrl: string,
 ): Promise<RuntimeValue> {
-  const apiKey = options.openaiApiKey ?? process.env.OPENAI_API_KEY;
-  if (!apiKey) {
-    throw new RuntimeError("OPENAI_API_KEY is required for openai:// models");
-  }
+  const apiKey = requireApiKey(options.openaiApiKey, "OPENAI_API_KEY", "openai");
 
   const body: JsonObject = {
     model: parsed.model,

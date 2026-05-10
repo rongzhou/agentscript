@@ -1,4 +1,4 @@
-import type { JsonObject, RuntimeValue } from "../runtime/types.js";
+import type { InputProvider, InputRequest, JsonObject, RuntimeValue } from "../runtime/types.js";
 
 export function parseJsonObjectInput(source: string, label: string): JsonObject {
   const value = JSON.parse(source) as RuntimeValue;
@@ -18,4 +18,17 @@ export function parseInteractiveInputValue(value: string): RuntimeValue {
   } catch {
     return value;
   }
+}
+
+export interface ReadlineQuestion {
+  question(prompt: string): Promise<string>;
+}
+
+export function createReadlineInputProvider(reader: ReadlineQuestion): InputProvider {
+  return {
+    async read(request: InputRequest): Promise<RuntimeValue> {
+      const answer = await reader.question(`${request.path.join(".")}: `);
+      return parseInteractiveInputValue(answer);
+    },
+  };
 }

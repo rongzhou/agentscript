@@ -1,18 +1,7 @@
 import type { Budget } from "../ast/types.js";
 import { assertNever } from "../utils/assert.js";
 import { isRuntimeResource } from "./guards.js";
-import type {
-  AgentBinding,
-  FunctionBinding,
-  JsonObject,
-  JsonValue,
-  LlmBinding,
-  MemoryBinding,
-  RuntimeValue,
-  ToolBinding,
-} from "./types.js";
-
-type RuntimeResource = ToolBinding | LlmBinding | FunctionBinding | AgentBinding | MemoryBinding;
+import type { JsonObject, JsonValue, RuntimeResource, RuntimeValue } from "./types.js";
 
 export function sanitizeForJson(value: RuntimeValue): JsonValue {
   return sanitizeForJsonValue(value, new WeakSet<object>());

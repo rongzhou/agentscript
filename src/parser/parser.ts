@@ -7,7 +7,6 @@ import type {
   CallExpr,
   ConfigDecl,
   ConfigKey,
-  ConfigStmt,
   Expr,
   ExprStmt,
   FuncDecl,
@@ -140,17 +139,6 @@ class Parser {
     };
   }
 
-  private parseConfigStmt(): ConfigStmt {
-    const key = this.consumeConfigKey();
-    const value = this.parseConfigValue(key.value);
-    return {
-      kind: "ConfigStmt",
-      key: key.value,
-      value,
-      range: { start: key.range.start, end: value.range.end },
-    };
-  }
-
   private parseFunc(): FuncDecl {
     const mainToken = this.match("main") ? this.previous() : undefined;
     const start = (mainToken ?? this.peek()).range.start;
@@ -198,7 +186,7 @@ class Parser {
 
   private parseStatement(): Stmt {
     if (this.isConfigKey(this.peek().value)) {
-      return this.parseConfigStmt();
+      return this.parseConfigDecl();
     }
     if (this.check("use")) {
       return this.parseUse();

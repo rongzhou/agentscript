@@ -1,5 +1,7 @@
 export type LlmProtocol = "openai" | "anthropic" | "ollama";
 
+export const SUPPORTED_LLM_PROTOCOLS: ReadonlySet<LlmProtocol> = new Set(["openai", "anthropic", "ollama"]);
+
 export interface ParsedLlmUri {
   protocol: LlmProtocol;
   model: string;

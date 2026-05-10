@@ -1,19 +1,18 @@
 import { RuntimeError } from "../../runtime/errors.js";
 import type { LlmBinding } from "../../runtime/types.js";
-import type { LlmProtocol, ParsedLlmUri } from "./types.js";
-
-const SUPPORTED_LLM_PROTOCOLS = new Set(["openai:", "anthropic:", "ollama:"]);
+import { SUPPORTED_LLM_PROTOCOLS, type LlmProtocol, type ParsedLlmUri } from "./types.js";
 
 export function parseLlmUri(model: LlmBinding): ParsedLlmUri {
   if (!model.uri.includes("://")) {
     throw new RuntimeError("LLM URI must use an explicit protocol URL form");
   }
   const url = new URL(model.uri);
-  if (!SUPPORTED_LLM_PROTOCOLS.has(url.protocol)) {
-    throw new RuntimeError(`Unsupported LLM provider protocol '${url.protocol.replace(":", "")}'`);
+  const protocolName = url.protocol.slice(0, -1);
+  if (!isSupportedLlmProtocol(protocolName)) {
+    throw new RuntimeError(`Unsupported LLM provider protocol '${protocolName}'`);
   }
 
-  const protocol = url.protocol.slice(0, -1) as LlmProtocol;
+  const protocol = protocolName;
   if (protocol === "ollama" && url.pathname.length > 1 && url.hostname) {
     return {
       protocol,
@@ -27,4 +26,8 @@ export function parseLlmUri(model: LlmBinding): ParsedLlmUri {
     throw new RuntimeError(`${protocol} URI must include a model name`);
   }
   return { protocol, model: modelName };
+}
+
+function isSupportedLlmProtocol(value: string): value is LlmProtocol {
+  return SUPPORTED_LLM_PROTOCOLS.has(value as LlmProtocol);
 }

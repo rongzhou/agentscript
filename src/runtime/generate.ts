@@ -1,4 +1,14 @@
-import type { AgentDecl, Budget, Expr, GenerateExpr } from "../ast/types.js";
+import type {
+  AgentDecl,
+  BooleanExpr,
+  Budget,
+  Expr,
+  GenerateExpr,
+  GenerateOptionsExpr,
+  NumberExpr,
+  ObjectProperty,
+  StringExpr,
+} from "../ast/types.js";
 import { buildContext, builtContextToJson } from "./context.js";
 import { RuntimeError } from "./errors.js";
 import { isLlmBinding, isObject } from "./guards.js";
@@ -28,6 +38,26 @@ interface GenerateOptions {
   think?: boolean | string;
   strict: boolean;
   debug: boolean;
+}
+
+function findProperty(options: GenerateOptionsExpr, key: string): ObjectProperty | undefined {
+  return options.properties.find((property) => property.key === key);
+}
+
+function readNumberProperty(options: GenerateOptionsExpr, key: string): NumberExpr | undefined {
+  const property = findProperty(options, key);
+  return property?.value.kind === "NumberExpr" ? property.value : undefined;
+}
+
+function readBooleanProperty(options: GenerateOptionsExpr, key: string): BooleanExpr | undefined {
+  const property = findProperty(options, key);
+  return property?.value.kind === "BooleanExpr" ? property.value : undefined;
+}
+
+function readThinkProperty(options: GenerateOptionsExpr): BooleanExpr | StringExpr | undefined {
+  const property = findProperty(options, "think");
+  if (!property) return undefined;
+  return property.value.kind === "BooleanExpr" || property.value.kind === "StringExpr" ? property.value : undefined;
 }
 
 export class GenerateRuntime {
@@ -130,24 +160,23 @@ export class GenerateRuntime {
   }
 
   private async parseOptions(expr: GenerateExpr, scope: RuntimeScope): Promise<GenerateOptions> {
-    if (!expr.options.input) {
+    const inputProperty = findProperty(expr.options, "input");
+    if (!inputProperty) {
       throw new RuntimeError("generate object argument requires an input field", expr.options.range);
     }
-    const attempts = expr.options.attempts?.value ?? 1;
+    const attemptsExpr = readNumberProperty(expr.options, "attempts");
+    const attempts = attemptsExpr?.value ?? 1;
     if (!Number.isInteger(attempts) || attempts <= 0) {
-      throw new RuntimeError(
-        "generate attempts must be a positive integer",
-        expr.options.attempts?.range ?? expr.options.range,
-      );
+      throw new RuntimeError("generate attempts must be a positive integer", attemptsExpr?.range ?? expr.options.range);
     }
     return {
-      input: await this.host.evaluate(expr.options.input, scope),
+      input: await this.host.evaluate(inputProperty.value, scope),
       attempts,
       maxOutput: expr.options.maxOutput,
-      temperature: expr.options.temperature?.value,
-      think: expr.options.think?.value,
-      strict: expr.options.strict?.value ?? false,
-      debug: expr.options.debug?.value ?? false,
+      temperature: readNumberProperty(expr.options, "temperature")?.value,
+      think: readThinkProperty(expr.options)?.value,
+      strict: readBooleanProperty(expr.options, "strict")?.value ?? false,
+      debug: readBooleanProperty(expr.options, "debug")?.value ?? false,
     };
   }
 
@@ -218,7 +247,9 @@ function errorMessage(error: unknown): string {
 
 function withGenerateRange(error: unknown, range: GenerateExpr["range"]): Error {
   if (error instanceof RuntimeError) {
-    return new RuntimeError(error.message, error.range ?? range);
+    // If the error already carries a range, its message already includes the formatted location,
+    // so returning it unchanged avoids double-appending `at L:C`.
+    return error.range ? error : new RuntimeError(error.message, range);
   }
   return new RuntimeError(errorMessage(error), range);
 }

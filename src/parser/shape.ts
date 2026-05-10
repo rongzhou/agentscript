@@ -1,5 +1,11 @@
-import { SHAPE_TYPE_NAMES } from "../ast/constants.js";
-import type { ListShapeType, NamedShapeType, ShapeField, ShapeObjectExpr, ShapeTypeExpr } from "../ast/types.js";
+import {
+  SHAPE_TYPE_NAMES,
+  type ListShapeType,
+  type NamedShapeType,
+  type ShapeField,
+  type ShapeObjectExpr,
+  type ShapeTypeExpr,
+} from "../ast/types.js";
 import { ParseError } from "./errors.js";
 import type { Token } from "./tokenizer.js";
 

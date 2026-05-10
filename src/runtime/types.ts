@@ -41,15 +41,9 @@ export interface RuntimeObject {
   [key: string]: RuntimeValue;
 }
 
-export type RuntimeValue =
-  | JsonPrimitive
-  | RuntimeObject
-  | RuntimeValue[]
-  | ToolBinding
-  | LlmBinding
-  | FunctionBinding
-  | AgentBinding
-  | MemoryBinding;
+export type RuntimeResource = ToolBinding | LlmBinding | FunctionBinding | AgentBinding | MemoryBinding;
+
+export type RuntimeValue = JsonPrimitive | RuntimeObject | RuntimeValue[] | RuntimeResource;
 
 export interface ContextUse {
   source?: string;
@@ -95,14 +89,6 @@ export interface MemoryQueryRequest {
 
 export interface LlmProvider {
   generate(request: GenerateRequest): Promise<RuntimeValue>;
-}
-
-export interface Disposable {
-  close(): Promise<void>;
-}
-
-export function isDisposable<T>(value: T): value is T & Disposable {
-  return typeof value === "object" && value !== null && "close" in value && typeof value.close === "function";
 }
 
 export interface ToolProvider {

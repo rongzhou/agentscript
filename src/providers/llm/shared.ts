@@ -89,6 +89,14 @@ export function trimTrailingSlash(value: string): string {
   return value.replace(/\/+$/, "");
 }
 
+export function requireApiKey(provided: string | undefined, environmentName: string, providerLabel: string): string {
+  const apiKey = provided ?? process.env[environmentName];
+  if (!apiKey) {
+    throw new RuntimeError(`${environmentName} is required for ${providerLabel}:// models`);
+  }
+  return apiKey;
+}
+
 function extractJsonCandidates(text: string): string[] {
   const candidates: string[] = [];
   const fenced = /```(?:json)?\s*([\s\S]*?)```/gi;

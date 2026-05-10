@@ -7,3 +7,17 @@ export function uriScheme(uri: string): string {
     return match?.[1] ?? "";
   }
 }
+
+export interface SqliteUriParts {
+  rawPath: string;
+  rawNamespace: string;
+}
+
+export function splitSqliteUri(uri: string): SqliteUriParts {
+  const raw = uri.slice("sqlite://".length);
+  const hashIndex = raw.indexOf("#");
+  return {
+    rawPath: hashIndex >= 0 ? raw.slice(0, hashIndex) : raw,
+    rawNamespace: hashIndex >= 0 ? raw.slice(hashIndex + 1) : "",
+  };
+}

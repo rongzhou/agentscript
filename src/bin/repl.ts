@@ -9,7 +9,7 @@ import { formatTrace } from "../runtime/trace.js";
 import type { TraceEvent } from "../runtime/types.js";
 import { analyze } from "../semantic/analyzer.js";
 import { formatSemanticDiagnostics } from "../semantic/diagnostics.js";
-import { parseInteractiveInputValue, parseJsonObjectInput } from "./input.js";
+import { createReadlineInputProvider, parseJsonObjectInput } from "./input.js";
 
 const MAIN_AGENT_PATTERN = /^\s*main\s+agent\b/;
 const AGENT_PATTERN = /^\s*(?:main\s+)?agent\b/;
@@ -235,12 +235,7 @@ async function runSession(session: ReplSession, inputJson: string, reader: ReplR
   const program = loadSessionProgram(session);
   const input = inputJson.trim().length > 0 ? parseJsonObjectInput(inputJson, ":run input") : {};
   const result = await executeAgent(program, input, {
-    inputProvider: {
-      async read(request) {
-        const answer = await reader.question(`${request.path.join(".")}: `);
-        return parseInteractiveInputValue(answer);
-      },
-    },
+    inputProvider: createReadlineInputProvider(reader),
     sourcePath: session.sourcePath,
   });
   session.lastTrace = result.trace;

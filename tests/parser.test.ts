@@ -66,7 +66,10 @@ describe("parse", () => {
     expect(stmt.value.kind).toBe("GenerateExpr");
     if (stmt.value.kind !== "GenerateExpr") return;
     expect(stmt.value.options.maxOutput).toEqual({ amount: 2, unit: "k" });
-    expect(stmt.value.options.debug?.value).toBe(true);
+    expect(stmt.value.options.properties.find((p) => p.key === "debug")?.value).toMatchObject({
+      kind: "BooleanExpr",
+      value: true,
+    });
     expect(stmt.value.returnShape).toBeDefined();
   });
 
@@ -458,7 +461,7 @@ describe("parse", () => {
     });
     expect(ast.agents[0]!.config.map((item) => item.key)).toEqual(["model", "role", "description"]);
     expect(ast.agents[0]!.functions[0]!.body[0]).toMatchObject({
-      kind: "ConfigStmt",
+      kind: "ConfigDecl",
       key: "model",
     });
   });

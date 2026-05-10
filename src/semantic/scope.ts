@@ -1,4 +1,4 @@
-import type { ConfigKey, FuncDecl, SourceRange } from "../ast/types.js";
+import type { ConfigKey, FuncDecl, ImportResourceKind, SourceRange } from "../ast/types.js";
 
 export type BindingKind = "param" | "local" | "function" | "tool" | "llm" | "file" | "agent" | "memory";
 
@@ -17,12 +17,11 @@ export class SemanticScope {
 
   constructor(private readonly parent?: SemanticScope) {}
 
-  define(name: string, binding: Binding): boolean {
+  define(name: string, binding: Binding): void {
     if (this.bindings.has(name)) {
-      return false;
+      return;
     }
     this.bindings.set(name, binding);
-    return true;
   }
 
   isLocalToThisScope(name: string): boolean {
@@ -63,9 +62,6 @@ export function isImportedBinding(kind: BindingKind): boolean {
   return IMPORTED_BINDING_KINDS.has(kind);
 }
 
-export function importResourceKindToBindingKind(resourceKind: string): BindingKind {
-  if (IMPORTED_BINDING_KINDS.has(resourceKind as BindingKind)) {
-    return resourceKind as BindingKind;
-  }
-  return "file";
+export function importResourceKindToBindingKind(resourceKind: ImportResourceKind): BindingKind {
+  return resourceKind;
 }

@@ -4,13 +4,10 @@ import type {
   CallExpr,
   ConfigDecl,
   ConfigKey,
-  ConfigStmt,
   Expr,
   FuncDecl,
   GenerateExpr,
-  MemberExpr,
   Program,
-  RepeatStmt,
   SourceRange,
   Stmt,
 } from "../ast/types.js";
@@ -18,7 +15,7 @@ import { RuntimeError } from "../runtime/errors.js";
 import { uriScheme } from "../runtime/uri.js";
 import { checkNodeImport, checkNpmImport, type NpmRegistry } from "../providers/tools/npm-registry.js";
 import { formatArityError, VALID_MEMORY_METHODS } from "./calls.js";
-import { SemanticError, type SemanticDiagnostic, type SemanticResult } from "./diagnostics.js";
+import { SemanticError, errorDiagnostic, type SemanticDiagnostic, type SemanticResult } from "./diagnostics.js";
 import { checkGenerateOptions } from "./generate.js";
 import { blockEndsWithExpression, checkParallelForBodyRules } from "./parallel-for.js";
 import { checkShapeObject } from "./shape.js";
@@ -52,9 +49,8 @@ export function assertSemanticallyValid(program: Program): SemanticResult {
 
 class Analyzer {
   private diagnostics: SemanticDiagnostic[] = [];
-  private agentDecls = new Map<string, AgentDecl>();
+  private readonly agentDecls = new Map<string, AgentDecl>();
   private readonly importBindings = new Map<string, { kind: BindingKind; range: SourceRange; uri: string }>();
-  private agents = new Map<string, SourceRange>();
 
   constructor(private readonly options: AnalyzeOptions = {}) {}
 
@@ -74,9 +70,6 @@ class Analyzer {
       this.importBindings.set(imported.name, { kind, range: imported.range, uri: imported.uri });
       if (imported.resourceKind === "tool") {
         this.checkToolImportAuthorization(imported.uri, imported.range);
-      }
-      if (imported.resourceKind === "agent") {
-        this.agents.set(imported.name, imported.range);
       }
     }
   }
@@ -103,7 +96,6 @@ class Analyzer {
       }
       seenNames.add(agent.name);
       this.agentDecls.set(agent.name, agent);
-      this.agents.set(agent.name, agent.range);
       if (agent.isMain) {
         if (mainAgent) {
           this.error("DUPLICATE_MAIN_AGENT", "Program can only have one main agent", agent.range);
@@ -122,11 +114,11 @@ class Analyzer {
     }
 
     for (const agent of program.agents) {
-      this.checkAgent(agent);
+      this.checkAgent(agent, program);
     }
   }
 
-  private checkAgent(agent: AgentDecl): void {
+  private checkAgent(agent: AgentDecl, program: Program): void {
     const agentScope = new SemanticScope();
     for (const [name, binding] of this.importBindings) {
       agentScope.define(name, {
@@ -136,9 +128,13 @@ class Analyzer {
         uri: binding.uri,
       });
     }
-    for (const [name, range] of this.agents) {
-      if (!agentScope.isLocalToThisScope(name)) {
-        agentScope.define(name, { kind: "agent", range, agentName: name });
+    for (const localAgent of program.agents) {
+      if (!agentScope.isLocalToThisScope(localAgent.name)) {
+        agentScope.define(localAgent.name, {
+          kind: "agent",
+          range: localAgent.range,
+          agentName: localAgent.name,
+        });
       }
     }
 
@@ -211,7 +207,7 @@ class Analyzer {
 
   private checkStatement(stmt: Stmt, scope: SemanticScope): void {
     switch (stmt.kind) {
-      case "ConfigStmt":
+      case "ConfigDecl":
         this.checkConfig(stmt, scope);
         break;
       case "UseStmt":
@@ -252,7 +248,7 @@ class Analyzer {
         this.checkBlock(stmt.body, scope.child());
         break;
       case "RepeatStmt":
-        this.checkRepeat(stmt, scope);
+        this.checkBlock(stmt.body, scope.child());
         break;
       case "ReturnStmt":
         this.checkExpression(stmt.value, scope);
@@ -260,7 +256,7 @@ class Analyzer {
     }
   }
 
-  private checkConfig(config: ConfigDecl | ConfigStmt, scope: SemanticScope): void {
+  private checkConfig(config: ConfigDecl, scope: SemanticScope): void {
     scope.defineConfig(config.key);
     switch (config.key) {
       case "model": {
@@ -289,10 +285,6 @@ class Analyzer {
     for (const stmt of statements) {
       this.checkStatement(stmt, scope);
     }
-  }
-
-  private checkRepeat(stmt: RepeatStmt, scope: SemanticScope): void {
-    this.checkBlock(stmt.body, scope.child());
   }
 
   private checkAssignment(stmt: AssignStmt, scope: SemanticScope): void {
@@ -341,7 +333,7 @@ class Analyzer {
         this.diagnostics.push(...checkShapeObject(expr));
         break;
       case "MemberExpr":
-        this.checkMember(expr, scope);
+        this.checkExpression(expr.object, scope);
         break;
       case "IndexExpr":
         this.checkExpression(expr.object, scope);
@@ -416,10 +408,6 @@ class Analyzer {
     }
   }
 
-  private checkMember(expr: MemberExpr, scope: SemanticScope): void {
-    this.checkExpression(expr.object, scope);
-  }
-
   private checkCall(expr: CallExpr, scope: SemanticScope): void {
     this.checkCallable(expr.callee, scope);
     for (const arg of expr.args) {
@@ -461,8 +449,9 @@ class Analyzer {
   }
 
   private checkGenerate(expr: GenerateExpr, scope: SemanticScope): void {
-    if (expr.options.input) {
-      this.checkExpression(expr.options.input, scope);
+    const inputProperty = expr.options.properties.find((property) => property.key === "input");
+    if (inputProperty) {
+      this.checkExpression(inputProperty.value, scope);
     }
     this.diagnostics.push(...checkGenerateOptions(expr));
     if (expr.returnShape) {
@@ -541,7 +530,7 @@ class Analyzer {
   }
 
   private error(code: string, message: string, range: SourceRange): void {
-    this.diagnostics.push({ severity: "error", code, message, range });
+    this.diagnostics.push(errorDiagnostic(code, message, range));
   }
 }
 

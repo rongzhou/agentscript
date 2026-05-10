@@ -1,7 +1,7 @@
 import { RuntimeError } from "../../runtime/errors.js";
-import { isDisposable } from "../../runtime/types.js";
+import type { Disposable } from "../../runtime/disposable.js";
 import { uriScheme } from "../../runtime/uri.js";
-import type { Disposable, RuntimeValue, ToolCallRequest, ToolProvider } from "../../runtime/types.js";
+import type { RuntimeValue, ToolCallRequest, ToolProvider } from "../../runtime/types.js";
 import { EnvToolProvider } from "./env.js";
 import { FileToolProvider } from "./file.js";
 import { HttpToolProvider } from "./http.js";
@@ -9,9 +9,8 @@ import { McpToolProvider } from "./mcp.js";
 import { NodeToolProvider } from "./node.js";
 import { NpmToolProvider } from "./npm.js";
 import { loadNpmRegistry } from "./npm-registry.js";
-import { SchemeToolProvider } from "./scheme.js";
 import { ShellToolProvider } from "./shell.js";
-import { Workspace } from "./shared.js";
+import { closeDisposableProviders, Workspace } from "./shared.js";
 
 export class HostToolProvider implements ToolProvider, Disposable {
   private readonly providers: Record<string, ToolProvider>;
@@ -43,21 +42,10 @@ export class HostToolProvider implements ToolProvider, Disposable {
   }
 
   async close(): Promise<void> {
-    const providers = new Set(Object.values(this.providers));
-    await Promise.all([...providers].filter(isDisposable).map((provider) => provider.close()));
+    await closeDisposableProviders(this.providers);
   }
 }
 
 export function createDefaultToolProvider(workspaceRoot = process.cwd()): ToolProvider {
-  const host = new HostToolProvider(workspaceRoot);
-  return new SchemeToolProvider({
-    env: host,
-    file: host,
-    http: host,
-    https: host,
-    mcp: host,
-    node: host,
-    npm: host,
-    sh: host,
-  });
+  return new HostToolProvider(workspaceRoot);
 }

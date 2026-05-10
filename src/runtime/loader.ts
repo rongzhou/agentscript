@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { dirname, isAbsolute, resolve } from "node:path";
 import type { AgentDecl, ImportDecl, Program } from "../ast/types.js";
 import { parse } from "../parser/parser.js";
+import { splitSqliteUri } from "./uri.js";
 
 export interface LoadProgramOptions {
   sourcePath?: string;
@@ -154,13 +155,11 @@ function normalizeMemoryImportUri(uri: string, baseDir: string): string {
     return `file://${resolveImportPath(uri, baseDir)}`;
   }
   if (uri.startsWith("sqlite://")) {
-    const raw = uri.slice("sqlite://".length);
-    const hashIndex = raw.indexOf("#");
-    const rawPath = hashIndex >= 0 ? raw.slice(0, hashIndex) : raw;
-    const rawNamespace = hashIndex >= 0 ? raw.slice(hashIndex) : "";
+    const { rawPath, rawNamespace } = splitSqliteUri(uri);
     const decodedPath = decodeURIComponent(rawPath);
     const path = isAbsolute(decodedPath) ? decodedPath : resolve(baseDir, decodedPath);
-    return `sqlite://${path}${rawNamespace}`;
+    const suffix = rawNamespace.length > 0 ? `#${rawNamespace}` : "";
+    return `sqlite://${path}${suffix}`;
   }
   return uri;
 }
@@ -194,9 +193,7 @@ function memoryUriHasRelativePath(uri: string): boolean {
     return isRelativeImport(uri.slice("file://".length));
   }
   if (uri.startsWith("sqlite://")) {
-    const raw = uri.slice("sqlite://".length);
-    const hashIndex = raw.indexOf("#");
-    return isRelativeImport(hashIndex >= 0 ? raw.slice(0, hashIndex) : raw);
+    return isRelativeImport(splitSqliteUri(uri).rawPath);
   }
   return false;
 }

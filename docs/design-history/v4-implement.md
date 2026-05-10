@@ -164,9 +164,9 @@ class NpmToolProvider implements ToolProvider {
 - Promise 返回值自动 await。
 - 属性读取对 primitive / plain object 正常；对 function / class 拒绝。
 
-## 阶段 4：接入 SchemeToolProvider
+## 阶段 4：接入默认 ToolProvider
 
-状态：计划中。
+状态：已完成。
 
 修改：
 
@@ -176,13 +176,14 @@ src/providers/tools/host.ts
 
 实现项：
 
-- `createDefaultToolProvider(workspaceRoot)` 构造时：
+- `HostToolProvider(workspaceRoot)` 构造时：
   - 读取 `NpmRegistry`；
   - 用 `NpmToolProvider` 处理 `npm` scheme；
   - 用 `NodeToolProvider` 处理 `node` scheme；
-  - 合并进 `SchemeToolProvider.providers`，与 `env`、`file`、`http`、`https`、`mcp`、`sh` 并列。
-- 沿用现有 `HostToolProvider` 结构（尽管名字是"Host"，它这里指 Node-runtime host，不是 V5 的 embed host；不与 V5 引入的 HostToolProvider 命名冲突的办法：V5 可将那边命名为 `EmbeddedHostToolProvider` 或 `HostRegistryToolProvider`。此命名决议在 V5 实施文档中处理）。
-- 确保 `HostToolProvider.close()` 在被 `SchemeToolProvider.close()` 调用时不重复关闭同一 provider。
+  - 与 `env`、`file`、`http`、`https`、`mcp`、`sh` 一起放入内部 scheme map。
+- `createDefaultToolProvider(workspaceRoot)` 直接返回 `HostToolProvider`。
+- `SchemeToolProvider` 作为公开组合工具保留，但默认 provider 不再额外包一层。
+- 确保 `HostToolProvider.close()` 不重复关闭同一 child provider。
 
 验收：
 

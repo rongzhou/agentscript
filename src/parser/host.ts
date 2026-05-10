@@ -17,7 +17,3 @@ export interface ExpressionParserHost extends TokenParserHost {
 export interface BlockParserHost extends ExpressionParserHost {
   parseBlock(): Stmt[];
 }
-
-export interface CommaSeparatedParserHost extends TokenParserHost {
-  parseCommaSeparatedUntil<T>(terminator: string, parseItem: () => T): T[];
-}

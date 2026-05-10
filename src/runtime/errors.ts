@@ -1,3 +1,4 @@
+import { formatSourceRangeStart } from "../ast/format.js";
 import type { SourceRange } from "../ast/types.js";
 
 export class RuntimeError extends Error {
@@ -5,14 +6,7 @@ export class RuntimeError extends Error {
     message: string,
     readonly range?: SourceRange,
   ) {
-    super(formatRuntimeMessage(message, range));
+    super(range ? `${message} at ${formatSourceRangeStart(range)}` : message);
     this.name = "RuntimeError";
   }
-}
-
-function formatRuntimeMessage(message: string, range?: SourceRange): string {
-  if (!range) {
-    return message;
-  }
-  return `${message} at ${range.start.line}:${range.start.column}`;
 }

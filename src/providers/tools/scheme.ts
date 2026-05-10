@@ -1,7 +1,8 @@
 import { RuntimeError } from "../../runtime/errors.js";
-import { isDisposable } from "../../runtime/types.js";
+import type { Disposable } from "../../runtime/disposable.js";
 import { uriScheme } from "../../runtime/uri.js";
-import type { Disposable, RuntimeValue, ToolCallRequest, ToolProvider } from "../../runtime/types.js";
+import type { RuntimeValue, ToolCallRequest, ToolProvider } from "../../runtime/types.js";
+import { closeDisposableProviders } from "./shared.js";
 
 export class SchemeToolProvider implements ToolProvider, Disposable {
   constructor(private readonly providers: Record<string, ToolProvider>) {}
@@ -16,7 +17,6 @@ export class SchemeToolProvider implements ToolProvider, Disposable {
   }
 
   async close(): Promise<void> {
-    const providers = new Set(Object.values(this.providers));
-    await Promise.all([...providers].filter(isDisposable).map((provider) => provider.close()));
+    await closeDisposableProviders(this.providers);
   }
 }

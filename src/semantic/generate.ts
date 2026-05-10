@@ -1,5 +1,5 @@
-import type { GenerateExpr, SourceRange } from "../ast/types.js";
-import type { SemanticDiagnostic } from "./diagnostics.js";
+import type { GenerateExpr } from "../ast/types.js";
+import { errorDiagnostic as error, type SemanticDiagnostic } from "./diagnostics.js";
 
 export function checkGenerateOptions(expr: GenerateExpr): SemanticDiagnostic[] {
   const diagnostics: SemanticDiagnostic[] = [];
@@ -68,13 +68,4 @@ export function checkGenerateOptions(expr: GenerateExpr): SemanticDiagnostic[] {
   }
 
   return diagnostics;
-}
-
-function error(code: string, message: string, range: SourceRange): SemanticDiagnostic {
-  return {
-    severity: "error",
-    code,
-    message,
-    range,
-  };
 }

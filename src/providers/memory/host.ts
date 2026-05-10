@@ -1,7 +1,7 @@
 import { isAbsolute, relative, resolve } from "node:path";
 import { RuntimeError } from "../../runtime/errors.js";
 import { isObject } from "../../runtime/guards.js";
-import { uriScheme } from "../../runtime/uri.js";
+import { splitSqliteUri, uriScheme } from "../../runtime/uri.js";
 import type { MemoryAddRequest, MemoryProvider, MemoryQueryRequest, RuntimeValue } from "../../runtime/types.js";
 import { FileMemoryBackend } from "./file.js";
 import { SqliteMemoryBackend, type SqliteMemoryTarget } from "./sqlite.js";
@@ -42,24 +42,21 @@ export class HostMemoryProvider implements MemoryProvider {
   }
 
   private resolveFileMemoryPath(uri: string): string {
-    const rawPath = decodeURIComponent(uri.slice("file://".length));
-    const path = isAbsolute(rawPath) ? rawPath : resolve(this.options.baseDir ?? process.cwd(), rawPath);
-    this.assertWithinWorkspace(path);
-    return path;
+    return this.resolveWorkspacePath(decodeURIComponent(uri.slice("file://".length)));
   }
 
   private resolveSqliteMemory(uri: string): SqliteMemoryTarget {
-    const raw = uri.slice("sqlite://".length);
-    const hashIndex = raw.indexOf("#");
-    const rawPath = hashIndex >= 0 ? raw.slice(0, hashIndex) : raw;
-    const rawNamespace = hashIndex >= 0 ? raw.slice(hashIndex + 1) : "";
-    const decoded = decodeURIComponent(rawPath);
-    const path = isAbsolute(decoded) ? decoded : resolve(this.options.baseDir ?? process.cwd(), decoded);
-    this.assertWithinWorkspace(path);
+    const { rawPath, rawNamespace } = splitSqliteUri(uri);
     return {
-      path,
+      path: this.resolveWorkspacePath(decodeURIComponent(rawPath)),
       namespace: rawNamespace.length > 0 ? decodeURIComponent(rawNamespace) : "memory",
     };
+  }
+
+  private resolveWorkspacePath(rawPath: string): string {
+    const path = isAbsolute(rawPath) ? rawPath : resolve(this.options.baseDir ?? process.cwd(), rawPath);
+    this.assertWithinWorkspace(path);
+    return path;
   }
 
   private assertWithinWorkspace(path: string): void {

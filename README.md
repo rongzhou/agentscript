@@ -17,7 +17,7 @@ generate({
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 ![Zero Dependencies](https://img.shields.io/badge/dependencies-0-brightgreen)
-![Node >= 22.5](https://img.shields.io/badge/node-%3E%3D22.5-green)
+![Node >= 22.13](https://img.shields.io/badge/node-%3E%3D22.13-green)
 
 [中文版](./README-CN.md)
 

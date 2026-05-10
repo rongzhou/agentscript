@@ -4,11 +4,11 @@ AgentScript is distributed as an npm package and can also be run from source.
 
 ## Requirements
 
-- Node.js >= 22.5.
+- Node.js >= 22.13.
 - npm.
 - Optional: Ollama, OpenAI, or Anthropic credentials for real model calls.
 
-The SQLite memory backend uses Node's built-in `node:sqlite` module, so Node.js 22.5 or newer is required.
+The SQLite memory backend uses Node's built-in `node:sqlite` module, so Node.js 22.13 or newer is required.
 
 ## Install from npm
 

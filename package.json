@@ -55,7 +55,7 @@
   "homepage": "https://github.com/rongzhou/agentscript#readme",
   "type": "module",
   "engines": {
-    "node": ">=22.5"
+    "node": ">=22.13"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",

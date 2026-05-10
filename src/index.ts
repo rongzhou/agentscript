@@ -1,26 +1,79 @@
-export * from "./ast/types.js";
-export * from "./ast/constants.js";
-export * from "./ast/format.js";
-export * from "./parser/tokenizer.js";
-export * from "./parser/parser.js";
-export * from "./semantic/analyzer.js";
-export * from "./semantic/diagnostics.js";
-export * from "./runtime/errors.js";
-export * from "./runtime/context.js";
-export * from "./runtime/evaluator.js";
-export * from "./runtime/generate.js";
-export * from "./runtime/guards.js";
-export * from "./runtime/interpreter.js";
-export * from "./runtime/input.js";
-export * from "./runtime/json.js";
-export * from "./runtime/loader.js";
-export * from "./providers/llm/index.js";
-export * from "./providers/memory/index.js";
-export * from "./providers/mock/index.js";
-export * from "./runtime/scope.js";
-export * from "./runtime/shape.js";
-export * from "./providers/tools/index.js";
-export * from "./runtime/trace.js";
-export * from "./runtime/truth.js";
-export * from "./runtime/types.js";
-export * from "./runtime/uri.js";
+export type {
+  AgentDecl,
+  AssignStmt,
+  BinaryExpr,
+  Budget,
+  CallExpr,
+  ConfigDecl,
+  ConfigKey,
+  ConfigStmt,
+  Expr,
+  ExprStmt,
+  ForInStmt,
+  FuncDecl,
+  FuncParam,
+  GenerateExpr,
+  GenerateOptionsExpr,
+  IdentifierExpr,
+  IfStmt,
+  ImportDecl,
+  ImportResourceKind,
+  IndexExpr,
+  ListExpr,
+  LoopUntilStmt,
+  MemberExpr,
+  NumberExpr,
+  ObjectExpr,
+  ObjectProperty,
+  ParallelForExpr,
+  Program,
+  RepeatStmt,
+  ReturnStmt,
+  ShapeField,
+  ShapeObjectExpr,
+  ShapeTypeExpr,
+  SourceLocation,
+  SourceRange,
+  Stmt,
+  UnaryExpr,
+  UseStmt,
+} from "./ast/types.js";
+export { parse } from "./parser/parser.js";
+export { analyze, assertSemanticallyValid } from "./semantic/analyzer.js";
+export {
+  SemanticError,
+  formatSemanticDiagnostics,
+  type DiagnosticSeverity,
+  type SemanticDiagnostic,
+  type SemanticResult,
+} from "./semantic/diagnostics.js";
+export { RuntimeError } from "./runtime/errors.js";
+export { executeAgent, type ExecuteOptions, type ExecuteResult } from "./runtime/interpreter.js";
+export { loadProgram, loadProgramSource, type LoadProgramOptions } from "./runtime/loader.js";
+export { formatTrace } from "./runtime/trace.js";
+export type {
+  ContextUse,
+  GenerateRequest,
+  InputProvider,
+  InputRequest,
+  JsonObject,
+  JsonPrimitive,
+  JsonValue,
+  LlmBinding,
+  LlmProvider,
+  MemoryAddRequest,
+  MemoryBinding,
+  MemoryProvider,
+  MemoryQueryRequest,
+  RuntimeObject,
+  RuntimeValue,
+  ToolBinding,
+  ToolCallRequest,
+  ToolProvider,
+  TraceEvent,
+} from "./runtime/types.js";
+export { ProtocolLlmProvider } from "./providers/llm/index.js";
+export type { FetchLike, LlmProtocol, ProtocolLlmProviderOptions } from "./providers/llm/index.js";
+export { createDefaultMemoryProvider } from "./providers/memory/index.js";
+export type { HostMemoryProviderOptions } from "./providers/memory/index.js";
+export { createDefaultToolProvider } from "./providers/tools/index.js";

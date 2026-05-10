@@ -421,7 +421,7 @@ describe("interpreter", () => {
     expect(result.value).toEqual({ value: "named" });
   });
 
-  it("lets local assignments shadow imported tool names", async () => {
+  it("rejects local assignments that shadow imported tool names", async () => {
     const ast = parse(`
       import tool Search from "mcp://tools/search"
 
@@ -433,9 +433,7 @@ describe("interpreter", () => {
       }
     `);
 
-    const result = await executeAgent(ast, {});
-
-    expect(result.value).toBe("local");
+    await expect(executeAgent(ast, {})).rejects.toThrow(/Cannot assign to immutable tool binding 'Search'/);
   });
 
   it("evaluates if else and boolean operators", async () => {

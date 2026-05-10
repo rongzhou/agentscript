@@ -42,11 +42,14 @@ export class RuntimeScope {
     return binding.value;
   }
 
-  set(name: string, value: RuntimeValue): void {
+  set(name: string, value: RuntimeValue, range?: SourceRange): void {
     const binding = this.resolveBinding(name);
     if (binding && MUTABLE_BINDING_KINDS.has(binding.kind)) {
       binding.value = value;
       return;
+    }
+    if (binding) {
+      throw new RuntimeError(`Cannot assign to immutable ${binding.kind} binding '${name}'`, range);
     }
     this.define(name, value);
   }

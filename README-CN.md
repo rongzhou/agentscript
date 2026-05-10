@@ -21,6 +21,14 @@ generate({
 
 [English](./README.md)
 
+<p align="center">
+  <img src="docs/assets/context-boundaries.png" alt="Traditional append-only chat versus AgentScript scoped context boundaries" width="900">
+</p>
+
+传统 chat 会让 context 不断增长、混在一起，直到重要信号被埋没。
+AgentScript 将程序状态和模型 context 分开：只有通过 `use` 选择的数据才会进入
+`generate` 调用。
+
 ## 安装
 
 ```bash

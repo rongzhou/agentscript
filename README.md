@@ -44,23 +44,23 @@ agentscript --help
 Or run without installing:
 
 ```bash
-npx @rong/agentscript run recipes/code-review.as --input '{"path":"src"}'
+npx @rong/agentscript recipes/code-review.as --input '{"path":"src"}'
 ```
 
 ## Quick start
 
 ```bash
 # Real model call by default
-agentscript run recipes/summarize-file.as --input '{"path":"README.md"}'
+agentscript recipes/summarize-file.as --input '{"path":"README.md"}'
 
 # Mock override for deterministic local checks
-agentscript run recipes/summarize-file.as --input '{"path":"README.md"}' --mock
+agentscript recipes/summarize-file.as --input '{"path":"README.md"}' --mock
 
 # Dry-run inspection without model calls
-agentscript run recipes/summarize-file.as --input '{"path":"README.md"}' --dry-run
+agentscript recipes/summarize-file.as --input '{"path":"README.md"}' --dry-run
 
 # Audit trace
-agentscript run recipes/summarize-file.as --input '{"path":"README.md"}' --trace
+agentscript recipes/summarize-file.as --input '{"path":"README.md"}' --trace
 ```
 
 The `recipes/summarize-file.as` recipe reads a local file, includes it in the LLM context, and returns a structured summary:
@@ -325,13 +325,13 @@ Python and TypeScript are excellent general-purpose tools, but they have no conc
 ## CLI
 
 ```bash
-agentscript run recipes/code-review.as --input '{"path":"src"}'
-agentscript run recipes/code-review.as --input '{"path":"src"}' --mock
-agentscript run recipes/code-review.as --input '{"path":"src"}' --dry-run
-agentscript run recipes/code-review.as --input '{"path":"src"}' --trace
+agentscript recipes/code-review.as --input '{"path":"src"}'
+agentscript recipes/code-review.as --input '{"path":"src"}' --mock
+agentscript recipes/code-review.as --input '{"path":"src"}' --dry-run
+agentscript recipes/code-review.as --input '{"path":"src"}' --trace
 agentscript recipes/code-review.as --check
 agentscript examples/arithmetic.as --parse
-agentscript run recipes/code-review.as --quiet
+agentscript recipes/code-review.as --quiet
 ```
 
 | Option | Description |

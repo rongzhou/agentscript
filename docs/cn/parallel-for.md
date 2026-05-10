@@ -405,7 +405,7 @@ max 10 = process at most 10 items
 示例：
 
 ```bash
-agentscript run app.as --concurrency 4
+agentscript app.as --concurrency 4
 ```
 
 推荐默认值：
@@ -434,7 +434,7 @@ provider adapters may apply stricter limits
 示例：
 
 ```bash
-agentscript run workflows/review.as \
+agentscript workflows/review.as \
   --input '{"path":"src"}' \
   --concurrency 3 \
   --trace

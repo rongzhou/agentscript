@@ -16,7 +16,7 @@ After the package is published:
 
 ```bash
 npm install -g @rong/agentscript
-agentscript run recipes/code-review.as --input '{"path":"src"}'
+agentscript recipes/code-review.as --input '{"path":"src"}'
 ```
 
 ## Run with npx
@@ -24,7 +24,7 @@ agentscript run recipes/code-review.as --input '{"path":"src"}'
 After the package is published:
 
 ```bash
-npx @rong/agentscript run recipes/code-review.as --input '{"path":"src"}'
+npx @rong/agentscript recipes/code-review.as --input '{"path":"src"}'
 ```
 
 ## Run from source
@@ -47,13 +47,13 @@ npm run parse -- examples/react.as
 
 ## Real LLM providers
 
-By default, `agentscript run` calls the configured real LLM provider. Use `--mock` for deterministic local flow checks, or `--dry-run` to inspect prompts and trace without model calls.
+By default, `agentscript` calls the configured real LLM provider. Use `--mock` for deterministic local flow checks, or `--dry-run` to inspect prompts and trace without model calls.
 
 ### OpenAI
 
 ```bash
 export OPENAI_API_KEY="..."
-agentscript run recipes/code-review.as --input '{"path":"src"}'
+agentscript recipes/code-review.as --input '{"path":"src"}'
 ```
 
 Use an AgentScript import such as:
@@ -66,7 +66,7 @@ import llm OpenAI from "openai://gpt-4.1-mini"
 
 ```bash
 export ANTHROPIC_API_KEY="..."
-agentscript run recipes/code-review.as --input '{"path":"src"}'
+agentscript recipes/code-review.as --input '{"path":"src"}'
 ```
 
 Use an AgentScript import such as:

@@ -176,32 +176,32 @@ for a structured result.
 Run it with a real model:
 
 ```bash
-agentscript run recipes/summarize-file.as --input '{"path":"README.md"}'
+agentscript recipes/summarize-file.as --input '{"path":"README.md"}'
 ```
 
 Or try it immediately with deterministic output and a trace:
 
 ```bash
 npm install -g @rong/agentscript
-agentscript run recipes/summarize-file.as --input '{"path":"README.md"}' --mock --trace
+agentscript recipes/summarize-file.as --input '{"path":"README.md"}' --mock --trace
 ```
 
 Run it with a deterministic mock model:
 
 ```bash
-agentscript run recipes/summarize-file.as --input '{"path":"README.md"}' --mock
+agentscript recipes/summarize-file.as --input '{"path":"README.md"}' --mock
 ```
 
 Inspect the prompt and trace without calling a model:
 
 ```bash
-agentscript run recipes/summarize-file.as --input '{"path":"README.md"}' --dry-run
+agentscript recipes/summarize-file.as --input '{"path":"README.md"}' --dry-run
 ```
 
 Print an auditable trace:
 
 ```bash
-agentscript run recipes/summarize-file.as --input '{"path":"README.md"}' --trace
+agentscript recipes/summarize-file.as --input '{"path":"README.md"}' --trace
 ```
 
 The trace can show which context sources were selected, which budgets were
@@ -448,25 +448,25 @@ npm install -g @rong/agentscript
 Run a recipe:
 
 ```bash
-agentscript run recipes/summarize-file.as --input '{"path":"README.md"}'
+agentscript recipes/summarize-file.as --input '{"path":"README.md"}'
 ```
 
 Run without installing:
 
 ```bash
-npx @rong/agentscript run recipes/code-review.as --input '{"path":"src"}'
+npx @rong/agentscript recipes/code-review.as --input '{"path":"src"}'
 ```
 
 Use mock mode for deterministic local checks:
 
 ```bash
-agentscript run recipes/summarize-file.as --input '{"path":"README.md"}' --mock
+agentscript recipes/summarize-file.as --input '{"path":"README.md"}' --mock
 ```
 
 Use trace mode when you want to inspect what happened:
 
 ```bash
-agentscript run recipes/summarize-file.as --input '{"path":"README.md"}' --trace
+agentscript recipes/summarize-file.as --input '{"path":"README.md"}' --trace
 ```
 
 Project links:

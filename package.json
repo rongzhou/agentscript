@@ -19,8 +19,8 @@
     "agentscript": "npm run build --silent && node dist/bin/agentscript.js",
     "parse": "npm run agentscript -- --parse",
     "check": "npm run agentscript -- --check",
-    "execute": "npm run agentscript -- run",
-    "execute:mock": "npm run agentscript -- run --mock",
+    "execute": "npm run agentscript --",
+    "execute:mock": "npm run agentscript -- --mock",
     "format": "biome format --write .",
     "format:check": "biome format ."
   },

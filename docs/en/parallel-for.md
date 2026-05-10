@@ -405,7 +405,7 @@ Concurrency is controlled by runtime configuration.
 Example:
 
 ```bash
-agentscript run app.as --concurrency 4
+agentscript app.as --concurrency 4
 ```
 
 Recommended default:
@@ -434,7 +434,7 @@ provider adapters may apply stricter limits
 Example:
 
 ```bash
-agentscript run workflows/review.as \
+agentscript workflows/review.as \
   --input '{"path":"src"}' \
   --concurrency 3 \
   --trace

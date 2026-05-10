@@ -99,25 +99,24 @@ function parseArgs(argv: string[]): CliOptions {
     version: false,
   };
 
-  const args = argv[0] === "run" ? argv.slice(1) : argv;
   const positional: string[] = [];
-  for (let index = 0; index < args.length; index += 1) {
-    const arg = args[index]!;
+  for (let index = 0; index < argv.length; index += 1) {
+    const arg = argv[index]!;
     switch (arg) {
       case "--agent":
-        options.agentName = readOptionValue(args, ++index, arg);
+        options.agentName = readOptionValue(argv, ++index, arg);
         break;
       case "--function":
-        options.functionName = readOptionValue(args, ++index, arg);
+        options.functionName = readOptionValue(argv, ++index, arg);
         break;
       case "--input":
-        options.input = readOptionValue(args, ++index, arg);
+        options.input = readOptionValue(argv, ++index, arg);
         break;
       case "--input-file":
-        options.inputFile = readOptionValue(args, ++index, arg);
+        options.inputFile = readOptionValue(argv, ++index, arg);
         break;
       case "--concurrency":
-        options.concurrency = readPositiveIntegerOption(args, ++index, arg);
+        options.concurrency = readPositiveIntegerOption(argv, ++index, arg);
         break;
       case "--dry-run":
         options.dryRun = true;
@@ -144,7 +143,7 @@ function parseArgs(argv: string[]): CliOptions {
         break;
       case "--trace":
         {
-          const value = readOptionalOptionValue(args, index + 1);
+          const value = readOptionalOptionValue(argv, index + 1);
           if (!value) {
             options.tracePretty = true;
           } else if (value === "pretty") {
@@ -308,14 +307,14 @@ function printUsage(write: (message: string) => void): void {
   write(
     [
       "Usage:",
-      '  agentscript run <file.as> --input \'{"question":"..."}\'',
-      "  agentscript run <file.as>",
-      "  agentscript run <file.as> --mock",
-      "  agentscript run <file.as> --dry-run",
-      "  agentscript run <file.as> --trace",
-      "  agentscript run <file.as> --concurrency 4",
-      "  agentscript run <file.as> --input-file input.json --agent AgentName",
-      "  agentscript run <file.as> --input '{}' --quiet",
+      '  agentscript <file.as> --input \'{"question":"..."}\'',
+      "  agentscript <file.as>",
+      "  agentscript <file.as> --mock",
+      "  agentscript <file.as> --dry-run",
+      "  agentscript <file.as> --trace",
+      "  agentscript <file.as> --concurrency 4",
+      "  agentscript <file.as> --input-file input.json --agent AgentName",
+      "  agentscript <file.as> --input '{}' --quiet",
       "  agentscript <file.as> --check",
       "  agentscript <file.as> --parse",
       "  agentscript",

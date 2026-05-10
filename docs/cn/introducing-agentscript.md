@@ -141,32 +141,32 @@ File tool 可以从 workspace 读取文件，但工具结果不会隐式变成 p
 用真实模型运行：
 
 ```bash
-agentscript run recipes/summarize-file.as --input '{"path":"README.md"}'
+agentscript recipes/summarize-file.as --input '{"path":"README.md"}'
 ```
 
 也可以立刻用确定性 mock output 和 trace 试一下：
 
 ```bash
 npm install -g @rong/agentscript
-agentscript run recipes/summarize-file.as --input '{"path":"README.md"}' --mock --trace
+agentscript recipes/summarize-file.as --input '{"path":"README.md"}' --mock --trace
 ```
 
 用确定性的 mock model 运行：
 
 ```bash
-agentscript run recipes/summarize-file.as --input '{"path":"README.md"}' --mock
+agentscript recipes/summarize-file.as --input '{"path":"README.md"}' --mock
 ```
 
 不调用模型，只检查 prompt 和 trace：
 
 ```bash
-agentscript run recipes/summarize-file.as --input '{"path":"README.md"}' --dry-run
+agentscript recipes/summarize-file.as --input '{"path":"README.md"}' --dry-run
 ```
 
 打印可审计 trace：
 
 ```bash
-agentscript run recipes/summarize-file.as --input '{"path":"README.md"}' --trace
+agentscript recipes/summarize-file.as --input '{"path":"README.md"}' --trace
 ```
 
 Trace 可以展示哪些 context source 被选择、应用了哪些 budget、哪些内容被裁剪、使用了什么 instruction、请求了什么 output shape，以及 validation 是否通过。Trace 用于 debugging 和 audit。它本身不是 prompt context。
@@ -376,25 +376,25 @@ npm install -g @rong/agentscript
 运行一个 recipe：
 
 ```bash
-agentscript run recipes/summarize-file.as --input '{"path":"README.md"}'
+agentscript recipes/summarize-file.as --input '{"path":"README.md"}'
 ```
 
 不安装直接运行：
 
 ```bash
-npx @rong/agentscript run recipes/code-review.as --input '{"path":"src"}'
+npx @rong/agentscript recipes/code-review.as --input '{"path":"src"}'
 ```
 
 使用 mock mode 做确定性本地检查：
 
 ```bash
-agentscript run recipes/summarize-file.as --input '{"path":"README.md"}' --mock
+agentscript recipes/summarize-file.as --input '{"path":"README.md"}' --mock
 ```
 
 使用 trace mode 检查执行过程：
 
 ```bash
-agentscript run recipes/summarize-file.as --input '{"path":"README.md"}' --trace
+agentscript recipes/summarize-file.as --input '{"path":"README.md"}' --trace
 ```
 
 项目链接：

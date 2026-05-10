@@ -60,14 +60,6 @@ describe("agentscript CLI", () => {
     expect(output.trace.some((event: { kind: string }) => event.kind === "agent")).toBe(true);
   });
 
-  it("supports the run subcommand", async () => {
-    const code = await main(["run", fixture, "--input", fixtureInput]);
-
-    expect(code).toBe(0);
-    const output = JSON.parse(logSpy.mock.calls[0]![0] as string);
-    expect(output.value).toMatchObject({ ok: true });
-  });
-
   it("uses real LLM mode by default and allows explicit mock override", async () => {
     vi.stubEnv("OPENAI_API_KEY", "");
     const dir = mkdtempSync(join(tmpdir(), "agentscript-cli-"));
@@ -91,13 +83,13 @@ describe("agentscript CLI", () => {
     `,
     );
 
-    const real = await main(["run", scriptFile]);
+    const real = await main([scriptFile]);
     expect(real).toBe(1);
     expect(errorSpy.mock.calls[0]![0]).toContain("OPENAI_API_KEY is required");
 
     errorSpy.mockClear();
     logSpy.mockClear();
-    const mock = await main(["run", scriptFile, "--mock"]);
+    const mock = await main([scriptFile, "--mock"]);
     expect(mock).toBe(0);
     const output = JSON.parse(logSpy.mock.calls[0]![0] as string);
     expect(output.value).toEqual({ ok: true });
@@ -127,7 +119,7 @@ describe("agentscript CLI", () => {
     `,
     );
 
-    const code = await main(["run", scriptFile, "--dry-run", "--trace"]);
+    const code = await main([scriptFile, "--dry-run", "--trace"]);
 
     expect(code).toBe(0);
     expect(errorSpy).not.toHaveBeenCalled();
@@ -165,7 +157,6 @@ describe("agentscript CLI", () => {
 
   it("prints a readable trace", async () => {
     const code = await main([
-      "run",
       "tutorials/cli.as",
       "--input",
       '{"name":"Rong","request":"Say hello"}',
@@ -193,7 +184,7 @@ describe("agentscript CLI", () => {
     `,
     );
 
-    const code = await main(["run", scriptFile, "--input", '{"items":["a","b","c"]}', "--concurrency", "2"]);
+    const code = await main([scriptFile, "--input", '{"items":["a","b","c"]}', "--concurrency", "2"]);
 
     expect(code).toBe(0);
     const output = JSON.parse(logSpy.mock.calls[0]![0] as string);

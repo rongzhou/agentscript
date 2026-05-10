@@ -98,6 +98,7 @@ export interface LlmProvider {
 
 export interface ToolProvider {
   call(request: ToolCallRequest): Promise<RuntimeValue>;
+  close?(): Promise<void>;
 }
 
 export interface MemoryProvider {

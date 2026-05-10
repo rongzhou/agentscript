@@ -253,6 +253,52 @@ main agent ResearchAgent {
 5. **工具、memory、文件都是导入资源** —— 访问可审计
 6. **内置 Trace** —— 每次 `generate` 和 `use` 都被记录，便于调试
 
+## MCP stdio 工具
+
+AgentScript 可以通过 `mcp://` tool import 调用 MCP 工具。当前 MCP 支持只覆盖
+stdio transport，并且不引入 runtime dependency。
+
+在 workspace root 放置 `agentscript.mcp.json`：
+
+```json
+{
+  "mcpServers": {
+    "search": {
+      "transport": "stdio",
+      "command": "npx",
+      "args": ["-y", "@example/mcp-server-search"],
+      "env": {
+        "SEARCH_API_KEY": "$SEARCH_API_KEY"
+      }
+    }
+  }
+}
+```
+
+然后在 AgentScript 中导入并调用：
+
+```agentscript
+import tool Search from "mcp://search"
+
+main agent Researcher {
+    main func(input { query string }) {
+        result = Search.call({
+            tool: "web-search",
+            args: {
+                query: input.query
+            }
+        })
+
+        use result.text max 4k as "search results"
+        generate({ input: "Answer from the selected search results" }) -> {
+            answer
+        }
+    }
+}
+```
+
+MCP 返回值只是普通数据。只有通过 `use` 显式选择后，它才会进入模型 context。
+
 ## 为什么不用 Python 或 TypeScript？
 
 | | Python / TypeScript | AgentScript |

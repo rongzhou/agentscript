@@ -263,6 +263,53 @@ main agent ResearchAgent {
 5. **Tools, memory, and files are imported resources** — with auditable access
 6. **Trace is built in** — every `generate` and `use` is recorded for debugging
 
+## MCP stdio tools
+
+AgentScript can call MCP tools through `mcp://` tool imports. Current MCP support
+is stdio-only and does not add runtime dependencies.
+
+Configure servers in `agentscript.mcp.json` at the workspace root:
+
+```json
+{
+  "mcpServers": {
+    "search": {
+      "transport": "stdio",
+      "command": "npx",
+      "args": ["-y", "@example/mcp-server-search"],
+      "env": {
+        "SEARCH_API_KEY": "$SEARCH_API_KEY"
+      }
+    }
+  }
+}
+```
+
+Then import and call the server:
+
+```agentscript
+import tool Search from "mcp://search"
+
+main agent Researcher {
+    main func(input { query string }) {
+        result = Search.call({
+            tool: "web-search",
+            args: {
+                query: input.query
+            }
+        })
+
+        use result.text max 4k as "search results"
+        generate({ input: "Answer from the selected search results" }) -> {
+            answer
+        }
+    }
+}
+```
+
+MCP results are ordinary data. They enter model context only when selected with
+`use`.
+
 ## Why not just Python or TypeScript?
 
 | | Python / TypeScript | AgentScript |

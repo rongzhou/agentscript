@@ -325,6 +325,7 @@ import tool Grep from "sh://grep"
 import tool File from "file://workspace"
 import tool Env from "env://process"
 import tool Http from "https://api.example.com"
+import tool Search from "mcp://search"
 ```
 
 ### Find
@@ -407,12 +408,53 @@ response = Http.post({
 
 HTTP requests are restricted to the origin of the import URI.
 
+### MCP
+
+MCP support is stdio-only. `mcp://name` resolves to a server entry in
+`agentscript.mcp.json` at the workspace root.
+
+```json
+{
+  "mcpServers": {
+    "search": {
+      "transport": "stdio",
+      "command": "npx",
+      "args": ["-y", "@example/mcp-server-search"]
+    }
+  }
+}
+```
+
+Use `call({ tool, args })` for MCP tool names that are not AgentScript
+identifiers:
+
+```agentscript
+result = Search.call({
+    tool: "web-search",
+    args: {
+        query: input.query
+    }
+})
+```
+
+Identifier-safe MCP tool names can also be called directly:
+
+```agentscript
+result = Search.search({
+    query: input.query
+})
+```
+
+MCP tool results are ordinary data and must be explicitly selected with `use` to
+enter prompt context.
+
 ### Security
 
 - General shell entry points (`sh://sh`, `sh://bash`, `sh://zsh`, `sh://fish`) are forbidden.
 - File paths are constrained to the workspace root.
 - Symlinks escaping the workspace are not followed.
 - Write operations return effect records for audit and undo.
+- MCP tools are treated as effectful and are not allowed inside `parallel for`.
 
 ## Memory
 

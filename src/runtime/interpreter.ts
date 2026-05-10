@@ -159,13 +159,17 @@ class Interpreter {
   }
 
   async execute(input: RuntimeValue): Promise<RuntimeValue> {
-    const entry = this.findFunction(this.agent, this.entryFunction);
-    if (!entry) {
-      throw new RuntimeError(`Unknown function '${this.entryFunction}'`);
+    try {
+      const entry = this.findFunction(this.agent, this.entryFunction);
+      if (!entry) {
+        throw new RuntimeError(`Unknown function '${this.entryFunction}'`);
+      }
+      const args =
+        entry.params.length === 0 ? [] : [await prepareEntryInput(input, entry, this.inputProvider, this.trace)];
+      return await this.callFunction(this.agent, entry.name, args, entry.range);
+    } finally {
+      await this.toolProvider.close?.();
     }
-    const args =
-      entry.params.length === 0 ? [] : [await prepareEntryInput(input, entry, this.inputProvider, this.trace)];
-    return this.callFunction(this.agent, entry.name, args, entry.range);
   }
 
   private resolveAgent(agentName?: string): AgentDecl {

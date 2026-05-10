@@ -3,6 +3,7 @@ import type { SemanticDiagnostic } from "./diagnostics.js";
 
 interface BindingLike {
   kind: string;
+  uri?: string;
 }
 
 interface ParallelForScope {
@@ -55,6 +56,15 @@ export function checkParallelForBodyRules(statements: Stmt[], scope: ParallelFor
           error(
             "PARALLEL_FOR_EFFECTFUL_CALL",
             `effectful operation '${root}.${stmt.expr.callee.property}' is not allowed inside parallel for`,
+            stmt.expr.callee.range,
+          ),
+        );
+      }
+      if (binding?.kind === "tool" && binding.uri?.startsWith("mcp://")) {
+        diagnostics.push(
+          error(
+            "PARALLEL_FOR_EFFECTFUL_CALL",
+            `MCP tool operation '${root}.${stmt.expr.callee.property}' is not allowed inside parallel for`,
             stmt.expr.callee.range,
           ),
         );

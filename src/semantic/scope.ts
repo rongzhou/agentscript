@@ -8,6 +8,7 @@ export interface Binding {
   agentName?: string;
   functionName?: string;
   arity?: number;
+  uri?: string;
 }
 
 export class SemanticScope {

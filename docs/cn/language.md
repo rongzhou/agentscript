@@ -325,6 +325,7 @@ import tool Grep from "sh://grep"
 import tool File from "file://workspace"
 import tool Env from "env://process"
 import tool Http from "https://api.example.com"
+import tool Search from "mcp://search"
 ```
 
 ### Find
@@ -407,11 +408,50 @@ response = Http.post({
 
 HTTP 请求限制在 import URI 的 origin 内。
 
+### MCP
+
+MCP 支持目前只覆盖 stdio transport。`mcp://name` 会解析到 workspace root
+下 `agentscript.mcp.json` 中的 server entry。
+
+```json
+{
+  "mcpServers": {
+    "search": {
+      "transport": "stdio",
+      "command": "npx",
+      "args": ["-y", "@example/mcp-server-search"]
+    }
+  }
+}
+```
+
+对于不是 AgentScript identifier 的 MCP tool name，使用 `call({ tool, args })`：
+
+```agentscript
+result = Search.call({
+    tool: "web-search",
+    args: {
+        query: input.query
+    }
+})
+```
+
+如果 MCP tool name 本身是合法 identifier，也可以直接调用：
+
+```agentscript
+result = Search.search({
+    query: input.query
+})
+```
+
+MCP tool 返回值是普通数据，必须通过 `use` 显式选择后才会进入 prompt context。
+
 ### 安全
 
 - 禁止通用 shell 入口（`sh://sh`、`sh://bash`、`sh://zsh`、`sh://fish`）。
 - 文件路径限制在 workspace 根目录内。
 - 逃逸 workspace 的符号链接不会被跟随。
+- MCP tool 默认视为 effectful，不能在 `parallel for` 中调用。
 - 写操作返回 effect 记录用于审计和撤销。
 
 ## Memory

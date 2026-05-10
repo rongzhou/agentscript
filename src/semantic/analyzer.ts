@@ -46,7 +46,7 @@ export function assertSemanticallyValid(program: Program): SemanticResult {
 class Analyzer {
   private diagnostics: SemanticDiagnostic[] = [];
   private agentDecls = new Map<string, AgentDecl>();
-  private readonly importBindings = new Map<string, { kind: BindingKind; range: SourceRange }>();
+  private readonly importBindings = new Map<string, { kind: BindingKind; range: SourceRange; uri: string }>();
   private agents = new Map<string, SourceRange>();
 
   analyze(program: Program): SemanticResult {
@@ -62,7 +62,7 @@ class Analyzer {
         continue;
       }
       const kind = importResourceKindToBindingKind(imported.resourceKind);
-      this.importBindings.set(imported.name, { kind, range: imported.range });
+      this.importBindings.set(imported.name, { kind, range: imported.range, uri: imported.uri });
       if (imported.resourceKind === "agent") {
         this.agents.set(imported.name, imported.range);
       }
@@ -108,6 +108,7 @@ class Analyzer {
         kind: binding.kind,
         range: binding.range,
         agentName: binding.kind === "agent" ? name : undefined,
+        uri: binding.uri,
       });
     }
     for (const [name, range] of this.agents) {

@@ -25,10 +25,6 @@ export class SemanticScope {
     return true;
   }
 
-  hasLocal(name: string): boolean {
-    return this.bindings.has(name);
-  }
-
   isLocalToThisScope(name: string): boolean {
     return this.bindings.has(name);
   }

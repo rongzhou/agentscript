@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { RuntimeError } from "../../runtime/errors.js";
+import { expectPlainObject } from "./shared.js";
 
 export interface McpRegistry {
   mcpServers: Record<string, McpServerConfig>;
@@ -35,12 +36,12 @@ export function loadMcpRegistry(workspaceRoot: string): McpRegistry {
 }
 
 function parseMcpRegistry(value: unknown): McpRegistry {
-  const root = expectRecord(value, "MCP registry");
+  const root = expectPlainObject(value, "MCP registry");
   const serversValue = root.mcpServers;
   if (serversValue === undefined) {
     return { mcpServers: {} };
   }
-  const servers = expectRecord(serversValue, "MCP registry mcpServers");
+  const servers = expectPlainObject(serversValue, "MCP registry mcpServers");
   const result: Record<string, McpServerConfig> = {};
   for (const [key, item] of Object.entries(servers)) {
     result[key] = parseServerConfig(key, item);
@@ -49,7 +50,7 @@ function parseMcpRegistry(value: unknown): McpRegistry {
 }
 
 function parseServerConfig(key: string, value: unknown): McpServerConfig {
-  const server = expectRecord(value, `MCP server '${key}'`);
+  const server = expectPlainObject(value, `MCP server '${key}'`);
   if (server.transport !== "stdio") {
     throw new RuntimeError(`MCP server '${key}' transport must be 'stdio'`);
   }
@@ -75,7 +76,7 @@ function readStringArray(value: unknown, name: string): string[] {
 
 function readEnv(value: unknown, key: string): Record<string, string> {
   if (value === undefined) return {};
-  const env = expectRecord(value, `MCP server '${key}' env`);
+  const env = expectPlainObject(value, `MCP server '${key}' env`);
   const result: Record<string, string> = {};
   for (const [name, item] of Object.entries(env)) {
     if (typeof item !== "string") {
@@ -95,14 +96,5 @@ function readTimeout(value: unknown, key: string): number {
 }
 
 function expandEnvValue(value: string): string {
-  if (!value.startsWith("$")) return value;
-  const name = value.slice(1);
-  return process.env[name] ?? "";
-}
-
-function expectRecord(value: unknown, name: string): Record<string, unknown> {
-  if (typeof value !== "object" || value === null || Array.isArray(value)) {
-    throw new RuntimeError(`${name} must be an object`);
-  }
-  return value as Record<string, unknown>;
+  return value.replace(/\$([A-Za-z_][A-Za-z0-9_]*)/g, (_match, name: string) => process.env[name] ?? "");
 }

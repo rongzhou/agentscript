@@ -112,7 +112,7 @@ class Analyzer {
       });
     }
     for (const [name, range] of this.agents) {
-      if (!agentScope.hasLocal(name)) {
+      if (!agentScope.isLocalToThisScope(name)) {
         agentScope.define(name, { kind: "agent", range, agentName: name });
       }
     }
@@ -171,7 +171,7 @@ class Analyzer {
         if (!fn.isMain || index !== 0 || param.name !== "input") {
           this.error(
             "INVALID_PARAM_SHAPE",
-            "V0 only supports shape declarations on the main func input parameter",
+            "Shape declarations are currently only supported on the main func input parameter",
             param.range,
           );
         }
@@ -274,7 +274,7 @@ class Analyzer {
     this.checkExpression(stmt.value, scope);
 
     if (stmt.target.kind === "IdentifierExpr") {
-      if (!scope.hasLocal(stmt.target.name)) {
+      if (!scope.isLocalToThisScope(stmt.target.name)) {
         scope.define(stmt.target.name, { kind: "local", range: stmt.target.range });
       }
       return;
@@ -432,7 +432,7 @@ class Analyzer {
     }
 
     this.checkExpression(callee, scope);
-    this.error("NOT_CALLABLE", "Only agent functions and member calls can be called in V0", callee.range);
+    this.error("NOT_CALLABLE", "Only agent functions and member calls can currently be called", callee.range);
   }
 
   private checkGenerate(expr: GenerateExpr, scope: SemanticScope): void {

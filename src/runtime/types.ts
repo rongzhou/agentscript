@@ -96,9 +96,16 @@ export interface LlmProvider {
   generate(request: GenerateRequest): Promise<RuntimeValue>;
 }
 
+export interface Disposable {
+  close(): Promise<void>;
+}
+
+export function isDisposable<T>(value: T): value is T & Disposable {
+  return typeof value === "object" && value !== null && "close" in value && typeof value.close === "function";
+}
+
 export interface ToolProvider {
   call(request: ToolCallRequest): Promise<RuntimeValue>;
-  close?(): Promise<void>;
 }
 
 export interface MemoryProvider {

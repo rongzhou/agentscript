@@ -1,6 +1,7 @@
 import { RuntimeError } from "../../runtime/errors.js";
+import { isDisposable } from "../../runtime/types.js";
 import { uriScheme } from "../../runtime/uri.js";
-import type { RuntimeValue, ToolCallRequest, ToolProvider } from "../../runtime/types.js";
+import type { Disposable, RuntimeValue, ToolCallRequest, ToolProvider } from "../../runtime/types.js";
 import { EnvToolProvider } from "./env.js";
 import { FileToolProvider } from "./file.js";
 import { HttpToolProvider } from "./http.js";
@@ -9,7 +10,7 @@ import { SchemeToolProvider } from "./scheme.js";
 import { ShellToolProvider } from "./shell.js";
 import { Workspace } from "./shared.js";
 
-export class HostToolProvider implements ToolProvider {
+export class HostToolProvider implements ToolProvider, Disposable {
   private readonly providers: Record<string, ToolProvider>;
 
   constructor(workspaceRoot = process.cwd()) {
@@ -37,7 +38,7 @@ export class HostToolProvider implements ToolProvider {
 
   async close(): Promise<void> {
     const providers = new Set(Object.values(this.providers));
-    await Promise.all([...providers].map((provider) => provider.close?.()));
+    await Promise.all([...providers].filter(isDisposable).map((provider) => provider.close()));
   }
 }
 

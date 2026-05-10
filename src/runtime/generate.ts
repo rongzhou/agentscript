@@ -108,8 +108,6 @@ export class GenerateRuntime {
               debug: options.debug,
             },
             attempts: attempt,
-            maxOutput: budgetToJson(options.maxOutput),
-            debug: options.debug,
             context: builtContextToJson(builtContext),
             validation: expr.returnShape ? { ok: true, strict: options.strict } : null,
             result: sanitizeForJson(result),

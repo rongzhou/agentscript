@@ -15,6 +15,7 @@ import { isTruthy } from "./truth.js";
 import { createDefaultMemoryProvider } from "../providers/memory/index.js";
 import { MockLlmProvider } from "../providers/mock/index.js";
 import { createDefaultToolProvider } from "../providers/tools/index.js";
+import { isDisposable } from "./types.js";
 import type {
   InputProvider,
   LlmBinding,
@@ -168,7 +169,7 @@ class Interpreter {
         entry.params.length === 0 ? [] : [await prepareEntryInput(input, entry, this.inputProvider, this.trace)];
       return await this.callFunction(this.agent, entry.name, args, entry.range);
     } finally {
-      await this.toolProvider.close?.();
+      await closeIfDisposable(this.toolProvider);
     }
   }
 
@@ -412,5 +413,15 @@ class Interpreter {
     const agent = this.agents.get(name);
     if (!agent) throw new RuntimeError(`Unknown agent '${name}'`, range);
     return agent;
+  }
+}
+
+async function closeIfDisposable(value: unknown): Promise<void> {
+  if (!isDisposable(value)) return;
+  try {
+    await value.close();
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error(`AgentScript cleanup failed: ${message}`);
   }
 }

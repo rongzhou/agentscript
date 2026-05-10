@@ -186,6 +186,7 @@ Currently implemented:
 - mock runtime
 - OpenAI / Anthropic / Ollama LLM adapters
 - file and environment tools
+- MCP stdio tool provider
 - JSONL and SQLite memory backends
 - trace output
 

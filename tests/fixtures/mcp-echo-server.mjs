@@ -21,6 +21,14 @@ const tools = [
       },
     },
   },
+  {
+    name: "env",
+    description: "Echo env",
+    inputSchema: {
+      type: "object",
+      properties: {},
+    },
+  },
 ];
 
 const rl = readline.createInterface({ input: process.stdin });
@@ -58,6 +66,13 @@ rl.on("line", (line) => {
     if (name === "web-search") {
       respond(message.id, {
         content: [{ type: "text", text: `result for ${String(args.query ?? "")}` }],
+        isError: false,
+      });
+      return;
+    }
+    if (name === "env") {
+      respond(message.id, {
+        content: [{ type: "text", text: process.env.MCP_ECHO_ENV ?? "" }],
         isError: false,
       });
       return;

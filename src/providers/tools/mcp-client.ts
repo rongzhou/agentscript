@@ -2,6 +2,7 @@ import { RuntimeError } from "../../runtime/errors.js";
 import type { RuntimeValue } from "../../runtime/types.js";
 import type { McpServerConfig } from "./mcp-config.js";
 import { StdioJsonRpcClient } from "./mcp-rpc.js";
+import { expectPlainObject } from "./shared.js";
 
 export interface McpToolInfo {
   name: string;
@@ -10,7 +11,7 @@ export interface McpToolInfo {
 }
 
 const MCP_PROTOCOL_VERSION = "2025-03-26";
-const CLIENT_VERSION = "0.1.8";
+const CLIENT_VERSION = "unknown";
 
 export class McpClient {
   private readonly rpc: StdioJsonRpcClient;
@@ -63,7 +64,7 @@ export class McpClient {
 }
 
 function parseToolsList(serverKey: string, value: unknown): McpToolInfo[] {
-  const root = expectRecord(value, `MCP server '${serverKey}' tools/list result`);
+  const root = expectPlainObject(value, `MCP server '${serverKey}' tools/list result`);
   if (!Array.isArray(root.tools)) {
     throw new RuntimeError(`MCP server '${serverKey}' tools/list result must contain tools array`);
   }
@@ -71,7 +72,7 @@ function parseToolsList(serverKey: string, value: unknown): McpToolInfo[] {
 }
 
 function parseToolInfo(serverKey: string, value: unknown, index: number): McpToolInfo {
-  const tool = expectRecord(value, `MCP server '${serverKey}' tool ${index}`);
+  const tool = expectPlainObject(value, `MCP server '${serverKey}' tool ${index}`);
   if (typeof tool.name !== "string" || tool.name.length === 0) {
     throw new RuntimeError(`MCP server '${serverKey}' tool ${index} name is required`);
   }
@@ -83,11 +84,4 @@ function parseToolInfo(serverKey: string, value: unknown, index: number): McpToo
     result.inputSchema = tool.inputSchema as RuntimeValue;
   }
   return result;
-}
-
-function expectRecord(value: unknown, name: string): Record<string, unknown> {
-  if (typeof value !== "object" || value === null || Array.isArray(value)) {
-    throw new RuntimeError(`${name} must be an object`);
-  }
-  return value as Record<string, unknown>;
 }

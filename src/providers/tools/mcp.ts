@@ -4,6 +4,7 @@ import { sanitizeForJson } from "../../runtime/json.js";
 import type { RuntimeObject, RuntimeValue, ToolCallRequest, ToolProvider } from "../../runtime/types.js";
 import { loadMcpRegistry, type McpRegistry } from "./mcp-config.js";
 import { McpClient } from "./mcp-client.js";
+import { expectObject } from "./shared.js";
 
 export class McpToolProvider implements ToolProvider {
   private readonly registry: McpRegistry;
@@ -52,7 +53,10 @@ function mcpServerKey(uri: string): string {
 
 function parseMcpToolCall(request: ToolCallRequest): { tool: string; args: Record<string, RuntimeValue> } {
   if (request.method === "call") {
-    const arg = expectSingleObjectArgument(request, "MCP call");
+    if (request.args.length !== 1) {
+      throw new RuntimeError("MCP call expects one object argument");
+    }
+    const arg = expectObject(request.args[0], "MCP call");
     const tool = arg.tool;
     if (typeof tool !== "string" || tool.length === 0) {
       throw new RuntimeError(`MCP ${request.toolName}.call tool is required`);
@@ -70,18 +74,8 @@ function parseMcpToolCall(request: ToolCallRequest): { tool: string; args: Recor
   if (request.args.length === 0) {
     return { tool: request.method, args: {} };
   }
-  const arg = request.args[0];
-  if (!isObject(arg)) {
-    throw new RuntimeError(`MCP ${request.toolName}.${request.method} expects one object argument`);
-  }
+  const arg = expectObject(request.args[0], `MCP ${request.toolName}.${request.method}`);
   return { tool: request.method, args: arg as Record<string, RuntimeValue> };
-}
-
-function expectSingleObjectArgument(request: ToolCallRequest, call: string): Record<string, RuntimeValue> {
-  if (request.args.length !== 1 || !isObject(request.args[0] ?? null)) {
-    throw new RuntimeError(`${call} expects one object argument`);
-  }
-  return request.args[0] as Record<string, RuntimeValue>;
 }
 
 function normalizeMcpResult(value: RuntimeValue): RuntimeObject {

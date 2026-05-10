@@ -93,6 +93,28 @@ describe("MCP stdio tools", () => {
     expect(result.value).toBe("result for agentscript");
   });
 
+  it("expands environment variable references in MCP registry env values", async () => {
+    process.env.AGENTSCRIPT_MCP_TEST_SUFFIX = "expanded";
+    const workspace = mcpWorkspace({ env: { MCP_ECHO_ENV: "token-$AGENTSCRIPT_MCP_TEST_SUFFIX" } });
+    const ast = parse(`
+      import tool Echo from "mcp://echo"
+
+      main agent A {
+        main func(input) {
+          return Echo.env({}).text
+        }
+      }
+    `);
+
+    try {
+      const result = await executeAgent(ast, {}, { workspaceRoot: workspace });
+
+      expect(result.value).toBe("token-expanded");
+    } finally {
+      delete process.env.AGENTSCRIPT_MCP_TEST_SUFFIX;
+    }
+  });
+
   it("reports unknown MCP tools at runtime", async () => {
     const workspace = mcpWorkspace();
     const ast = parse(`
@@ -142,15 +164,13 @@ describe("MCP stdio tools", () => {
 
     const result = analyze(ast);
 
-    expect(result.diagnostics).toContainEqual(
-      expect.objectContaining({
-        code: "PARALLEL_FOR_EFFECTFUL_CALL",
-      }),
-    );
+    const diagnostics = result.diagnostics.filter((diagnostic) => diagnostic.code === "PARALLEL_FOR_EFFECTFUL_CALL");
+
+    expect(diagnostics).toHaveLength(1);
   });
 });
 
-function mcpWorkspace(): string {
+function mcpWorkspace(options: { env?: Record<string, string> } = {}): string {
   const workspace = mkdtempSync(join(tmpdir(), "agentscript-mcp-"));
   writeFileSync(
     join(workspace, "agentscript.mcp.json"),
@@ -160,6 +180,7 @@ function mcpWorkspace(): string {
           transport: "stdio",
           command: process.execPath,
           args: [echoServer],
+          env: options.env,
         },
       },
     }),

@@ -66,6 +66,13 @@ export function expectObject(value: RuntimeValue | undefined, call: string): Rec
   return value as Record<string, RuntimeValue>;
 }
 
+export function expectPlainObject(value: unknown, name: string): Record<string, unknown> {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    throw new RuntimeError(`${name} must be an object`);
+  }
+  return value as Record<string, unknown>;
+}
+
 export function readRequiredString(value: RuntimeValue | undefined, name: string): string {
   if (typeof value !== "string" || value.length === 0) {
     throw new RuntimeError(`${name} is required`);

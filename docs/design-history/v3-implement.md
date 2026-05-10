@@ -174,7 +174,7 @@ src/providers/tools/mcp-client.ts
   "capabilities": {},
   "clientInfo": {
     "name": "agentscript",
-    "version": "0.1.8"
+    "version": "unknown"
   }
 }
 ```

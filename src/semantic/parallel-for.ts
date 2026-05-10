@@ -1,4 +1,5 @@
 import type { SourceRange, Stmt } from "../ast/types.js";
+import { uriScheme } from "../runtime/uri.js";
 import type { SemanticDiagnostic } from "./diagnostics.js";
 
 interface BindingLike {
@@ -51,20 +52,11 @@ export function checkParallelForBodyRules(statements: Stmt[], scope: ParallelFor
           ),
         );
       }
-      if (binding?.kind === "tool" && EFFECTFUL_TOOL_METHODS.has(stmt.expr.callee.property)) {
+      if (binding?.kind === "tool" && isEffectfulToolCall(binding, stmt.expr.callee.property)) {
         diagnostics.push(
           error(
             "PARALLEL_FOR_EFFECTFUL_CALL",
             `effectful operation '${root}.${stmt.expr.callee.property}' is not allowed inside parallel for`,
-            stmt.expr.callee.range,
-          ),
-        );
-      }
-      if (binding?.kind === "tool" && binding.uri?.startsWith("mcp://")) {
-        diagnostics.push(
-          error(
-            "PARALLEL_FOR_EFFECTFUL_CALL",
-            `MCP tool operation '${root}.${stmt.expr.callee.property}' is not allowed inside parallel for`,
             stmt.expr.callee.range,
           ),
         );
@@ -91,4 +83,9 @@ function error(code: string, message: string, range: SourceRange): SemanticDiagn
     message,
     range,
   };
+}
+
+function isEffectfulToolCall(binding: BindingLike, method: string): boolean {
+  if (binding.uri && uriScheme(binding.uri) === "mcp") return true;
+  return EFFECTFUL_TOOL_METHODS.has(method);
 }

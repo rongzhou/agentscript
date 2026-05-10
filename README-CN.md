@@ -176,6 +176,7 @@ AgentScript 仍处于实验阶段。
 - mock runtime
 - OpenAI / Anthropic / Ollama LLM adapters
 - file 和 environment tools
+- MCP stdio tool provider
 - JSONL 和 SQLite memory backends
 - trace output
 

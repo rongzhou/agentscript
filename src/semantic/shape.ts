@@ -1,5 +1,5 @@
 import { SHAPE_TYPE_NAMES } from "../ast/constants.js";
-import type { ListShapeType, NamedShapeType, ShapeObjectExpr, ShapeTypeExpr, SourceRange } from "../ast/types.js";
+import type { NamedShapeType, ShapeObjectExpr, ShapeTypeExpr, SourceRange } from "../ast/types.js";
 import type { SemanticDiagnostic } from "./diagnostics.js";
 
 export function checkShapeObject(shape: ShapeObjectExpr): SemanticDiagnostic[] {
@@ -19,13 +19,9 @@ export function checkShapeObject(shape: ShapeObjectExpr): SemanticDiagnostic[] {
 
 function checkShapeType(type: ShapeTypeExpr): SemanticDiagnostic[] {
   if (type.kind === "ListShapeType") {
-    return checkListShapeType(type);
+    return checkShapeType(type.itemType);
   }
   return checkNamedShapeType(type);
-}
-
-function checkListShapeType(type: ListShapeType): SemanticDiagnostic[] {
-  return checkShapeType(type.itemType);
 }
 
 function checkNamedShapeType(type: NamedShapeType): SemanticDiagnostic[] {

@@ -14,7 +14,7 @@ main agent {
 
         generate({ input: "Reply to the CLI user by name", max_output: 300 }) -> {
             ok boolean
-            message string
+            message
         }
     }
 }

@@ -13,7 +13,7 @@ main agent UseContextExample {
         use input.docs.summary max 2k as evidence
 
         generate({ input: "Answer from the selected evidence", max_output: 500 }) -> {
-            answer string
+            answer
             citations list[string]
         }
     }

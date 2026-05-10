@@ -33,8 +33,8 @@ main agent ResearchAgent {
         use scratch.summary max 1k
 
         generate({ input: "Choose the next search focus", max_output: 300 }) -> {
-            focus string
-            why string
+            focus
+            why
         }
     }
 
@@ -62,7 +62,7 @@ main agent ResearchAgent {
 
         generate({ input: "Summarize the useful observation", max_output: 400 }) -> {
             facts list[string]
-            source string
+            source
         }
     }
 
@@ -83,8 +83,8 @@ main agent ResearchAgent {
 
         generate({ input: "Answer using only the observations", max_output: 800 }) -> {
             ok boolean
-            text string
-            error string
+            text
+            error
         }
     }
 }

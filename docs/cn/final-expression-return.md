@@ -12,7 +12,7 @@ func answer(input) {
 
     generate({ input: "Answer the question" }) -> {
         ok boolean
-        answer string
+        answer
     }
 }
 ```
@@ -25,7 +25,7 @@ func answer(input) {
 
     return generate({ input: "Answer the question" }) -> {
         ok boolean
-        answer string
+        answer
     }
 }
 ```
@@ -148,7 +148,7 @@ func answer(input) {
 
     generate({ input: "Answer" }) -> {
         ok boolean
-        answer string
+        answer
     }
 }
 ```
@@ -181,8 +181,8 @@ func summarize(content) {
         input: "Summarize the content",
         max_output: 1000
     }) -> {
-        title string
-        summary string
+        title
+        summary
         key_points list[string]
     }
 }
@@ -203,7 +203,7 @@ func answer(input) {
 
     generate({ input: "Answer the question" }) -> {
         ok boolean
-        answer string
+        answer
     }
 }
 ```

@@ -47,7 +47,7 @@ main agent RepoReviewAssistant {
         use ci_config max 4k as "ci configuration"
 
         generate({ input: "Review this repository for release readiness", max_output: 4k, strict: true, think: "medium" }) -> {
-            summary string
+            summary
             blockers list[string]
             risks list[string]
             quick_wins list[string]

@@ -11,7 +11,7 @@ generate({
     input: "Answer from observations"
 }) -> {
     ok boolean
-    text string
+    text
 }
 ```
 
@@ -58,7 +58,7 @@ agentscript run recipes/summarize-file.as --input '{"path":"README.md"}' --trace
 `recipes/summarize-file.as` 读取本地文件，将其放入 LLM 上下文，并返回结构化摘要：
 
 ```agentscript
--- recipes/summarize-file.as
+// recipes/summarize-file.as
 import llm Qwen from "ollama://localhost:11434/qwen3.6"
 import tool File from "file://workspace"
 
@@ -78,8 +78,8 @@ main agent FileSummarizer {
             input: "Summarize the file for a busy teammate",
             max_output: 1000
         }) -> {
-            title string
-            summary string
+            title
+            summary
             key_points list[string]
             action_items list[string]
         }
@@ -229,8 +229,8 @@ main agent ResearchAgent {
             input: "Answer using only the observations"
         }) -> {
             ok boolean
-            text string
-            error string
+            text
+            error
         }
     }
 }

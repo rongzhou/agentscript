@@ -17,8 +17,8 @@ main agent MemoryExample {
         use past max 1k as "relevant lessons"
 
         answer = generate({ input: "Answer using relevant lessons", max_output: 500 }) -> {
-            response string
-            lesson string
+            response
+            lesson
         }
 
         Lessons.add({

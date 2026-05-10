@@ -17,8 +17,8 @@ main agent FileSummarizer {
         use content max 8k as "file content"
 
         generate({ input: "Summarize the file for a busy teammate", max_output: 1000 }) -> {
-            title string
-            summary string
+            title
+            summary
             key_points list[string]
             action_items list[string]
         }

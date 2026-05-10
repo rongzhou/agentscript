@@ -23,8 +23,8 @@ main agent SelfImprover {
             attempts: 3
         }) -> {
             ok boolean
-            answer string
-            reason string
+            answer
+            reason
         }
 
         lesson = reflect({
@@ -50,7 +50,7 @@ main agent SelfImprover {
             input: "Extract one durable lesson that could improve a future run.",
             attempts: 3
         }) -> {
-            insight string
+            insight
         }
     }
 }

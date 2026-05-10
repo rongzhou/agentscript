@@ -17,11 +17,11 @@ main agent ChangelogWriter {
         use diff max 10k as "git diff"
 
         generate({ input: "Write a changelog from this git diff", max_output: 1200 }) -> {
-            title string
+            title
             highlights list[string]
             breaking_changes list[string]
             fixes list[string]
-            notes string
+            notes
         }
     }
 }

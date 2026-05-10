@@ -70,6 +70,92 @@ describe("parse", () => {
     expect(stmt.value.returnShape).toBeDefined();
   });
 
+  it("defaults untyped generate return shape fields to string", () => {
+    const ast = parse(`
+      main agent A {
+        main func act(input) {
+          return generate({ input: "x" }) -> {
+              title
+              summary
+              confidence number
+              tags list[string]
+          }
+        }
+      }
+    `);
+
+    const func = ast.agents[0]!.functions[0]!;
+    const stmt = func.body[0]!;
+    expect(stmt.kind).toBe("ReturnStmt");
+    if (stmt.kind !== "ReturnStmt") return;
+    expect(stmt.value.kind).toBe("GenerateExpr");
+    if (stmt.value.kind !== "GenerateExpr") return;
+    expect(
+      stmt.value.returnShape?.fields.map((field) => ({
+        name: field.name,
+        kind: field.type.kind,
+        typeName: field.type.kind === "NamedShapeType" ? field.type.name : undefined,
+      })),
+    ).toEqual([
+      { name: "title", kind: "NamedShapeType", typeName: "string" },
+      { name: "summary", kind: "NamedShapeType", typeName: "string" },
+      { name: "confidence", kind: "NamedShapeType", typeName: "number" },
+      { name: "tags", kind: "ListShapeType", typeName: undefined },
+    ]);
+  });
+
+  it("allows comma-terminated default string fields in generate return shapes", () => {
+    const ast = parse(`
+      main agent A {
+        main func act(input) {
+          return generate({ input: "x" }) -> {
+              title,
+              summary,
+          }
+        }
+      }
+    `);
+
+    const func = ast.agents[0]!.functions[0]!;
+    const stmt = func.body[0]!;
+    expect(stmt.kind).toBe("ReturnStmt");
+    if (stmt.kind !== "ReturnStmt") return;
+    expect(stmt.value.kind).toBe("GenerateExpr");
+    if (stmt.value.kind !== "GenerateExpr") return;
+    expect(stmt.value.returnShape?.fields.map((field) => field.type)).toEqual([
+      expect.objectContaining({ kind: "NamedShapeType", name: "string" }),
+      expect.objectContaining({ kind: "NamedShapeType", name: "string" }),
+    ]);
+  });
+
+  it("requires explicit types outside generate return shapes", () => {
+    expect(() =>
+      parse(`
+        main agent A {
+          main func act(input {
+              path
+          }) {
+            return input
+          }
+        }
+      `),
+    ).toThrow(ParseError);
+  });
+
+  it("keeps same-line shape type typos as parse errors", () => {
+    expect(() =>
+      parse(`
+        main agent A {
+          main func act(input) {
+            return generate({ input: "x" }) -> {
+                confidence nubmer
+            }
+          }
+        }
+      `),
+    ).toThrow("Unsupported shape type 'nubmer'");
+  });
+
   it("parses generate without a return shape", () => {
     const ast = parse(`
       main agent A {

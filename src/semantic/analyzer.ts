@@ -8,67 +8,26 @@ import type {
   Expr,
   FuncDecl,
   GenerateExpr,
-  ListShapeType,
   MemberExpr,
-  NamedShapeType,
   Program,
   RepeatStmt,
-  ShapeObjectExpr,
-  ShapeTypeExpr,
   SourceRange,
   Stmt,
 } from "../ast/types.js";
-import { SHAPE_TYPE_NAMES } from "../ast/constants.js";
+import { formatArityError, VALID_MEMORY_METHODS } from "./calls.js";
 import { SemanticError, type SemanticDiagnostic, type SemanticResult } from "./diagnostics.js";
-
-type BindingKind = "param" | "local" | "function" | "tool" | "llm" | "file" | "agent" | "memory";
-
-interface Binding {
-  kind: BindingKind;
-  range: SourceRange;
-  agentName?: string;
-  functionName?: string;
-  arity?: number;
-}
-
-class SemanticScope {
-  private readonly bindings = new Map<string, Binding>();
-  private readonly configs = new Set<ConfigKey>();
-
-  constructor(private readonly parent?: SemanticScope) {}
-
-  define(name: string, binding: Binding): boolean {
-    if (this.bindings.has(name)) {
-      return false;
-    }
-    this.bindings.set(name, binding);
-    return true;
-  }
-
-  hasLocal(name: string): boolean {
-    return this.bindings.has(name);
-  }
-
-  isLocalToThisScope(name: string): boolean {
-    return this.bindings.has(name);
-  }
-
-  resolve(name: string): Binding | undefined {
-    return this.bindings.get(name) ?? this.parent?.resolve(name);
-  }
-
-  defineConfig(name: ConfigKey): void {
-    this.configs.add(name);
-  }
-
-  hasConfig(name: ConfigKey): boolean {
-    return this.configs.has(name) || this.parent?.hasConfig(name) === true;
-  }
-
-  child(): SemanticScope {
-    return new SemanticScope(this);
-  }
-}
+import { checkGenerateOptions } from "./generate.js";
+import { blockEndsWithExpression, checkParallelForBodyRules } from "./parallel-for.js";
+import { checkShapeObject } from "./shape.js";
+import {
+  type Binding,
+  type BindingKind,
+  NON_CONTEXT_BINDING_KINDS,
+  SemanticScope,
+  functionBinding,
+  importResourceKindToBindingKind,
+  isImportedBinding,
+} from "./scope.js";
 
 export function analyze(program: Program): SemanticResult {
   const analyzer = new Analyzer();
@@ -215,7 +174,7 @@ class Analyzer {
             param.range,
           );
         }
-        this.checkShapeObject(param.shape);
+        this.diagnostics.push(...checkShapeObject(param.shape));
       }
     }
 
@@ -353,7 +312,7 @@ class Analyzer {
         }
         break;
       case "ShapeObjectExpr":
-        this.checkShapeObject(expr);
+        this.diagnostics.push(...checkShapeObject(expr));
         break;
       case "MemberExpr":
         this.checkMember(expr, scope);
@@ -386,7 +345,7 @@ class Analyzer {
     if (expr.maxIterations <= 0) {
       this.error("INVALID_PARALLEL_FOR_LIMIT", "parallel for item count must be greater than 0", expr.range);
     }
-    if (!this.blockEndsWithExpression(expr.body)) {
+    if (!blockEndsWithExpression(expr.body)) {
       this.error("INVALID_PARALLEL_FOR_BODY", "parallel for body must end with a value expression", expr.range);
     }
     const child = scope.child();
@@ -394,52 +353,9 @@ class Analyzer {
     this.checkParallelForBody(expr.body, child);
   }
 
-  private blockEndsWithExpression(statements: Stmt[]): boolean {
-    return statements.length > 0 && statements[statements.length - 1]?.kind === "ExprStmt";
-  }
-
   private checkParallelForBody(statements: Stmt[], scope: SemanticScope): void {
+    this.diagnostics.push(...checkParallelForBodyRules(statements, scope));
     for (const stmt of statements) {
-      if (stmt.kind === "AssignStmt" && stmt.target.kind === "IdentifierExpr") {
-        const binding = scope.resolve(stmt.target.name);
-        if (binding && !scope.isLocalToThisScope(stmt.target.name)) {
-          this.error(
-            "PARALLEL_FOR_OUTER_ASSIGNMENT",
-            `parallel for body cannot assign to outer variable '${stmt.target.name}'`,
-            stmt.target.range,
-          );
-        }
-      }
-      if (
-        stmt.kind === "ExprStmt" &&
-        stmt.expr.kind === "CallExpr" &&
-        stmt.expr.callee.kind === "MemberExpr" &&
-        stmt.expr.callee.object.kind === "IdentifierExpr"
-      ) {
-        const root = stmt.expr.callee.object.name;
-        const binding = scope.resolve(root);
-        if (binding?.kind === "memory" && stmt.expr.callee.property === "add") {
-          this.error(
-            "PARALLEL_FOR_EFFECTFUL_CALL",
-            `effectful operation '${root}.${stmt.expr.callee.property}' is not allowed inside parallel for`,
-            stmt.expr.callee.range,
-          );
-        }
-        if (binding?.kind === "tool" && EFFECTFUL_TOOL_METHODS.has(stmt.expr.callee.property)) {
-          this.error(
-            "PARALLEL_FOR_EFFECTFUL_CALL",
-            `effectful operation '${root}.${stmt.expr.callee.property}' is not allowed inside parallel for`,
-            stmt.expr.callee.range,
-          );
-        }
-        if (binding && !scope.isLocalToThisScope(root) && stmt.expr.callee.property === "add") {
-          this.error(
-            "PARALLEL_FOR_OUTER_MUTATION",
-            `parallel for body cannot mutate outer variable '${root}'`,
-            stmt.expr.callee.range,
-          );
-        }
-      }
       this.checkStatement(stmt, scope);
     }
   }
@@ -522,70 +438,13 @@ class Analyzer {
     if (expr.options.input) {
       this.checkExpression(expr.options.input, scope);
     }
-    this.checkGenerateInput(expr);
+    this.diagnostics.push(...checkGenerateOptions(expr));
     if (expr.returnShape) {
-      this.checkShapeObject(expr.returnShape);
+      this.diagnostics.push(...checkShapeObject(expr.returnShape));
     }
     this.checkGenerateConfig("model", expr, scope);
     this.checkGenerateConfig("role", expr, scope);
     this.checkGenerateConfig("description", expr, scope);
-  }
-
-  private checkGenerateInput(expr: GenerateExpr): void {
-    let hasInput = false;
-    const seen = new Set<string>();
-    for (const property of expr.options.properties) {
-      if (seen.has(property.key)) {
-        this.error("DUPLICATE_GENERATE_OPTION", `Duplicate generate option '${property.key}'`, property.range);
-      }
-      seen.add(property.key);
-
-      if (property.key === "input") {
-        hasInput = true;
-      } else if (property.key === "attempts") {
-        const isPositiveInteger =
-          property.value.kind === "NumberExpr" && Number.isInteger(property.value.value) && property.value.value > 0;
-        if (!isPositiveInteger) {
-          this.error("INVALID_GENERATE_ATTEMPTS", "generate attempts must be a positive integer", property.value.range);
-        }
-      } else if (property.key === "max_output") {
-        if (!expr.options.maxOutput || expr.options.maxOutput.amount <= 0) {
-          this.error(
-            "INVALID_GENERATE_MAX_OUTPUT",
-            "generate max_output must be a positive budget",
-            property.value.range,
-          );
-        }
-      } else if (property.key === "temperature") {
-        if (property.value.kind !== "NumberExpr") {
-          this.error("INVALID_GENERATE_TEMPERATURE", "generate temperature must be a number", property.value.range);
-        }
-      } else if (property.key === "think") {
-        const validThinkString =
-          property.value.kind === "StringExpr" && ["auto", "low", "medium", "high"].includes(property.value.value);
-        if (property.value.kind !== "BooleanExpr" && !validThinkString) {
-          this.error(
-            "INVALID_GENERATE_THINK",
-            "generate think must be a boolean or one of auto, low, medium, high",
-            property.value.range,
-          );
-        }
-      } else if (property.key === "strict") {
-        if (property.value.kind !== "BooleanExpr") {
-          this.error("INVALID_GENERATE_STRICT", "generate strict must be a boolean", property.value.range);
-        }
-      } else if (property.key === "debug") {
-        if (property.value.kind !== "BooleanExpr") {
-          this.error("INVALID_GENERATE_DEBUG", "generate debug must be a boolean", property.value.range);
-        }
-      } else {
-        this.error("UNKNOWN_GENERATE_OPTION", `Unknown generate option '${property.key}'`, property.range);
-      }
-    }
-
-    if (!hasInput) {
-      this.error("INVALID_GENERATE_INPUT", "generate object argument requires an input field", expr.options.range);
-    }
   }
 
   private checkGenerateConfig(key: ConfigKey, expr: GenerateExpr, scope: SemanticScope): void {
@@ -641,16 +500,10 @@ class Analyzer {
   }
 
   private checkExpectedArity(binding: Binding, actual: number, range: SourceRange): void {
-    if (binding.arity === undefined || binding.arity === actual) {
-      return;
+    const message = formatArityError(binding, actual);
+    if (message) {
+      this.error("INVALID_ARGUMENT_COUNT", message, range);
     }
-    const displayName =
-      binding.agentName && binding.functionName ? `${binding.agentName}.${binding.functionName}` : "function";
-    this.error(
-      "INVALID_ARGUMENT_COUNT",
-      `Function '${displayName}' expects ${binding.arity} argument(s), got ${actual}`,
-      range,
-    );
   }
 
   private findAgentFunction(agentName: string, functionName: string): FuncDecl | undefined {
@@ -661,63 +514,9 @@ class Analyzer {
     return this.agentDecls.get(agentName)?.functions.find((fn) => fn.isMain);
   }
 
-  private checkShapeObject(shape: ShapeObjectExpr): void {
-    const fields = new Set<string>();
-    for (const field of shape.fields) {
-      if (fields.has(field.name)) {
-        this.error("DUPLICATE_SHAPE_FIELD", `Duplicate generate return field '${field.name}'`, field.range);
-      }
-      fields.add(field.name);
-      this.checkShapeType(field.type);
-    }
-  }
-
-  private checkShapeType(type: ShapeTypeExpr): void {
-    if (type.kind === "ListShapeType") {
-      this.checkListShapeType(type);
-      return;
-    }
-    this.checkNamedShapeType(type);
-  }
-
-  private checkListShapeType(type: ListShapeType): void {
-    this.checkShapeType(type.itemType);
-  }
-
-  private checkNamedShapeType(type: NamedShapeType): void {
-    if (!SHAPE_TYPE_NAMES.has(type.name)) {
-      this.error("UNKNOWN_SHAPE_TYPE", `Unsupported shape type '${type.name}'`, type.range);
-    }
-  }
-
   private error(code: string, message: string, range: SourceRange): void {
     this.diagnostics.push({ severity: "error", code, message, range });
   }
 }
 
-const IMPORTED_BINDING_KINDS = new Set<BindingKind>(["tool", "llm", "file", "agent", "memory"]);
-const NON_CONTEXT_BINDING_KINDS = new Set<BindingKind>(["tool", "llm", "agent", "function", "memory"]);
-const VALID_MEMORY_METHODS = new Set(["add", "query"]);
-const EFFECTFUL_TOOL_METHODS = new Set(["write", "patch", "delete", "post", "put"]);
 const RESERVED_CONTEXT_LABELS = new Set(["system", "assistant", "tool", "developer"]);
-
-function functionBinding(agentName: string, fn: FuncDecl): Binding {
-  return {
-    kind: "function",
-    range: fn.range,
-    agentName,
-    functionName: fn.name,
-    arity: fn.params.length,
-  };
-}
-
-function isImportedBinding(kind: BindingKind): boolean {
-  return IMPORTED_BINDING_KINDS.has(kind);
-}
-
-function importResourceKindToBindingKind(resourceKind: string): BindingKind {
-  if (IMPORTED_BINDING_KINDS.has(resourceKind as BindingKind)) {
-    return resourceKind as BindingKind;
-  }
-  return "file";
-}

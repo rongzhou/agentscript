@@ -17,6 +17,7 @@
 
 - [`use ... as ...`](./use-as.md)：prompt context 选择、label、budget、scope 可见性、延迟求值和 trace。
 - [`generate`](./generate.md)：generation site、prompt 构造、agent identity、输出契约、provider hint、校验、重试和 trace。
+- [`generate` 输出 Shape 中的默认 String 字段](./generate-default-string-fields.md)：`generate` 输出契约中 string 字段的简写规则。
 - [`parallel for`](./parallel-for.md)：面向独立有界 list 工作的结构化并行。
 - [Final Expression Return](./final-expression-return.md)：函数体最后一个顶层表达式的隐式返回规则。
 
@@ -38,7 +39,7 @@ main agent Assistant {
         use input.question
         generate({ input: "Answer the question" }) -> {
             ok boolean
-            answer string
+            answer
         }
     }
 }
@@ -151,7 +152,7 @@ Shape 用于输入校验和 `generate` 输出校验：
 ```agentscript
 generate({ input: "Extract facts" }) -> {
     ok boolean
-    title string
+    title
     items list[json]
     meta json
 }
@@ -218,8 +219,8 @@ answer = generate({
     debug: true
 }) -> {
     ok boolean
-    answer string
-    reason string
+    answer
+    reason
 }
 ```
 
@@ -430,12 +431,14 @@ import memory Runs from "sqlite://./.agentscript/memory.db#runs"
 import file Requirements from "./requirements.md"
 import file Config from "./config.json"
 
-func answer(input) {
-    use Requirements max 4k
-    use Config
-    generate({ input: "Answer from the referenced file." }) -> {
-        ok boolean
-        answer string
+agent Assistant {
+    func answer(input) {
+        use Requirements max 4k
+        use Config
+        generate({ input: "Answer from the referenced file." }) -> {
+            ok boolean
+            answer
+        }
     }
 }
 ```

@@ -211,7 +211,7 @@ parallel for body must end with a value expression
 ```agentscript
 results = parallel for step in plan.steps max 10 {
     log = Executor(step)
-    -- no final expression
+    // no final expression
 }
 ```
 
@@ -233,7 +233,7 @@ results = parallel for step in plan.steps max 10 {
         input: "Execute this step",
         max_output: 800
     }) -> {
-        result string
+        result
     }
 }
 ```
@@ -572,9 +572,9 @@ generate({
     max_output: 1200,
     strict: true
 }) -> {
-    summary string
+    summary
     failures list[string]
-    next_action string
+    next_action
 }
 ```
 
@@ -617,10 +617,10 @@ main agent Controller {
             strict: true,
             think: "medium"
         }) -> {
-            summary string
+            summary
             completed list[string]
             failed list[string]
-            next_action string
+            next_action
         }
     }
 }
@@ -655,7 +655,7 @@ main agent RepoReviewer {
             max_output: 1600,
             strict: true
         }) -> {
-            summary string
+            summary
             blockers list[string]
             risks list[string]
             quick_wins list[string]
@@ -682,7 +682,7 @@ main agent Summarizer {
                 max_output: 300,
                 strict: true
             }) -> {
-                summary string
+                summary
                 key_points list[string]
             }
         }
@@ -694,7 +694,7 @@ main agent Summarizer {
             max_output: 1200,
             strict: true
         }) -> {
-            summary string
+            summary
             key_points list[string]
         }
     }

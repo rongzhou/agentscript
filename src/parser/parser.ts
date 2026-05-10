@@ -10,39 +10,28 @@ import type {
   ConfigStmt,
   Expr,
   ExprStmt,
-  ForInStmt,
   FuncDecl,
   FuncParam,
-  GenerateExpr,
-  GenerateOptionsExpr,
   IdentifierExpr,
-  IfStmt,
   ImportDecl,
   ImportResourceKind,
   IndexExpr,
-  ListExpr,
-  ListShapeType,
-  LoopUntilStmt,
   MemberExpr,
-  NamedShapeType,
   NullExpr,
   NumberExpr,
-  ObjectExpr,
-  ObjectProperty,
-  ParallelForExpr,
   Program,
-  RepeatStmt,
   ReturnStmt,
-  ShapeField,
-  ShapeObjectExpr,
-  ShapeTypeExpr,
   Stmt,
   StringExpr,
   UnaryExpr,
   UseStmt,
 } from "../ast/types.js";
 import { ParseError } from "./errors.js";
-import { SHAPE_TYPE_NAMES } from "../ast/constants.js";
+import { parseForIn, parseIf, parseLoop, parseRepeat } from "./control-flow.js";
+import { parseGenerate } from "./generate.js";
+import { parseList, parseObject } from "./literals.js";
+import { parseParallelFor } from "./parallel-for.js";
+import { parseShapeObject } from "./shape.js";
 import { type Token, tokenize } from "./tokenizer.js";
 
 export function parse(source: string): Program {
@@ -188,7 +177,7 @@ class Parser {
 
   private parseFuncParam(): FuncParam {
     const token = this.consumeIdentifier("Expected parameter name");
-    const shape = this.check("{") ? this.parseShapeObject() : undefined;
+    const shape = this.check("{") ? parseShapeObject(this, { allowDefaultStringFields: false }) : undefined;
     return {
       kind: "FuncParam",
       name: token.value,
@@ -197,7 +186,7 @@ class Parser {
     };
   }
 
-  private parseBlock(): Stmt[] {
+  parseBlock(): Stmt[] {
     this.consume("{");
     const statements: Stmt[] = [];
     while (!this.check("}") && !this.isAtEnd()) {
@@ -218,16 +207,16 @@ class Parser {
       return this.parseReturn();
     }
     if (this.check("repeat")) {
-      return this.parseRepeat();
+      return parseRepeat(this);
     }
     if (this.check("for")) {
-      return this.parseForIn();
+      return parseForIn(this);
     }
     if (this.check("loop")) {
-      return this.parseLoop();
+      return parseLoop(this);
     }
     if (this.check("if")) {
-      return this.parseIf();
+      return parseIf(this);
     }
     return this.parseAssignmentOrExpressionStatement();
   }
@@ -279,68 +268,6 @@ class Parser {
     };
   }
 
-  private parseRepeat(): RepeatStmt {
-    const start = this.consume("repeat").range.start;
-    this.consume("*");
-    const maxAttempts = this.parsePositiveInteger("Expected repeat count");
-    const body = this.parseBlock();
-    return {
-      kind: "RepeatStmt",
-      maxAttempts,
-      body,
-      range: { start, end: this.previous().range.end },
-    };
-  }
-
-  private parseForIn(): ForInStmt {
-    const start = this.consume("for").range.start;
-    const item = this.consumeIdentifier("Expected for item name");
-    this.consume("in");
-    const iterable = this.parseLogicalOr();
-    this.consume("max");
-    const maxIterations = this.parsePositiveInteger("Expected for iteration count");
-    const body = this.parseBlock();
-    return {
-      kind: "ForInStmt",
-      itemName: item.value,
-      itemRange: item.range,
-      iterable,
-      maxIterations,
-      body,
-      range: { start, end: this.previous().range.end },
-    };
-  }
-
-  private parseLoop(): LoopUntilStmt {
-    const start = this.consume("loop").range.start;
-    this.consume("until");
-    const condition = this.parseLogicalOr();
-    this.consume("max");
-    const maxIterations = this.parsePositiveInteger("Expected loop iteration count");
-    const body = this.parseBlock();
-    return {
-      kind: "LoopUntilStmt",
-      condition,
-      maxIterations,
-      body,
-      range: { start, end: this.previous().range.end },
-    };
-  }
-
-  private parseIf(): IfStmt {
-    const start = this.consume("if").range.start;
-    const condition = this.parseExpression();
-    const thenBody = this.parseBlock();
-    const elseBody = this.match("else") ? this.parseBlock() : undefined;
-    return {
-      kind: "IfStmt",
-      condition,
-      thenBody,
-      elseBody,
-      range: { start, end: this.previous().range.end },
-    };
-  }
-
   private parseAssignmentOrExpressionStatement(): AssignStmt | ExprStmt {
     const expr = this.parseExpression();
     if (this.matchAny(["=", "+=", "-="])) {
@@ -365,7 +292,7 @@ class Parser {
     };
   }
 
-  private parseExpression(): Expr {
+  parseExpression(): Expr {
     return this.parseLogicalOr();
   }
 
@@ -468,11 +395,11 @@ class Parser {
     const token = this.peek();
 
     if (this.check("generate")) {
-      return this.parseGenerate();
+      return parseGenerate(this);
     }
 
     if (this.check("parallel")) {
-      return this.parseParallelFor();
+      return parseParallelFor(this);
     }
 
     if (this.matchKind("string")) {
@@ -508,11 +435,11 @@ class Parser {
     }
 
     if (this.check("{")) {
-      return this.parseObject();
+      return parseObject(this);
     }
 
     if (this.check("[")) {
-      return this.parseList();
+      return parseList(this);
     }
 
     if (this.matchKind("identifier") || this.matchKind("keyword")) {
@@ -526,199 +453,16 @@ class Parser {
     throw this.error("Expected expression");
   }
 
-  private parseGenerate(): GenerateExpr {
-    const start = this.consume("generate").range.start;
-    this.consume("(");
-    const options = this.parseGenerateOptions();
-    this.consume(")");
-    const returnShape = this.match("->") ? this.parseShapeObject() : undefined;
-
-    return {
-      kind: "GenerateExpr",
-      options,
-      returnShape,
-      range: { start, end: this.previous().range.end },
-    };
-  }
-
-  private parseParallelFor(): ParallelForExpr {
-    const start = this.consume("parallel").range.start;
-    this.consume("for");
-    const item = this.consumeIdentifier("Expected parallel for item name");
-    this.consume("in");
-    const iterable = this.parseLogicalOr();
-    this.consume("max");
-    const maxIterations = this.parsePositiveInteger("Expected parallel for item count");
-    const body = this.parseBlock();
-    return {
-      kind: "ParallelForExpr",
-      itemName: item.value,
-      itemRange: item.range,
-      iterable,
-      maxIterations,
-      body,
-      range: { start, end: this.previous().range.end },
-    };
-  }
-
-  private parseGenerateOptions(): GenerateOptionsExpr {
-    const start = this.consume("{").range.start;
-    const properties: ObjectProperty[] = [];
-    let input: Expr | undefined;
-    let attempts: NumberExpr | undefined;
-    let maxOutput: Budget | undefined;
-    let temperature: NumberExpr | undefined;
-    let think: BooleanExpr | StringExpr | undefined;
-    let strict: BooleanExpr | undefined;
-    let debug: BooleanExpr | undefined;
-
-    while (!this.check("}") && !this.isAtEnd()) {
-      const propStart = this.peek().range.start;
-      const key = this.consumeObjectKey();
-      this.consume(":");
-      let value: Expr;
-      if (key === "max_output") {
-        const token = this.consumeKind("number", "Expected generate max_output");
-        maxOutput = this.parseBudgetToken(token);
-        value = {
-          kind: "NumberExpr",
-          value: Number.parseFloat(token.value),
-          raw: token.value,
-          range: token.range,
-        } satisfies NumberExpr;
-      } else {
-        value = this.parseExpression();
-      }
-      properties.push({
-        kind: "ObjectProperty",
-        key,
-        value,
-        range: { start: propStart, end: value.range.end },
-      });
-      if (key === "input") {
-        input = value;
-      } else if (key === "attempts" && value.kind === "NumberExpr") {
-        attempts = value;
-      } else if (key === "temperature" && value.kind === "NumberExpr") {
-        temperature = value;
-      } else if (key === "think" && (value.kind === "BooleanExpr" || value.kind === "StringExpr")) {
-        think = value;
-      } else if (key === "strict" && value.kind === "BooleanExpr") {
-        strict = value;
-      } else if (key === "debug" && value.kind === "BooleanExpr") {
-        debug = value;
-      }
-      this.consumePropertySeparator("}");
-    }
-
-    this.consume("}");
-    return {
-      kind: "GenerateOptionsExpr",
-      properties,
-      input,
-      attempts,
-      maxOutput,
-      temperature,
-      think,
-      strict,
-      debug,
-      range: { start, end: this.previous().range.end },
-    };
-  }
-
-  private parseObject(): ObjectExpr {
-    const start = this.consume("{").range.start;
-    const properties: ObjectProperty[] = [];
-
-    while (!this.check("}") && !this.isAtEnd()) {
-      const propStart = this.peek().range.start;
-      const key = this.consumeObjectKey();
-      this.consume(":");
-      const value = this.parseExpression();
-      properties.push({
-        kind: "ObjectProperty",
-        key,
-        value,
-        range: { start: propStart, end: value.range.end },
-      });
-      this.consumePropertySeparator("}");
-    }
-
-    this.consume("}");
-    return {
-      kind: "ObjectExpr",
-      properties,
-      range: { start, end: this.previous().range.end },
-    };
-  }
-
-  private consumePropertySeparator(terminator: string): void {
+  consumePropertySeparator(terminator: string): void {
     if (this.check(terminator)) return;
     this.consume(",");
-  }
-
-  private parseList(): ListExpr {
-    const start = this.consume("[").range.start;
-    const items = this.parseCommaSeparatedUntil("]", () => this.parseExpression());
-    this.consume("]");
-    return {
-      kind: "ListExpr",
-      items,
-      range: { start, end: this.previous().range.end },
-    };
-  }
-
-  private parseShapeObject(): ShapeObjectExpr {
-    const start = this.consume("{").range.start;
-    const fields = this.parseCommaSeparatedUntil("}", () => this.parseShapeField());
-
-    this.consume("}");
-    return {
-      kind: "ShapeObjectExpr",
-      fields,
-      range: { start, end: this.previous().range.end },
-    };
-  }
-
-  private parseShapeField(): ShapeField {
-    const start = this.peek().range.start;
-    const name = this.consumeIdentifier("Expected shape field name").value;
-    const type = this.parseShapeType();
-    return {
-      kind: "ShapeField",
-      name,
-      type,
-      range: { start, end: type.range.end },
-    };
-  }
-
-  private parseShapeType(): ShapeTypeExpr {
-    const start = this.peek().range.start;
-    const name = this.consumeIdentifier("Expected shape type").value;
-    if (name === "list" && this.match("[")) {
-      const itemType = this.parseShapeType();
-      this.consume("]");
-      return {
-        kind: "ListShapeType",
-        itemType,
-        range: { start, end: this.previous().range.end },
-      } satisfies ListShapeType;
-    }
-    if (!SHAPE_TYPE_NAMES.has(name)) {
-      throw new ParseError(`Unsupported shape type '${name}'`, { ...start });
-    }
-    return {
-      kind: "NamedShapeType",
-      name: name as NamedShapeType["name"],
-      range: { start, end: this.previous().range.end },
-    } satisfies NamedShapeType;
   }
 
   private parseBudget(): Budget {
     return this.parseBudgetToken(this.consumeKind("number", "Expected budget amount"));
   }
 
-  private parseBudgetToken(token: Token): Budget {
+  parseBudgetToken(token: Token): Budget {
     const raw = token.value;
     const match = /^(\d+(?:\.\d+)?)([A-Za-z]+)?$/.exec(raw);
     if (!match) {
@@ -730,7 +474,7 @@ class Parser {
     };
   }
 
-  private parsePositiveInteger(message: string): number {
+  parsePositiveInteger(message: string): number {
     const raw = this.consumeKind("number", message).value;
     if (!/^\d+$/.test(raw)) {
       throw this.error(message);
@@ -738,7 +482,7 @@ class Parser {
     return Number.parseInt(raw, 10);
   }
 
-  private consumeObjectKey(): string {
+  consumeObjectKey(): string {
     if (this.matchKind("identifier") || this.matchKind("keyword") || this.matchKind("string")) {
       return this.previous().value;
     }
@@ -753,28 +497,28 @@ class Parser {
     return token as Token & { value: ConfigKey };
   }
 
-  private consumeIdentifier(message: string): Token {
+  consumeIdentifier(message: string): Token {
     if (this.matchKind("identifier") || this.matchKind("keyword")) {
       return this.previous();
     }
     throw this.error(message);
   }
 
-  private consumeKind(kind: Token["kind"], message: string): Token {
+  consumeKind(kind: Token["kind"], message: string): Token {
     if (this.matchKind(kind)) {
       return this.previous();
     }
     throw this.error(message);
   }
 
-  private consume(value: string): Token {
+  consume(value: string): Token {
     if (this.match(value)) {
       return this.previous();
     }
     throw this.error(`Expected '${value}'`);
   }
 
-  private match(value: string): boolean {
+  match(value: string): boolean {
     if (!this.check(value)) {
       return false;
     }
@@ -798,7 +542,7 @@ class Parser {
     return true;
   }
 
-  private check(value: string): boolean {
+  check(value: string): boolean {
     return this.peek().value === value;
   }
 
@@ -806,7 +550,7 @@ class Parser {
     return this.peek().kind === kind;
   }
 
-  private parseCommaSeparatedUntil<T>(terminator: string, parseItem: () => T): T[] {
+  parseCommaSeparatedUntil<T>(terminator: string, parseItem: () => T): T[] {
     const items: T[] = [];
     while (!this.check(terminator) && !this.isAtEnd()) {
       items.push(parseItem());
@@ -826,11 +570,11 @@ class Parser {
     return this.peek().kind === "eof";
   }
 
-  private peek(): Token {
+  peek(): Token {
     return this.tokens[this.current]!;
   }
 
-  private previous(): Token {
+  previous(): Token {
     return this.tokens[this.current - 1] ?? this.tokens[0]!;
   }
 

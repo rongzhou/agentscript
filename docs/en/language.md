@@ -17,6 +17,7 @@ This language reference is the compact syntax and feature map. Detailed design d
 
 - [`use ... as ...`](./use-as.md): prompt context selection, labels, budgets, scope visibility, deferred evaluation, and trace.
 - [`generate`](./generate.md): generation sites, prompt construction, agent identity, output contracts, provider hints, validation, retries, and trace.
+- [Default String Fields in `generate` Output Shapes](./generate-default-string-fields.md): shorthand for string fields in `generate` output contracts.
 - [`parallel for`](./parallel-for.md): structured parallelism for independent bounded list work.
 - [Final Expression Return](./final-expression-return.md): implicit return from the final top-level expression in a function body.
 
@@ -38,7 +39,7 @@ main agent Assistant {
         use input.question
         generate({ input: "Answer the question" }) -> {
             ok boolean
-            answer string
+            answer
         }
     }
 }
@@ -151,7 +152,7 @@ Shapes are used for input validation and `generate` output validation:
 ```agentscript
 generate({ input: "Extract facts" }) -> {
     ok boolean
-    title string
+    title
     items list[json]
     meta json
 }
@@ -218,8 +219,8 @@ answer = generate({
     debug: true
 }) -> {
     ok boolean
-    answer string
-    reason string
+    answer
+    reason
 }
 ```
 
@@ -430,12 +431,14 @@ File imports load local files as explicit context resources.
 import file Requirements from "./requirements.md"
 import file Config from "./config.json"
 
-func answer(input) {
-    use Requirements max 4k
-    use Config
-    generate({ input: "Answer from the referenced file." }) -> {
-        ok boolean
-        answer string
+agent Assistant {
+    func answer(input) {
+        use Requirements max 4k
+        use Config
+        generate({ input: "Answer from the referenced file." }) -> {
+            ok boolean
+            answer
+        }
     }
 }
 ```

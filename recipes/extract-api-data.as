@@ -21,7 +21,7 @@ main agent ApiExtractor {
             records list[json]
             fields list[string]
             warnings list[string]
-            summary string
+            summary
         }
     }
 }

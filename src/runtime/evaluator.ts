@@ -1,16 +1,5 @@
 import { assertNever } from "../utils/assert.js";
-import { formatExpressionSource } from "../ast/format.js";
-import type {
-  AgentDecl,
-  CallExpr,
-  ConfigDecl,
-  ConfigStmt,
-  Expr,
-  MemberExpr,
-  ParallelForExpr,
-  SourceRange,
-  Stmt,
-} from "../ast/types.js";
+import type { AgentDecl, CallExpr, ConfigDecl, ConfigStmt, Expr, MemberExpr, SourceRange, Stmt } from "../ast/types.js";
 import { RuntimeError } from "./errors.js";
 import { GenerateRuntime } from "./generate.js";
 import { isAgentBinding, isFunctionBinding, isLlmBinding, isMemoryBinding, isObject, isToolBinding } from "./guards.js";
@@ -18,6 +7,7 @@ import { runtimeValuesEqual, sanitizeForJson } from "./json.js";
 import type { RuntimeScope } from "./scope.js";
 import { uriScheme } from "./uri.js";
 import { isTruthy } from "./truth.js";
+import { evaluateParallelFor } from "./parallel-for.js";
 import {
   type ContextUse,
   type JsonValue,
@@ -115,67 +105,15 @@ export class Evaluator {
       case "GenerateExpr":
         return this.generateRuntime.evaluateGenerate(expr, scope);
       case "ParallelForExpr":
-        return this.evaluateParallelFor(expr, scope);
+        return evaluateParallelFor(expr, scope, this.trace, {
+          concurrency: () => this.host.concurrency(),
+          evaluateExpression: (value, currentScope) => this.evaluate(value, currentScope),
+          evaluateBlockFinalValue: (statements, currentScope) =>
+            this.host.evaluateBlockFinalValue(statements, currentScope),
+        });
       default:
         assertNever(expr);
     }
-  }
-
-  private async evaluateParallelFor(expr: ParallelForExpr, scope: RuntimeScope): Promise<RuntimeValue[]> {
-    const iterable = await this.evaluate(expr.iterable, scope);
-    if (!Array.isArray(iterable)) {
-      throw new RuntimeError("parallel for source must be a list", expr.iterable.range);
-    }
-    const selected = iterable.slice(0, expr.maxIterations);
-    const concurrency = Math.max(1, Math.floor(this.host.concurrency()));
-    const start = Date.now();
-    this.trace.push({
-      kind: "parallel_for",
-      data: {
-        item: expr.itemName,
-        source: formatExpressionSource(expr.iterable),
-        max_items: expr.maxIterations,
-        items: selected.length,
-        concurrency,
-      },
-    });
-
-    const result = await mapLimitWaitAll(selected, concurrency, async (item) => {
-      const child = scope.child();
-      child.define(expr.itemName, item);
-      return this.host.evaluateBlockFinalValue(expr.body, child);
-    });
-    if (result.failures.length > 0) {
-      this.trace.push({
-        kind: "parallel_for",
-        data: {
-          item: expr.itemName,
-          source: formatExpressionSource(expr.iterable),
-          items: selected.length,
-          concurrency,
-          duration_ms: Date.now() - start,
-          ok: false,
-          failed_indices: result.failures.map((failure) => failure.index),
-        },
-      });
-      throw new RuntimeError(
-        `parallel for failed: ${result.failures.map((failure) => `[${failure.index}] ${failure.message}`).join("; ")}`,
-        expr.range,
-      );
-    }
-
-    this.trace.push({
-      kind: "parallel_for",
-      data: {
-        item: expr.itemName,
-        source: formatExpressionSource(expr.iterable),
-        items: selected.length,
-        concurrency,
-        duration_ms: Date.now() - start,
-        ok: true,
-      },
-    });
-    return result.values;
   }
 
   async resolveContextUses(scope: RuntimeScope): Promise<ContextUse[]> {
@@ -451,36 +389,4 @@ export class Evaluator {
 
 function formatArithmeticOperand(value: RuntimeValue): string {
   return typeof value === "string" ? value : JSON.stringify(sanitizeForJson(value));
-}
-
-interface MapLimitFailure {
-  index: number;
-  message: string;
-}
-
-async function mapLimitWaitAll<T, R>(
-  items: T[],
-  concurrency: number,
-  mapper: (item: T, index: number) => Promise<R>,
-): Promise<{ values: R[]; failures: MapLimitFailure[] }> {
-  const results = new Array<R>(items.length);
-  const failures: MapLimitFailure[] = [];
-  let nextIndex = 0;
-
-  async function worker(): Promise<void> {
-    while (nextIndex < items.length) {
-      const index = nextIndex;
-      nextIndex += 1;
-      try {
-        results[index] = await mapper(items[index]!, index);
-      } catch (error) {
-        failures.push({ index, message: error instanceof Error ? error.message : String(error) });
-      }
-    }
-  }
-
-  const workerCount = Math.min(concurrency, items.length);
-  await Promise.all(Array.from({ length: workerCount }, () => worker()));
-  failures.sort((left, right) => left.index - right.index);
-  return { values: results, failures };
 }

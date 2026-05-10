@@ -20,7 +20,7 @@ main agent ResearchBriefWriter {
         use search max 8k as "search results"
 
         generate({ input: "Write a concise research brief with citations and open questions", max_output: 1200 }) -> {
-            answer string
+            answer
             key_points list[string]
             citations list[string]
             open_questions list[string]

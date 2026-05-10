@@ -23,7 +23,7 @@ main agent CodeReviewAssistant {
         use findings[1] max 4k as "fixme findings"
 
         generate({ input: "Turn TODO and FIXME scan results into prioritized repair suggestions", max_output: 1200 }) -> {
-            summary string
+            summary
             findings list[string]
             suggested_fixes list[string]
             next_steps list[string]

@@ -22,10 +22,10 @@ main agent MarkdownTranslator {
         use files max 4k as "markdown files"
 
         generate({ input: "Create a practical markdown translation plan", max_output: 1000 }) -> {
-            target_language string
+            target_language
             files list[string]
             glossary_notes list[string]
-            instructions string
+            instructions
         }
     }
 }

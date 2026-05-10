@@ -2,7 +2,7 @@
 
 This document defines the semantics of `generate` in AgentScript: generation sites, prompt layers, agent identity, selected context, output contracts, generation configuration, retries, validation, debug output, and trace output.
 
-For context selection and labels, see [`use ... as ...`](./use-as.md). For the broader design map, see [Context Engineering](./context-engineering.md).
+For context selection and labels, see [`use ... as ...`](./use-as.md). For the broader design map, see [Context Engineering](./context-engineering.md). For the default string shorthand in output shapes, see [Default String Fields in `generate` Output Shapes](./generate-default-string-fields.md).
 
 ## Purpose
 
@@ -11,7 +11,7 @@ For context selection and labels, see [`use ... as ...`](./use-as.md). For the b
 ```agentscript
 generate({ input: "Answer using the selected context." }) -> {
     ok boolean
-    answer string
+    answer
 }
 ```
 
@@ -29,7 +29,7 @@ generate({
     strict: true,
     debug: false
 }) -> {
-    category string
+    category
     confidence number
 }
 ```
@@ -136,7 +136,7 @@ The instruction comes from the `input` field of `generate(...)`:
 
 ```agentscript
 generate({ input: "Answer using only the selected context." }) -> {
-    answer string
+    answer
 }
 ```
 
@@ -149,7 +149,7 @@ The output contract comes from the optional shape after `->`:
 ```agentscript
 generate({ input: "Answer" }) -> {
     ok boolean
-    answer string
+    answer
     citations list[string]
 }
 ```
@@ -165,7 +165,7 @@ generate({
     input: "Answer briefly",
     max_output: 300
 }) -> {
-    answer string
+    answer
 }
 ```
 
@@ -184,7 +184,7 @@ generate({
     input: "Answer from the selected docs",
     max_output: 800
 }) -> {
-    answer string
+    answer
 }
 ```
 
@@ -205,7 +205,7 @@ generate({
     max_output: 500,
     attempts: 3
 }) -> {
-    title string
+    title
     tags list[string]
 }
 ```
@@ -291,7 +291,7 @@ generate({
     max_output: 1200,
     think: "high"
 }) -> {
-    decision string
+    decision
     tradeoffs list[string]
     risks list[string]
 }
@@ -319,7 +319,7 @@ generate({
     max_output: 300,
     strict: true
 }) -> {
-    category string
+    category
     confidence number
 }
 ```
@@ -377,7 +377,7 @@ generate({
     max_output: 800,
     debug: true
 }) -> {
-    answer string
+    answer
 }
 ```
 
@@ -455,7 +455,7 @@ func answer(question) {
     use question as "user question"
 
     generate({ input: "Answer" }) -> {
-        answer string
+        answer
     }
 }
 ```

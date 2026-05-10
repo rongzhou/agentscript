@@ -100,7 +100,7 @@ main func(input) {
     scratch.add({ fact: "B" })
 
     generate({ input: "Answer from observations" }) -> {
-        text string
+        text
     }
 }
 ```
@@ -119,7 +119,7 @@ use input.question as "user question"
 if input.needs_detail {
     use input.detail as detail
     generate({ input: "Answer with detail" }) -> {
-        text string
+        text
     }
 }
 ```

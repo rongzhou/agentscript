@@ -27,7 +27,7 @@ main agent ReActExample {
         use question
         use scratch.summary max 1k as observations
         generate({ input: "Choose one search query", max_output: 300 }) -> {
-            query string
+            query
         }
     }
 
@@ -44,8 +44,8 @@ main agent ReActExample {
         use question
         use scratch.summary max 2k as observations
         generate({ input: "Answer using only the observations", max_output: 500 }) -> {
-            answer string
-            confidence string
+            answer
+            confidence
         }
     }
 }

@@ -2,7 +2,7 @@
 
 本文档定义 AgentScript 中 `generate` 的语义：generation site、prompt 层次、agent identity、selected context、输出契约、生成配置、重试、校验、debug output 和 trace output。
 
-Context 选择和 label 见 [`use ... as ...`](./use-as.md)。整体设计总纲见 [Context Engineering](./context-engineering.md)。
+Context 选择和 label 见 [`use ... as ...`](./use-as.md)。整体设计总纲见 [Context Engineering](./context-engineering.md)。`generate` 输出 shape 中默认 string 字段的简写规则见 [`generate` 输出 Shape 中的默认 String 字段](./generate-default-string-fields.md)。
 
 ## 目的
 
@@ -11,7 +11,7 @@ Context 选择和 label 见 [`use ... as ...`](./use-as.md)。整体设计总纲
 ```agentscript
 generate({ input: "Answer using the selected context." }) -> {
     ok boolean
-    answer string
+    answer
 }
 ```
 
@@ -29,7 +29,7 @@ generate({
     strict: true,
     debug: false
 }) -> {
-    category string
+    category
     confidence number
 }
 ```
@@ -136,7 +136,7 @@ Instruction 来自 `generate(...)` 的 `input` 字段：
 
 ```agentscript
 generate({ input: "Answer using only the selected context." }) -> {
-    answer string
+    answer
 }
 ```
 
@@ -149,7 +149,7 @@ Output contract 来自 `->` 后可选的 shape：
 ```agentscript
 generate({ input: "Answer" }) -> {
     ok boolean
-    answer string
+    answer
     citations list[string]
 }
 ```
@@ -165,7 +165,7 @@ generate({
     input: "Answer briefly",
     max_output: 300
 }) -> {
-    answer string
+    answer
 }
 ```
 
@@ -184,7 +184,7 @@ generate({
     input: "Answer from the selected docs",
     max_output: 800
 }) -> {
-    answer string
+    answer
 }
 ```
 
@@ -205,7 +205,7 @@ generate({
     max_output: 500,
     attempts: 3
 }) -> {
-    title string
+    title
     tags list[string]
 }
 ```
@@ -291,7 +291,7 @@ generate({
     max_output: 1200,
     think: "high"
 }) -> {
-    decision string
+    decision
     tradeoffs list[string]
     risks list[string]
 }
@@ -319,7 +319,7 @@ generate({
     max_output: 300,
     strict: true
 }) -> {
-    category string
+    category
     confidence number
 }
 ```
@@ -377,7 +377,7 @@ generate({
     max_output: 800,
     debug: true
 }) -> {
-    answer string
+    answer
 }
 ```
 
@@ -455,7 +455,7 @@ func answer(question) {
     use question as "user question"
 
     generate({ input: "Answer" }) -> {
-        answer string
+        answer
     }
 }
 ```

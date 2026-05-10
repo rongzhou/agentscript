@@ -134,17 +134,35 @@ function addImport(imported: ImportDecl, state: LoadState): void {
 }
 
 function normalizeImport(imported: ImportDecl, baseDir: string): ImportDecl {
-  if (imported.resourceKind !== "file" && imported.resourceKind !== "memory") {
-    return imported;
+  if (imported.resourceKind === "file") {
+    return {
+      ...imported,
+      uri: resolveImportPath(imported.uri, baseDir),
+    };
   }
-  if (imported.resourceKind === "memory" && !imported.uri.startsWith("file://")) {
-    return imported;
+  if (imported.resourceKind === "memory") {
+    return {
+      ...imported,
+      uri: normalizeMemoryImportUri(imported.uri, baseDir),
+    };
   }
-  const path = resolveImportPath(imported.uri, baseDir);
-  return {
-    ...imported,
-    uri: imported.resourceKind === "memory" ? `file://${path}` : path,
-  };
+  return imported;
+}
+
+function normalizeMemoryImportUri(uri: string, baseDir: string): string {
+  if (uri.startsWith("file://")) {
+    return `file://${resolveImportPath(uri, baseDir)}`;
+  }
+  if (uri.startsWith("sqlite://")) {
+    const raw = uri.slice("sqlite://".length);
+    const hashIndex = raw.indexOf("#");
+    const rawPath = hashIndex >= 0 ? raw.slice(0, hashIndex) : raw;
+    const rawNamespace = hashIndex >= 0 ? raw.slice(hashIndex) : "";
+    const decodedPath = decodeURIComponent(rawPath);
+    const path = isAbsolute(decodedPath) ? decodedPath : resolve(baseDir, decodedPath);
+    return `sqlite://${path}${rawNamespace}`;
+  }
+  return uri;
 }
 
 function resolveImportPath(uri: string, baseDir: string): string {
@@ -168,9 +186,17 @@ function requiresFileResolution(imported: ImportDecl): boolean {
   if (FILE_RESOLUTION_KINDS.has(imported.resourceKind)) {
     return true;
   }
-  return (
-    imported.resourceKind === "memory" &&
-    imported.uri.startsWith("file://") &&
-    isRelativeImport(imported.uri.slice("file://".length))
-  );
+  return imported.resourceKind === "memory" && memoryUriHasRelativePath(imported.uri);
+}
+
+function memoryUriHasRelativePath(uri: string): boolean {
+  if (uri.startsWith("file://")) {
+    return isRelativeImport(uri.slice("file://".length));
+  }
+  if (uri.startsWith("sqlite://")) {
+    const raw = uri.slice("sqlite://".length);
+    const hashIndex = raw.indexOf("#");
+    return isRelativeImport(hashIndex >= 0 ? raw.slice(0, hashIndex) : raw);
+  }
+  return false;
 }

@@ -127,6 +127,29 @@ describe("loadProgram", () => {
     ).toThrow(/sourcePath is required/);
   });
 
+  it("normalizes file and sqlite memory import paths relative to the source file", () => {
+    const dir = mkdtempSync(join(tmpdir(), "agentscript-memory-imports-"));
+    const sourcePath = join(dir, "main.as");
+    const program = loadProgramSource(
+      `
+        import memory FileMem from "file://./.agentscript/lessons.jsonl"
+        import memory SqliteMem from "sqlite://./.agentscript/memory.db#lessons"
+
+        main agent A {
+          main func(input) {
+            return input
+          }
+        }
+      `,
+      { sourcePath },
+    );
+
+    expect(program.imports.map((item) => item.uri)).toEqual([
+      `file://${join(dir, ".agentscript", "lessons.jsonl")}`,
+      `sqlite://${join(dir, ".agentscript", "memory.db")}#lessons`,
+    ]);
+  });
+
   it("includes resolved file path when an agent import fails", () => {
     const dir = mkdtempSync(join(tmpdir(), "agentscript-"));
     const mainFile = join(dir, "main.as");

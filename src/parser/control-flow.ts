@@ -1,14 +1,8 @@
-import type { Expr, ForInStmt, IfStmt, LoopUntilStmt, RepeatStmt, Stmt } from "../ast/types.js";
-import type { Token } from "./tokenizer.js";
+import type { ForInStmt, IfStmt, LoopUntilStmt, RepeatStmt } from "../ast/types.js";
+import type { BlockParserHost } from "./host.js";
 
-export interface ControlFlowParserHost {
-  consume(value: string): Token;
-  consumeIdentifier(message: string): Token;
-  match(value: string): boolean;
-  parseExpression(): Expr;
+export interface ControlFlowParserHost extends BlockParserHost {
   parsePositiveInteger(message: string): number;
-  parseBlock(): Stmt[];
-  previous(): Token;
 }
 
 export function parseRepeat(parser: ControlFlowParserHost): RepeatStmt {

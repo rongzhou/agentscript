@@ -2,6 +2,25 @@
 
 All notable changes to AgentScript will be documented in this file.
 
+## 0.1.11 - 2026-05-10
+
+### Added
+
+- Added `node:` and `npm:` tool providers gated by `agentscript.npm.json`.
+- Added JSON-safe host marshalling for npm/node tool arguments and return values.
+- Added `examples/node-crypto.as` to demonstrate importing `node:crypto`.
+- Added English and Chinese npm/node tool documentation.
+
+### Changed
+
+- Extended `--check` to validate `npm:` and `node:` tool imports against the registry.
+- Extended `--dry-run` to skip real npm/node tool calls while preserving registry checks.
+- Treat `npm:` and `node:` tool calls as effectful inside `parallel for`.
+
+### Verified
+
+- Verified formatting, type checking, full test suite, and production build.
+
 ## 0.1.7 - 2026-05-09
 
 ### Added

@@ -13,6 +13,7 @@ interface ParallelForScope {
 }
 
 const EFFECTFUL_TOOL_METHODS = new Set(["write", "patch", "delete", "post", "put"]);
+const EFFECTFUL_TOOL_SCHEMES = new Set(["mcp", "npm", "node"]);
 
 export function blockEndsWithExpression(statements: Stmt[]): boolean {
   return statements.length > 0 && statements[statements.length - 1]?.kind === "ExprStmt";
@@ -86,6 +87,6 @@ function error(code: string, message: string, range: SourceRange): SemanticDiagn
 }
 
 function isEffectfulToolCall(binding: BindingLike, method: string): boolean {
-  if (binding.uri && uriScheme(binding.uri) === "mcp") return true;
+  if (binding.uri && EFFECTFUL_TOOL_SCHEMES.has(uriScheme(binding.uri))) return true;
   return EFFECTFUL_TOOL_METHODS.has(method);
 }

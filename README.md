@@ -311,6 +311,42 @@ main agent Researcher {
 MCP results are ordinary data. They enter model context only when selected with
 `use`.
 
+## npm and node tools
+
+AgentScript can also call explicitly allowed Node built-in modules and installed
+npm packages through `node:` and `npm:` tool imports.
+
+```agentscript
+import tool Crypto from "node:crypto"
+
+main agent NodeCryptoExample {
+    main func(input { label string }) {
+        run_id = Crypto.randomUUID()
+        digest = Crypto.hash("sha256", input.label, "hex")
+
+        return {
+            label: input.label,
+            run_id: run_id,
+            digest: digest
+        }
+    }
+}
+```
+
+Enable the capability in `agentscript.npm.json`:
+
+```json
+{
+  "allow": {
+    "node": ["crypto"],
+    "npm": {}
+  }
+}
+```
+
+See [npm and node tools](docs/en/npm-tools.md) for registry, marshalling, and
+safety rules.
+
 ## Why not just Python or TypeScript?
 
 | | Python / TypeScript | AgentScript |
@@ -355,8 +391,8 @@ agentscript recipes/code-review.as --quiet
 
 | Language | Links |
 |----------|-------|
-| English | [Language Reference](docs/en/language.md) · [Context Engineering](docs/en/context-engineering.md) · [`use ... as ...`](docs/en/use-as.md) · [`generate`](docs/en/generate.md) · [`parallel for`](docs/en/parallel-for.md) · [Final Expression Return](docs/en/final-expression-return.md) · [Design History](docs/design-history/) |
-| 中文 | [README-CN](./README-CN.md) · [语言参考](docs/cn/language.md) · [Context Engineering](docs/cn/context-engineering.md) · [`use ... as ...`](docs/cn/use-as.md) · [`generate`](docs/cn/generate.md) · [`parallel for`](docs/cn/parallel-for.md) · [Final Expression Return](docs/cn/final-expression-return.md) |
+| English | [Language Reference](docs/en/language.md) · [Context Engineering](docs/en/context-engineering.md) · [`use ... as ...`](docs/en/use-as.md) · [`generate`](docs/en/generate.md) · [`parallel for`](docs/en/parallel-for.md) · [Final Expression Return](docs/en/final-expression-return.md) · [npm and node tools](docs/en/npm-tools.md) · [Design History](docs/design-history/) |
+| 中文 | [README-CN](./README-CN.md) · [语言参考](docs/cn/language.md) · [Context Engineering](docs/cn/context-engineering.md) · [`use ... as ...`](docs/cn/use-as.md) · [`generate`](docs/cn/generate.md) · [`parallel for`](docs/cn/parallel-for.md) · [Final Expression Return](docs/cn/final-expression-return.md) · [npm 和 node tools](docs/cn/npm-tools.md) |
 
 ### Design principles
 

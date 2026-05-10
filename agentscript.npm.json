@@ -1,0 +1,6 @@
+{
+  "allow": {
+    "node": ["crypto"],
+    "npm": {}
+  }
+}

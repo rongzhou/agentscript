@@ -8,9 +8,12 @@ import { executeAgent } from "../runtime/interpreter.js";
 import { loadProgram } from "../runtime/loader.js";
 import { ProtocolLlmProvider } from "../providers/llm/index.js";
 import { MockLlmProvider } from "../providers/mock/index.js";
+import { createDefaultToolProvider } from "../providers/tools/index.js";
+import { checkNodeImport, checkNpmImport, loadNpmRegistry } from "../providers/tools/npm-registry.js";
 import { buildValueFromShape } from "../runtime/shape.js";
 import { sanitizeForJson } from "../runtime/json.js";
 import { formatTrace } from "../runtime/trace.js";
+import { uriScheme } from "../runtime/uri.js";
 import type {
   GenerateRequest,
   InputProvider,
@@ -18,6 +21,8 @@ import type {
   JsonObject,
   LlmProvider,
   RuntimeValue,
+  ToolCallRequest,
+  ToolProvider,
 } from "../runtime/types.js";
 import { analyze } from "../semantic/analyzer.js";
 import { formatSemanticDiagnostics } from "../semantic/diagnostics.js";
@@ -207,7 +212,7 @@ function runParse(options: CliOptions): number {
 }
 
 function runCheck(options: CliOptions): number {
-  const result = analyze(loadCliProgram(options));
+  const result = analyze(loadCliProgram(options), { npmRegistry: loadNpmRegistry(process.cwd()) });
   if (result.diagnostics.length > 0) {
     console.error(formatSemanticDiagnostics(result.diagnostics));
   }
@@ -224,6 +229,7 @@ async function runAgent(options: CliOptions): Promise<number> {
     inputProvider,
     llmProvider: createCliLlmProvider(options),
     sourcePath: options.file,
+    toolProvider: options.dryRun ? createDryRunToolProvider() : undefined,
   }).finally(() => inputProvider?.close?.());
 
   if (options.traceFile) {
@@ -256,6 +262,27 @@ class DryRunLlmProvider implements LlmProvider {
   async generate(request: GenerateRequest): Promise<RuntimeValue> {
     return request.returnShape ? buildValueFromShape(request.returnShape) : null;
   }
+}
+
+class DryRunToolProvider implements ToolProvider {
+  constructor(private readonly fallback: ToolProvider) {}
+
+  async call(request: ToolCallRequest): Promise<RuntimeValue> {
+    const scheme = uriScheme(request.uri);
+    if (scheme === "npm") {
+      checkNpmImport(request.uri, loadNpmRegistry(process.cwd()));
+      return null;
+    }
+    if (scheme === "node") {
+      checkNodeImport(request.uri, loadNpmRegistry(process.cwd()));
+      return null;
+    }
+    return this.fallback.call(request);
+  }
+}
+
+function createDryRunToolProvider(): ToolProvider {
+  return new DryRunToolProvider(createDefaultToolProvider(process.cwd()));
 }
 
 function loadCliProgram(options: CliOptions): Program {

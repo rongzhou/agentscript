@@ -1,12 +1,23 @@
 {
   "name": "@rong/agentscript",
-  "version": "0.1.10",
+  "version": "0.1.11",
   "description": "A DSL for explicit, scoped, auditable LLM context",
   "main": "dist/index.js",
   "bin": {
     "agentscript": "dist/bin/agentscript.js"
   },
-  "files": ["dist", "examples", "recipes", "tutorials", "docs", "README.md", "LICENSE", "CHANGELOG.md", "INSTALL.md"],
+  "files": [
+    "dist",
+    "examples",
+    "recipes",
+    "tutorials",
+    "docs",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md",
+    "INSTALL.md",
+    "agentscript.npm.json"
+  ],
   "directories": {
     "doc": "docs"
   },

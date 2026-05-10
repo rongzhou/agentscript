@@ -14,6 +14,9 @@ import type {
   SourceRange,
   Stmt,
 } from "../ast/types.js";
+import { RuntimeError } from "../runtime/errors.js";
+import { uriScheme } from "../runtime/uri.js";
+import { checkNodeImport, checkNpmImport, type NpmRegistry } from "../providers/tools/npm-registry.js";
 import { formatArityError, VALID_MEMORY_METHODS } from "./calls.js";
 import { SemanticError, type SemanticDiagnostic, type SemanticResult } from "./diagnostics.js";
 import { checkGenerateOptions } from "./generate.js";
@@ -29,8 +32,12 @@ import {
   isImportedBinding,
 } from "./scope.js";
 
-export function analyze(program: Program): SemanticResult {
-  const analyzer = new Analyzer();
+export interface AnalyzeOptions {
+  npmRegistry?: NpmRegistry;
+}
+
+export function analyze(program: Program, options: AnalyzeOptions = {}): SemanticResult {
+  const analyzer = new Analyzer(options);
   return analyzer.analyze(program);
 }
 
@@ -49,6 +56,8 @@ class Analyzer {
   private readonly importBindings = new Map<string, { kind: BindingKind; range: SourceRange; uri: string }>();
   private agents = new Map<string, SourceRange>();
 
+  constructor(private readonly options: AnalyzeOptions = {}) {}
+
   analyze(program: Program): SemanticResult {
     this.checkImports(program);
     this.checkAgents(program);
@@ -63,9 +72,25 @@ class Analyzer {
       }
       const kind = importResourceKindToBindingKind(imported.resourceKind);
       this.importBindings.set(imported.name, { kind, range: imported.range, uri: imported.uri });
+      if (imported.resourceKind === "tool") {
+        this.checkToolImportAuthorization(imported.uri, imported.range);
+      }
       if (imported.resourceKind === "agent") {
         this.agents.set(imported.name, imported.range);
       }
+    }
+  }
+
+  private checkToolImportAuthorization(uri: string, range: SourceRange): void {
+    if (!this.options.npmRegistry) return;
+    try {
+      if (uriScheme(uri) === "npm") {
+        checkNpmImport(uri, this.options.npmRegistry);
+      } else if (uriScheme(uri) === "node") {
+        checkNodeImport(uri, this.options.npmRegistry);
+      }
+    } catch (error) {
+      this.error("UNAUTHORIZED_TOOL_IMPORT", error instanceof RuntimeError ? error.message : String(error), range);
     }
   }
 

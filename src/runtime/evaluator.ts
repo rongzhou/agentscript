@@ -194,6 +194,9 @@ export class Evaluator {
 
   private async evaluateMember(expr: MemberExpr, scope: RuntimeScope): Promise<RuntimeValue> {
     const object = await this.evaluate(expr.object, scope);
+    if (isToolBinding(object) && isModuleTool(object)) {
+      return this.evaluateToolCall(object, expr, [], true);
+    }
     return this.readMember(object, expr.property, expr.range);
   }
 
@@ -284,12 +287,18 @@ export class Evaluator {
     throw new RuntimeError(`Unsupported member call '${callee.property}'`, callee.range);
   }
 
-  private async evaluateToolCall(object: ToolBinding, callee: MemberExpr, args: RuntimeValue[]): Promise<RuntimeValue> {
+  private async evaluateToolCall(
+    object: ToolBinding,
+    callee: MemberExpr,
+    args: RuntimeValue[],
+    propertyRead = false,
+  ): Promise<RuntimeValue> {
     const request = {
       toolName: object.name,
       uri: object.uri,
       method: callee.property,
       args,
+      propertyRead,
     };
     let result: RuntimeValue;
     try {
@@ -388,5 +397,10 @@ export class Evaluator {
 }
 
 function formatArithmeticOperand(value: RuntimeValue): string {
-  return typeof value === "string" ? value : JSON.stringify(sanitizeForJson(value));
+  return typeof value === "string" || typeof value === "number" || typeof value === "boolean" ? String(value) : "";
+}
+
+function isModuleTool(value: ToolBinding): boolean {
+  const scheme = uriScheme(value.uri);
+  return scheme === "npm" || scheme === "node";
 }

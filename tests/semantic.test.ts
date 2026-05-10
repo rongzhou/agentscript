@@ -361,6 +361,54 @@ describe("analyze", () => {
     );
   });
 
+  it("rejects npm and node tool calls inside parallel for", () => {
+    const result = analyze(
+      parse(`
+        import tool Path from "node:path"
+        import tool Yaml from "npm:yaml"
+
+        main agent A {
+          main func(input) {
+            return parallel for item in input.items max 2 {
+              Path.join("a", item)
+              Yaml.parse(item)
+              item
+            }
+          }
+        }
+      `),
+    );
+
+    expect(result.diagnostics.filter((diagnostic) => diagnostic.code === "PARALLEL_FOR_EFFECTFUL_CALL")).toHaveLength(
+      2,
+    );
+  });
+
+  it("checks npm and node import authorization when a registry is provided", () => {
+    const program = parse(`
+      import tool Path from "node:path"
+      import tool Yaml from "npm:yaml"
+
+      main agent A {
+        main func(input) {
+          return input
+        }
+      }
+    `);
+    const unauthorized = analyze(program, { npmRegistry: { allow: { node: new Set(), npm: new Map() }, path: null } });
+    const authorized = analyze(program, {
+      npmRegistry: {
+        allow: { node: new Set(["path"]), npm: new Map([["yaml", { name: "yaml" }]]) },
+        path: null,
+      },
+    });
+
+    expect(
+      unauthorized.diagnostics.filter((diagnostic) => diagnostic.code === "UNAUTHORIZED_TOOL_IMPORT"),
+    ).toHaveLength(2);
+    expect(authorized.diagnostics).toEqual([]);
+  });
+
   it("checks generate options", () => {
     const result = analyze(
       parse(`

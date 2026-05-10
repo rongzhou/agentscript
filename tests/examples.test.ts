@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import { executeAgent } from "../src/runtime/interpreter.js";
 import { loadProgram } from "../src/runtime/loader.js";
 import { MockMemoryProvider, MockToolProvider } from "../src/providers/mock/index.js";
+import { createDefaultToolProvider } from "../src/providers/tools/index.js";
 import type { JsonObject } from "../src/runtime/types.js";
 import { analyze } from "../src/semantic/analyzer.js";
 
@@ -19,7 +20,7 @@ describe("sample programs", () => {
         expect(semantic.diagnostics).toEqual([]);
         await expect(
           executeAgent(program, inputFor(file), {
-            toolProvider: new MockToolProvider(),
+            toolProvider: toolProviderFor(dir, file),
             memoryProvider: new MockMemoryProvider(),
           }),
         ).resolves.toHaveProperty("value");
@@ -90,6 +91,10 @@ function inputFor(file: string): JsonObject {
       return {
         topic: "AgentScript memory",
       };
+    case "node-crypto.as":
+      return {
+        label: "AgentScript V4",
+      };
     case "self-improve.as":
       return {
         goal: "Use memory safely",
@@ -97,4 +102,8 @@ function inputFor(file: string): JsonObject {
     default:
       return {};
   }
+}
+
+function toolProviderFor(dir: string, file: string) {
+  return dir === "examples" && file === "node-crypto.as" ? createDefaultToolProvider() : new MockToolProvider();
 }

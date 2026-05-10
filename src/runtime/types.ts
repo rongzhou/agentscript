@@ -78,6 +78,7 @@ export interface ToolCallRequest {
   uri: string;
   method: string;
   args: RuntimeValue[];
+  propertyRead?: boolean;
 }
 
 export interface MemoryAddRequest {

@@ -1,13 +1,8 @@
-import type { Expr, ParallelForExpr, Stmt } from "../ast/types.js";
-import type { Token } from "./tokenizer.js";
+import type { ParallelForExpr } from "../ast/types.js";
+import type { BlockParserHost } from "./host.js";
 
-export interface ParallelForParserHost {
-  consume(value: string): Token;
-  consumeIdentifier(message: string): Token;
-  parseExpression(): Expr;
+export interface ParallelForParserHost extends BlockParserHost {
   parsePositiveInteger(message: string): number;
-  parseBlock(): Stmt[];
-  previous(): Token;
 }
 
 export function parseParallelFor(parser: ParallelForParserHost): ParallelForExpr {

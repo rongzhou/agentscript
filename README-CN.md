@@ -22,7 +22,7 @@ generate({
 [English](./README.md)
 
 <p align="center">
-  <img src="docs/assets/context-boundaries.png" alt="Traditional append-only chat versus AgentScript scoped context boundaries" width="900">
+  <img src="docs/cn/assets/context-boundaries.png" alt="传统追加式 chat 与 AgentScript scoped context boundaries 的对比" width="900">
 </p>
 
 传统 chat 会让 context 不断增长、混在一起，直到重要信号被埋没。

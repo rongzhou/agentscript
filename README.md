@@ -22,7 +22,7 @@ generate({
 [中文版](./README-CN.md)
 
 <p align="center">
-  <img src="docs/assets/context-boundaries.png" alt="Traditional append-only chat versus AgentScript scoped context boundaries" width="900">
+  <img src="docs/en/assets/context-boundaries.png" alt="Traditional append-only chat versus AgentScript scoped context boundaries" width="900">
 </p>
 
 Traditional chat lets context grow and mix until important signals get buried.

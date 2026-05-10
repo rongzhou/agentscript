@@ -3,6 +3,22 @@
 Introducing AgentScript, a small language for explicit, scoped, auditable LLM
 context.
 
+Many programmers of my generation first learned computing through a simple
+model: input, processing, output.
+
+A program receives data, transforms it, and produces a result. It is an old
+mental model, but still a useful one. It made programs feel understandable
+because the boundaries were visible.
+
+LLM agents stretch that model.
+
+The input is no longer just a file, a request, or a record with a known shape. It
+is prompt context: user intent, tool observations, retrieved documents, memory
+records, intermediate state, retry messages, and outputs from other agents.
+
+The output is no longer just a return value. It is generated text or JSON that
+may need to satisfy a contract before the next step can trust it.
+
 Most agent programs do not fail because calling a model is hard.
 
 They fail because nobody can tell, with confidence, what the model actually saw
@@ -12,12 +28,6 @@ After a few iterations, an agent has local variables, tool results, memory
 records, intermediate observations, retry messages, and outputs from other
 agents. Some of that data should reach the next model call. Some should not. In
 most Python or TypeScript agents, that boundary is maintained by convention.
-
-Classic programming is often introduced with a simple model: input, process,
-output. LLM agents stretch that model. The input is no longer just a file, a
-request, or a record with a known shape. It is prompt context. The output is no
-longer just a return value. It is generated text or JSON that may need to satisfy
-a contract before the next step can trust it.
 
 That works for small demos. It becomes fragile in real workflows.
 
@@ -254,6 +264,16 @@ That boundary is the unit you can review, debug, and trace.
 ## Scope Is the Context Boundary
 
 AgentScript uses scope to control prompt visibility.
+
+This is also a way to avoid the pressure of long conversations. In a traditional
+chat loop, each step tends to append more messages to the same history. The
+context grows heavier over time, and the next model call inherits whatever the
+conversation happened to accumulate.
+
+AgentScript treats each generation differently. Before a `generate`, the program
+selects the visible context deliberately with `use`: the specific values, labels,
+and budgets that matter for this step. It is closer to precise sampling than to
+endless appending.
 
 A `use` declaration is visible to later `generate` calls in the same scope and
 child scopes. It does not leak upward. Function calls and agent calls create

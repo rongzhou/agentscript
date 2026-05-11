@@ -1,9 +1,7 @@
 import type { ParallelForExpr } from "../ast/types.js";
 import type { BlockParserHost } from "./host.js";
 
-export interface ParallelForParserHost extends BlockParserHost {
-  parsePositiveInteger(message: string): number;
-}
+export interface ParallelForParserHost extends BlockParserHost {}
 
 export function parseParallelFor(parser: ParallelForParserHost): ParallelForExpr {
   const start = parser.consume("parallel").range.start;
@@ -12,7 +10,7 @@ export function parseParallelFor(parser: ParallelForParserHost): ParallelForExpr
   parser.consume("in");
   const iterable = parser.parseExpression();
   parser.consume("max");
-  const maxIterations = parser.parsePositiveInteger("Expected parallel for item count");
+  const maxIterations = parser.parsePositiveInteger("Expected parallel for iteration count");
   const body = parser.parseBlock();
   return {
     kind: "ParallelForExpr",

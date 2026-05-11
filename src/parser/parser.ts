@@ -17,7 +17,7 @@ import { ParseError } from "./errors.js";
 import { parseForIn, parseIf, parseLoop, parseRepeat } from "./control-flow.js";
 import { parseAgentDecl, parseImportDecl } from "./declarations.js";
 import { parseExpressionExpr, parsePostfixExpr } from "./expressions.js";
-import { type Token, tokenize } from "./tokenizer.js";
+import { isNewLineBetween, isOnSameLine, type Token, tokenize } from "./tokenizer.js";
 
 export function parse(source: string): Program {
   return new Parser(tokenize(source)).parseProgram();
@@ -112,7 +112,7 @@ class Parser {
   }
 
   private parseUseLabel(): string {
-    const line = this.previous().range.start.line;
+    const asToken = this.previous();
     let label: string;
     if (this.matchKind("string")) {
       label = this.previous().value;
@@ -121,7 +121,7 @@ class Parser {
     } else {
       throw this.error("Expected identifier or string context label after 'as'");
     }
-    if (!this.isAtEnd() && !this.check("}") && this.peek().range.start.line === line) {
+    if (!this.isAtEnd() && !this.check("}") && isOnSameLine(asToken, this.peek())) {
       throw this.error("Expected newline after context label");
     }
     return label;
@@ -180,7 +180,7 @@ class Parser {
   consumeShapeFieldSeparator(terminator: string): void {
     if (this.check(terminator)) return;
     if (this.match(",")) return;
-    if (this.previous().range.end.line < this.peek().range.start.line) return;
+    if (isNewLineBetween(this.previous(), this.peek())) return;
     throw this.error("Expected ',' or newline between shape fields");
   }
 

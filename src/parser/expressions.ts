@@ -1,7 +1,6 @@
 import type {
   BinaryExpr,
   BooleanExpr,
-  Budget,
   Expr,
   CallExpr,
   IdentifierExpr,
@@ -9,37 +8,13 @@ import type {
   MemberExpr,
   NullExpr,
   NumberExpr,
-  Stmt,
   StringExpr,
   UnaryExpr,
 } from "../ast/types.js";
-import type { ParseError } from "./errors.js";
 import { parseGenerate } from "./generate.js";
+import type { ExpressionParserHost } from "./host.js";
 import { parseList, parseObject } from "./literals.js";
 import { parseParallelFor } from "./parallel-for.js";
-import type { Token } from "./tokenizer.js";
-
-export interface ExpressionParserHost {
-  check(value: string): boolean;
-  consume(value: string): Token;
-  consumeIdentifier(message: string): Token;
-  consumeKind(kind: Token["kind"], message: string): Token;
-  consumeObjectKey(): string;
-  consumePropertySeparator(terminator: string): void;
-  consumeShapeFieldSeparator(terminator: string): void;
-  error(message: string): ParseError;
-  isAtEnd(): boolean;
-  match(value: string): boolean;
-  matchAny(values: readonly string[]): boolean;
-  matchKind(kind: Token["kind"]): boolean;
-  parseBlock(): Stmt[];
-  parseBudgetToken(token: Token): Budget;
-  parseCommaSeparatedUntil<T>(terminator: string, parseItem: () => T): T[];
-  parseExpression(): Expr;
-  parsePositiveInteger(message: string): number;
-  peek(): Token;
-  previous(): Token;
-}
 
 export function parseExpressionExpr(parser: ExpressionParserHost): Expr {
   return parseLogicalOr(parser);

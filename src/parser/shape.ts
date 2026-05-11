@@ -7,23 +7,16 @@ import {
 } from "../ast/types.js";
 import { isShapeTypeName } from "../language/shape.js";
 import { ParseError } from "./errors.js";
-import type { Token } from "./tokenizer.js";
+import type { TokenParserHost } from "./host.js";
+import { isNewLineBetween, type Token } from "./tokenizer.js";
 
-export interface ShapeParserHost {
-  consume(value: string): Token;
-  consumeIdentifier(message: string): Token;
+export interface ShapeParserHost extends TokenParserHost {
   consumeShapeFieldSeparator(terminator: string): void;
-  check(value: string): boolean;
-  isAtEnd(): boolean;
-  match(value: string): boolean;
-  peek(): Token;
-  previous(): Token;
 }
 
-export function parseShapeObject(
-  parser: ShapeParserHost,
-  options: { allowDefaultStringFields: boolean },
-): ShapeObjectExpr {
+type ShapeParseMode = "strict" | "shorthand";
+
+export function parseShapeObject(parser: ShapeParserHost, options: { mode: ShapeParseMode }): ShapeObjectExpr {
   const start = parser.consume("{").range.start;
   const fields: ShapeField[] = [];
   while (!parser.check("}") && !parser.isAtEnd()) {
@@ -39,7 +32,7 @@ export function parseShapeObject(
   };
 }
 
-function parseShapeField(parser: ShapeParserHost, options: { allowDefaultStringFields: boolean }): ShapeField {
+function parseShapeField(parser: ShapeParserHost, options: { mode: ShapeParseMode }): ShapeField {
   const nameToken = parser.consumeIdentifier("Expected shape field name");
   const start = nameToken.range.start;
   const type = shouldDefaultShapeFieldToString(parser, nameToken, options)
@@ -56,15 +49,15 @@ function parseShapeField(parser: ShapeParserHost, options: { allowDefaultStringF
 function shouldDefaultShapeFieldToString(
   parser: ShapeParserHost,
   fieldName: Token,
-  options: { allowDefaultStringFields: boolean },
+  options: { mode: ShapeParseMode },
 ): boolean {
-  if (!options.allowDefaultStringFields) {
+  if (options.mode !== "shorthand") {
     return false;
   }
   if (parser.check("}") || parser.check(",")) {
     return true;
   }
-  return fieldName.range.end.line < parser.peek().range.start.line;
+  return isNewLineBetween(fieldName, parser.peek());
 }
 
 function defaultStringShapeType(fieldName: Token): NamedShapeType {

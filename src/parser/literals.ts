@@ -1,18 +1,7 @@
-import type { Expr, ListExpr, ObjectExpr, ObjectProperty } from "../ast/types.js";
-import type { Token } from "./tokenizer.js";
+import type { ListExpr, ObjectExpr, ObjectProperty } from "../ast/types.js";
+import type { ExpressionParserHost } from "./host.js";
 
-export interface LiteralParserHost {
-  consume(value: string): Token;
-  consumeObjectKey(): string;
-  consumePropertySeparator(terminator: string): void;
-  check(value: string): boolean;
-  peek(): Token;
-  previous(): Token;
-  parseCommaSeparatedUntil<T>(terminator: string, parseItem: () => T): T[];
-  parseExpression(): Expr;
-}
-
-export function parseObject(parser: LiteralParserHost): ObjectExpr {
+export function parseObject(parser: ExpressionParserHost): ObjectExpr {
   const start = parser.consume("{").range.start;
   const properties: ObjectProperty[] = [];
 
@@ -38,7 +27,7 @@ export function parseObject(parser: LiteralParserHost): ObjectExpr {
   };
 }
 
-export function parseList(parser: LiteralParserHost): ListExpr {
+export function parseList(parser: ExpressionParserHost): ListExpr {
   const start = parser.consume("[").range.start;
   const items = parser.parseCommaSeparatedUntil("]", () => parser.parseExpression());
   parser.consume("]");

@@ -1,21 +1,15 @@
 import type { Budget, Expr, GenerateExpr, GenerateOptionsExpr, NumberExpr, ObjectProperty } from "../ast/types.js";
-import type { Token } from "./tokenizer.js";
-import { parseShapeObject, type ShapeParserHost } from "./shape.js";
+import type { ExpressionParserHost } from "./host.js";
+import { parseShapeObject } from "./shape.js";
 
-export interface GenerateParserHost extends ShapeParserHost {
-  consumeKind(kind: Token["kind"], message: string): Token;
-  consumeObjectKey(): string;
-  consumePropertySeparator(terminator: string): void;
-  parseBudgetToken(token: Token): Budget;
-  parseExpression(): Expr;
-}
+export interface GenerateParserHost extends ExpressionParserHost {}
 
 export function parseGenerate(parser: GenerateParserHost): GenerateExpr {
   const start = parser.consume("generate").range.start;
   parser.consume("(");
   const options = parseGenerateOptions(parser);
   parser.consume(")");
-  const returnShape = parser.match("->") ? parseShapeObject(parser, { allowDefaultStringFields: true }) : undefined;
+  const returnShape = parser.match("->") ? parseShapeObject(parser, { mode: "shorthand" }) : undefined;
 
   return {
     kind: "GenerateExpr",

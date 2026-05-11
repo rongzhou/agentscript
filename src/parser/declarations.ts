@@ -1,25 +1,14 @@
-import type { AgentDecl, ConfigDecl, FuncDecl, FuncParam, ImportDecl, Stmt, UseStmt } from "../ast/types.js";
+import type { AgentDecl, ConfigDecl, FuncDecl, FuncParam, ImportDecl, UseStmt } from "../ast/types.js";
 import { isImportResourceKind } from "../language/bindings.js";
 import { ParseError } from "./errors.js";
+import type { BlockParserHost } from "./host.js";
 import { parseShapeObject } from "./shape.js";
-import type { Token } from "./tokenizer.js";
 
-export interface DeclarationParserHost {
-  check(value: string): boolean;
-  consume(value: string): Token;
-  consumeIdentifier(message: string): Token;
+export interface DeclarationParserHost extends BlockParserHost {
   consumeShapeFieldSeparator(terminator: string): void;
-  consumeKind(kind: Token["kind"], message: string): Token;
-  error(message: string): ParseError;
-  isAtEnd(): boolean;
   isConfigKey(value: string): boolean;
-  match(value: string): boolean;
-  parseBlock(): Stmt[];
-  parseCommaSeparatedUntil<T>(terminator: string, parseItem: () => T): T[];
   parseConfigDecl(): ConfigDecl;
   parseUse(): UseStmt;
-  peek(): Token;
-  previous(): Token;
 }
 
 const ANONYMOUS_MAIN_AGENT = "__main_agent";
@@ -121,7 +110,7 @@ function parseFuncDecl(parser: DeclarationParserHost): FuncDecl {
 
 function parseFuncParam(parser: DeclarationParserHost): FuncParam {
   const token = parser.consumeIdentifier("Expected parameter name");
-  const shape = parser.check("{") ? parseShapeObject(parser, { allowDefaultStringFields: false }) : undefined;
+  const shape = parser.check("{") ? parseShapeObject(parser, { mode: "strict" }) : undefined;
   return {
     kind: "FuncParam",
     name: token.value,

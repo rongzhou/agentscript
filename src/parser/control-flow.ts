@@ -1,9 +1,7 @@
 import type { ForInStmt, IfStmt, LoopUntilStmt, RepeatStmt } from "../ast/types.js";
 import type { BlockParserHost } from "./host.js";
 
-export interface ControlFlowParserHost extends BlockParserHost {
-  parsePositiveInteger(message: string): number;
-}
+export interface ControlFlowParserHost extends BlockParserHost {}
 
 export function parseRepeat(parser: ControlFlowParserHost): RepeatStmt {
   const start = parser.consume("repeat").range.start;

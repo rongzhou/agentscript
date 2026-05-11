@@ -466,6 +466,44 @@ describe("parse", () => {
     });
   });
 
+  it("parses agent-level use declarations", () => {
+    const ast = parse(`
+      import file Playbook from "./playbook.md"
+
+      agent A {
+        use Playbook max 2k as playbook
+
+        func act(input) {
+          return input
+        }
+      }
+    `);
+
+    expect(ast.agents[0]!.uses).toEqual([
+      expect.objectContaining({
+        kind: "UseStmt",
+        label: "playbook",
+        budget: { amount: 2, unit: "k" },
+      }),
+    ]);
+  });
+
+  it("requires agent-level use declarations before functions", () => {
+    expect(() =>
+      parse(`
+        import file Playbook from "./playbook.md"
+
+        agent A {
+          func act(input) {
+            return input
+          }
+
+          use Playbook as playbook
+        }
+      `),
+    ).toThrow(/Agent-level use declarations must appear before function declarations/);
+  });
+
   it("parses file imports", () => {
     const ast = parse(`
       import file Requirements from "./requirements.md"

@@ -130,6 +130,83 @@ describe("analyze", () => {
     );
   });
 
+  it("checks agent-level use declarations are declarative file context", () => {
+    const valid = analyze(
+      parse(`
+        import file Playbook from "./playbook.md"
+
+        agent A {
+          use Playbook as playbook
+
+          main func act(input) {
+            return input
+          }
+        }
+      `),
+    );
+    expect(valid.diagnostics).toEqual([]);
+
+    const invalidLocal = analyze(
+      parse(`
+        agent A {
+          use input.question as question
+
+          func act(input) {
+            return input
+          }
+        }
+      `),
+    );
+    expect(invalidLocal.diagnostics).toContainEqual(
+      expect.objectContaining({
+        severity: "error",
+        code: "UNKNOWN_IDENTIFIER",
+      }),
+    );
+
+    const invalidCall = analyze(
+      parse(`
+        import file Playbook from "./playbook.md"
+
+        agent A {
+          use Playbook.trim() as playbook
+
+          func act(input) {
+            return input
+          }
+        }
+      `),
+    );
+    expect(invalidCall.diagnostics).toContainEqual(
+      expect.objectContaining({
+        severity: "error",
+        code: "INVALID_USE_CALL",
+      }),
+    );
+  });
+
+  it("rejects call expressions in use declarations", () => {
+    const result = analyze(
+      parse(`
+        import memory Lessons from "file://./.agentscript/lessons.jsonl"
+
+        agent A {
+          func act(input) {
+            use Lessons.query({ kind: "lesson" }) as lessons
+            return input
+          }
+        }
+      `),
+    );
+
+    expect(result.diagnostics).toContainEqual(
+      expect.objectContaining({
+        severity: "error",
+        code: "INVALID_USE_CALL",
+      }),
+    );
+  });
+
   it("checks memory resources and methods", () => {
     const valid = analyze(
       parse(`
@@ -625,6 +702,7 @@ describe("analyze", () => {
           func act(input) {
             use Qwen
             use Search
+            use { capability: Search }
             use helper
             return input
           }
@@ -632,7 +710,7 @@ describe("analyze", () => {
       `),
     );
 
-    expect(result.diagnostics.filter((diagnostic) => diagnostic.code === "INVALID_USE_RESOURCE")).toHaveLength(3);
+    expect(result.diagnostics.filter((diagnostic) => diagnostic.code === "INVALID_USE_RESOURCE")).toHaveLength(4);
   });
 
   it("checks input parameter shapes", () => {

@@ -185,6 +185,62 @@ describe("interpreter", () => {
     expect(requests[0]!.builtContext.finalUserMessage).toContain("[retrieved evidence]");
   });
 
+  it("makes agent-level use visible to every function without leaking caller function context", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "agentscript-agent-use-"));
+    const scriptFile = join(dir, "agent.as");
+    writeFileSync(join(dir, "base.md"), "base context");
+    writeFileSync(join(dir, "detail.md"), "caller detail");
+
+    const requests: GenerateRequest[] = [];
+    const ast = parse(`
+      import llm Qwen from "openai://gpt-4.1-mini"
+      import file Base from "./base.md"
+      import file Detail from "./detail.md"
+
+      main agent A {
+        model Qwen
+        role "Assistant"
+        description "Use scoped context."
+        use Base as base
+
+        main func(input) {
+          use Detail as detail
+          return helper(input)
+        }
+
+        func helper(input) {
+          return generate({ input: "answer" }) -> {
+              ok boolean
+          }
+        }
+      }
+    `);
+
+    await executeAgent(
+      ast,
+      {},
+      {
+        sourcePath: scriptFile,
+        llmProvider: {
+          async generate(request) {
+            requests.push(request);
+            if (!request.returnShape) {
+              throw new Error("unexpected missing return shape");
+            }
+            return buildValueFromShape(request.returnShape);
+          },
+        },
+      },
+    );
+
+    expect(requests[0]!.context).toEqual([
+      expect.objectContaining({ source: "Base", label: "base", value: "base context" }),
+    ]);
+    expect(requests[0]!.context).not.toEqual(
+      expect.arrayContaining([expect.objectContaining({ source: "Detail", label: "detail" })]),
+    );
+  });
+
   it("updates outer variables from repeat attempt scopes", async () => {
     const ast = parse(`
       import llm Qwen from "openai://gpt-4.1-mini"

@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { dirname, extname, isAbsolute, resolve } from "node:path";
-import type { AgentDecl, CallExpr, FuncDecl, Program, Stmt } from "../ast/types.js";
+import type { AgentDecl, CallExpr, FuncDecl, Program, Stmt, UseStmt } from "../ast/types.js";
 import { formatExpressionSource } from "../ast/format.js";
 import { assertSemanticallyValid } from "../semantic/analyzer.js";
 import { Evaluator } from "./evaluator.js";
@@ -237,25 +237,30 @@ class Interpreter {
   }
 
   private async buildFunctionScope(agent: AgentDecl, fn: FuncDecl, args: RuntimeValue[]): Promise<RuntimeScope> {
-    const scope = new RuntimeScope();
+    const agentScope = new RuntimeScope();
 
     for (const agentName of this.agents.keys()) {
-      scope.define(agentName, { __agentScriptResource: "agent", name: agentName }, "agent");
+      agentScope.define(agentName, { __agentScriptResource: "agent", name: agentName }, "agent");
     }
     for (const binding of this.imports) {
-      scope.define(binding.name, binding.value, binding.kind);
+      agentScope.define(binding.name, binding.value, binding.kind);
     }
     for (const func of agent.functions) {
-      scope.define(
+      agentScope.define(
         func.name,
         { __agentScriptResource: "function", agentName: agent.name, name: func.name },
         "function",
       );
     }
     for (const config of agent.config) {
-      const configValue = await this.evaluator.evaluateConfig(config, scope);
-      scope.setConfig(config.key, configValue);
+      const configValue = await this.evaluator.evaluateConfig(config, agentScope);
+      agentScope.setConfig(config.key, configValue);
     }
+    for (const use of agent.uses) {
+      this.declareUse(use, agentScope);
+    }
+
+    const scope = agentScope.child();
     for (const [index, param] of fn.params.entries()) {
       scope.define(param.name, args[index] ?? null, "param");
     }
@@ -297,12 +302,7 @@ class Interpreter {
         return undefined;
 
       case "UseStmt": {
-        const source = formatExpressionSource(stmt.value);
-        scope.addUse(stmt.value, source, stmt.budget, stmt.label);
-        this.trace.push({
-          kind: "use",
-          data: { source, label: stmt.label ?? null, budget: budgetToJson(stmt.budget) },
-        });
+        this.declareUse(stmt, scope);
         return undefined;
       }
 
@@ -413,6 +413,15 @@ class Interpreter {
     const agent = this.agents.get(name);
     if (!agent) throw new RuntimeError(`Unknown agent '${name}'`, range);
     return agent;
+  }
+
+  private declareUse(stmt: UseStmt, scope: RuntimeScope): void {
+    const source = formatExpressionSource(stmt.value);
+    scope.addUse(stmt.value, source, stmt.budget, stmt.label);
+    this.trace.push({
+      kind: "use",
+      data: { source, label: stmt.label ?? null, budget: budgetToJson(stmt.budget) },
+    });
   }
 }
 

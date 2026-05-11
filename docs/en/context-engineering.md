@@ -38,11 +38,69 @@ AgentScript should preserve these invariants:
 - **Layered prompts**: prompts distinguish agent identity, selected context, instruction, and output contract.
 - **Auditable traces**: trace output must explain what the LLM call actually saw, including source expressions, labels, budgets, clipping, and generated results.
 
+## Declaration and execution
+
+AgentScript mixes two syntactic modes on purpose. This is the main departure from general-purpose languages and the main reason AgentScript exists as a DSL for LLM programming.
+
+- **Declarative mode** describes what an agent or a scope *is*: which model it uses (`model`), who it is (`role`, `description`), and what context it default-carries (`use` at agent level). These are statements of identity. They are legal only in declaration positions (agent body top, or at scope level as `use`) and they are read by the prompt builder, not by a general-purpose interpreter.
+- **Execution mode** describes what the agent *does*: call tools, query memory, branch on input, build intermediate data, and finally call `generate`. This is ordinary statement code inside function bodies.
+
+The boundary is enforced by syntax: `model` / `role` / `description` appear only in agent bodies; expression statements appear only in function bodies; `use` appears in both but means the same thing — "this source enters the prompt of every `generate` visible to this scope".
+
+Two rules keep the boundary sharp:
+
+1. **Agent-level declarations do not run arbitrary code.** An agent-level `use` expression may only reference names resolvable at the agent top level (primarily `import file` bindings). It cannot read function parameters, local variables, or call expressions. This keeps an agent's default context auditable without running the program.
+2. **Tool and memory calls go in execution mode, not in `use`.** Even when you want a fresh query result as context, write it as two statements:
+
+   ```agentscript
+   lessons = Lessons.query({ kind: "how-to" })
+   use lessons as "past lessons"
+   ```
+
+   This `call then use` pattern costs one extra line but preserves the invariant that `use` is always a context declaration and never a side-effectful action. Call expressions stay in one place; context declarations stay in another; the two never overload a single statement.
+
+Why this matters:
+
+- **Static readability.** The set of context sources a `generate` can see is a function of source position only. Readers do not need to trace which calls produce which bindings in order to understand what a prompt will contain.
+- **Tooling leverage.** An agent's default context surface (its agent-level `use` declarations) is a static property. Linters, audit tools, and documentation generators can extract it without executing the program.
+- **Refactoring safety.** Rewriting `lessons = Lessons.query(...)` into a helper, a cache, or a conditional changes the value flowing into `lessons` without touching the `use lessons as "past lessons"` declaration. The prompt surface stays visually stable.
+- **Audit clarity.** Every `use` trace event corresponds to exactly one source-level declaration. "Why did this text enter the prompt?" maps to a single line of code, not to an expression buried inside a call.
+
+The extra line required by `call then use` is the cost of this clarity. AgentScript takes this cost deliberately.
+
 ## Boundary model
+
+AgentScript defines three scope kinds — agent, function, block — which form two kinds of boundaries: **visibility boundaries** (`use` declarations propagate down into child scopes) and **call boundaries** (function or agent calls cut context propagation off).
+
+### Agent boundary
+
+An agent is the context unit of the language. It plays two roles at once:
+
+- **Capability boundary**: which tools, llms, memories, or agents this agent may call.
+- **Context boundary**: `use` declarations at the top of the agent body form the default context every function call entering this agent starts with. When an agent is invoked (as `main` entry or via `import agent`), the callee uses its own agent-level `use` and does not inherit the caller's context at all.
+
+```agentscript
+import file Playbook from "./playbook.md"
+import agent Worker from "./worker.as"
+
+main agent A {
+    use Playbook as playbook
+
+    main func(input) {
+        return Worker(input)
+    }
+}
+```
+
+A `generate` inside `Worker` cannot see `Playbook`; it only sees the context `Worker` declares for itself. Each agent carries its own prompt contract.
 
 ### Function boundary
 
-Each function call has its own context boundary. A callee does not automatically inherit the caller's selected context. Data must be passed as an argument and selected again when the callee wants it in its own prompt.
+A function is an execution unit, not a context unit. When functions inside the same agent call one another:
+
+- The callee sees its enclosing agent's agent-level `use` (shared identity).
+- The callee **does not** see the caller's function-local `use` (runtime-selected context does not travel).
+- To give a callee access to context, the caller must pass the data as an argument, and the callee must `use` it explicitly.
 
 ```agentscript
 func caller(input) {
@@ -58,24 +116,11 @@ func helper(input) {
 }
 ```
 
-The `generate` inside `helper` sees `input.detail`, not `caller`'s `input.goal`.
-
-### Agent boundary
-
-Agent calls create a stronger boundary. A called agent does not see the caller's prompt context. It sees only its input value and the context selected by its own functions.
-
-```agentscript
-result = Worker({
-    goal: input.goal,
-    previous: results.summary
-})
-```
-
-This keeps multi-agent composition auditable: each agent has its own prompt contract.
+The `generate` inside `helper` sees `helper`'s own `input.detail` (plus the enclosing agent's agent-level `use`), not `caller`'s `input.goal`.
 
 ### Block boundary
 
-Blocks such as `if`, `repeat`, `loop`, and `for` create child scopes. Context declared inside the block affects `generate` calls inside that block and does not leak upward.
+`if`, `repeat`, `loop`, `for`, and `parallel for` create child scopes. A `use` declared inside a block affects `generate` calls in that block and is discarded when the block ends. Block scopes never cross function or agent boundaries, so a block-level `use` is effectively a localized extension of a function-level `use` along one execution path.
 
 ## Prompt layers
 
@@ -99,5 +144,7 @@ Before changing `use`, scope, context builder, trace, or LLM provider behavior, 
 - Does this reduce `use` to a snapshot assignment instead of a deferred context source?
 - Does this confuse context budget with generation budget?
 - Does this confuse AgentScript context labels with provider message roles?
+- Does agent-level `use` remain declarative (no function-local state, no call expressions)?
+- Does this allow call expressions inside `use`, breaking the `call then use` separation?
 
 AgentScript's core value is not another control-flow syntax. Its value is making prompt context source, scope, budget, identity, and final prompt shape explicit and stable.

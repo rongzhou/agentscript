@@ -38,11 +38,69 @@ AgentScript 应维护这些不变量：
 - **prompt 分层**：prompt 区分 agent identity、selected context、instruction 和 output contract。
 - **trace 可审计**：trace 必须解释 LLM 调用实际看到了什么，包括 source expression、label、budget、clipping 和结果。
 
+## 声明式与执行式
+
+AgentScript 刻意混合两种语法模式。这是它相对通用编程语言的主要取舍，也是它作为 LLM 编程 DSL 存在的主要理由。
+
+- **声明式** 描述 agent 或 scope "是什么"：用哪个模型（`model`）、身份是谁（`role`、`description`）、默认携带什么 context（agent-level `use`）。这些是关于身份的陈述，只能出现在声明位置（agent body 顶部，或作用域级的 `use`），由 prompt builder 读取，而不是由通用解释器执行。
+- **执行式** 描述 agent "做什么"：调用 tool、查询 memory、按输入分支、构造中间数据，最后通过 `generate` 发起 LLM 调用。这是出现在 function body 内的普通语句代码。
+
+语法上，两种模式互不越界：`model` / `role` / `description` 只出现在 agent body；表达式语句只出现在 function body；`use` 在两处都允许，但语义一致——"让这个 source 进入该作用域内每一次可见 `generate` 的 prompt"。
+
+两条规则把边界卡紧：
+
+1. **声明式不执行任意代码。** agent-level `use` 的表达式只能引用 agent 顶层可解析的名字（主要是 `import file` 带入的文件），不能读 function 参数、局部变量，也不能包含 call expression。这样一个 agent 的默认 context 不用运行程序就能审计。
+2. **Tool 和 memory 调用走执行式，不进 `use`。** 即使想把一次新鲜的查询结果挂成 context，也要分成两句写：
+
+   ```agentscript
+   lessons = Lessons.query({ kind: "how-to" })
+   use lessons as "past lessons"
+   ```
+
+   这个 "call then use" 写法多写一行，但保住了一个不变量：`use` 始终是 context 声明，不会有副作用；call expression 始终在执行语句里，不会和 context 声明重叠。两类语句一件事，各安其位。
+
+为什么值得：
+
+- **静态可读。** 一次 `generate` 能看到哪些 context source，只取决于源码位置。读者不需要追踪哪些调用产生了哪些 binding 才能知道 prompt 内容。
+- **工具杠杆。** agent 的默认 context surface（它的 agent-level `use` 集合）是静态属性。linter、审计工具、文档生成器可以不运行程序就抽取出来。
+- **重构安全。** 把 `lessons = Lessons.query(...)` 重构成 helper、加缓存、加条件，都只改 `lessons` 的值流，不动 `use lessons as "past lessons"` 这条声明。Prompt surface 保持视觉稳定。
+- **审计清晰。** 每一条 `use` trace 事件对应恰好一条源码声明。"这段文字为什么进了 prompt" 对应一行代码，而不是埋在 call 表达式里。
+
+"call then use" 多一行是这份清晰度的代价。AgentScript 有意承担这个代价。
+
 ## 边界模型
+
+AgentScript 定义三类 scope：agent、function、block。它们形成两类边界：**可见边界**（`use` 声明向下传播到子作用域）和**调用边界**（function 或 agent 调用切断 context 传播）。
+
+### Agent boundary
+
+Agent 是 context 的语言单位，同时承担两个角色：
+
+- **Capability boundary**：决定这个 agent 能调用哪些 tool / llm / memory / agent。
+- **Context boundary**：agent body 中的 `use` 声明构成该 agent 进入任何 function 时的默认 context。Agent 被调用（`main` 入口或 `import agent` 组合）时，callee 用自己的 agent-level `use`，完全不看 caller 的 context。
+
+```agentscript
+import file Playbook from "./playbook.md"
+import agent Worker from "./worker.as"
+
+main agent A {
+    use Playbook as playbook
+
+    main func(input) {
+        return Worker(input)
+    }
+}
+```
+
+`Worker` 内的 `generate` 看不到 `Playbook`，只看到 `Worker` 自己声明的 context。每个 agent 都有独立的 prompt contract。
 
 ### Function boundary
 
-每次函数调用都有自己的 context boundary。callee 不会自动继承 caller 已选择的 context。数据必须作为参数传入，并在 callee 需要放进自己的 prompt 时再次 `use`。
+Function 是执行单元，不是 context 单元。同一 agent 内不同 function 互相调用时：
+
+- callee 看到它所在 agent 的 agent-level `use`（共享身份的一部分）。
+- callee **看不到** caller 的 function-local `use`（执行期选择的 context 不传递）。
+- 要让 callee 看到某段 context，caller 必须把数据通过参数传进去，callee 自己再 `use` 一次。
 
 ```agentscript
 func caller(input) {
@@ -58,24 +116,11 @@ func helper(input) {
 }
 ```
 
-`helper` 内的 `generate` 看到的是 `input.detail`，不是 `caller` 的 `input.goal`。
-
-### Agent boundary
-
-Agent 调用形成更强的边界。被调用 Agent 不会看到 caller 的 prompt context，只会看到输入值和它自己的函数显式选择的 context。
-
-```agentscript
-result = Worker({
-    goal: input.goal,
-    previous: results.summary
-})
-```
-
-这让 multi-agent 组合保持可审计：每个 Agent 都有自己的 prompt contract。
+`helper` 内的 `generate` 看到的是 `helper` 自己的 `input.detail`（加该 agent 的 agent-level `use`），不是 `caller` 的 `input.goal`。
 
 ### Block boundary
 
-`if`、`repeat`、`loop`、`for` 等 block 创建子作用域。block 内声明的 context 影响 block 内的 `generate`，不会向外泄漏。
+`if`、`repeat`、`loop`、`for`、`parallel for` 创建子作用域。block 内声明的 `use` 影响 block 内的 `generate`，block 结束后丢弃，不向外泄漏。block 子作用域不跨越 function 或 agent boundary，所以 block-level `use` 本质上是某条执行路径上 function-level `use` 的局部延展。
 
 ## Prompt 层次
 
@@ -99,5 +144,7 @@ result = Worker({
 - 是否把 `use` 退化成快照赋值，而不是延迟 context source？
 - 是否混淆 context budget 和 generation budget？
 - 是否混淆 AgentScript context label 和 provider message role？
+- agent-level `use` 是否仍保持声明式（不依赖 function-local 状态，不包含 call expression）？
+- 是否让 call expression 可以出现在 `use` 里，破坏了 "call then use" 的分离？
 
 AgentScript 的核心价值不是多一种控制流语法，而是让 prompt context 的来源、范围、预算、身份和最终 prompt 形态显式且稳定。

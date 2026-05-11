@@ -105,15 +105,26 @@ class Parser {
     this.consume("{");
 
     const config: ConfigDecl[] = [];
+    const uses: UseStmt[] = [];
     const functions: FuncDecl[] = [];
+    let seenFunction = false;
 
     while (!this.check("}") && !this.isAtEnd()) {
       if (this.isConfigKey(this.peek().value)) {
+        if (seenFunction) {
+          throw this.error("Agent-level configuration must appear before function declarations");
+        }
         config.push(this.parseConfigDecl());
+      } else if (this.check("use")) {
+        if (seenFunction) {
+          throw this.error("Agent-level use declarations must appear before function declarations");
+        }
+        uses.push(this.parseUse());
       } else if (this.check("func") || this.check("main")) {
+        seenFunction = true;
         functions.push(this.parseFunc());
       } else {
-        throw this.error("Expected configuration declaration or function declaration");
+        throw this.error("Expected configuration declaration, use declaration, or function declaration");
       }
     }
 
@@ -123,6 +134,7 @@ class Parser {
       name,
       isMain,
       config,
+      uses,
       functions,
       range: { start, end: this.previous().range.end },
     };

@@ -34,6 +34,7 @@ export interface AgentDecl extends NodeBase {
   name: string;
   isMain: boolean;
   config: ConfigDecl[];
+  uses: UseStmt[];
   functions: FuncDecl[];
 }
 

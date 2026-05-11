@@ -163,6 +163,9 @@ class Analyzer {
     for (const config of agent.config) {
       this.checkConfig(config, agentScope);
     }
+    for (const use of agent.uses) {
+      this.checkUse(use, agentScope, true);
+    }
 
     for (const fn of agent.functions) {
       this.checkFunction(fn, agentScope);
@@ -211,14 +214,7 @@ class Analyzer {
         this.checkConfig(stmt, scope);
         break;
       case "UseStmt":
-        this.checkExpression(stmt.value, scope);
-        this.checkUseValue(stmt.value, scope);
-        if (stmt.budget && stmt.budget.amount <= 0) {
-          this.error("INVALID_BUDGET", "Budget amount must be greater than 0", stmt.range);
-        }
-        if (stmt.label && RESERVED_CONTEXT_LABELS.has(stmt.label)) {
-          this.error("RESERVED_CONTEXT_LABEL", `Context label '${stmt.label}' is reserved`, stmt.range);
-        }
+        this.checkUse(stmt, scope, false);
         break;
       case "AssignStmt":
         this.checkAssignment(stmt, scope);
@@ -278,6 +274,27 @@ class Analyzer {
           this.error("INVALID_CONFIG", `${config.key} must be a string`, config.value.range);
         }
         return;
+    }
+  }
+
+  private checkUse(stmt: Extract<Stmt, { kind: "UseStmt" }>, scope: SemanticScope, agentLevel: boolean): void {
+    this.checkExpression(stmt.value, scope);
+    this.checkUseValue(stmt.value, scope);
+    if (this.containsCallExpression(stmt.value)) {
+      this.error(
+        "INVALID_USE_CALL",
+        "use declarations cannot contain call expressions; assign the call result first, then use the variable",
+        stmt.value.range,
+      );
+    }
+    if (agentLevel) {
+      this.checkAgentLevelUseValue(stmt.value, scope);
+    }
+    if (stmt.budget && stmt.budget.amount <= 0) {
+      this.error("INVALID_BUDGET", "Budget amount must be greater than 0", stmt.range);
+    }
+    if (stmt.label && RESERVED_CONTEXT_LABELS.has(stmt.label)) {
+      this.error("RESERVED_CONTEXT_LABEL", `Context label '${stmt.label}' is reserved`, stmt.range);
     }
   }
 
@@ -385,26 +402,124 @@ class Analyzer {
   }
 
   private checkUseValue(expr: Expr, scope: SemanticScope): void {
-    const root = this.rootIdentifier(expr);
-    if (!root) {
-      return;
-    }
-    const binding = scope.resolve(root.name);
-    if (binding && NON_CONTEXT_BINDING_KINDS.has(binding.kind)) {
-      this.error("INVALID_USE_RESOURCE", `Resource '${root.name}' cannot be used as prompt context`, root.range);
+    for (const identifier of this.identifiersInExpression(expr)) {
+      const binding = scope.resolve(identifier.name);
+      if (binding && NON_CONTEXT_BINDING_KINDS.has(binding.kind)) {
+        this.error(
+          "INVALID_USE_RESOURCE",
+          `Resource '${identifier.name}' cannot be used as prompt context`,
+          identifier.range,
+        );
+      }
     }
   }
 
-  private rootIdentifier(expr: Expr): { name: string; range: SourceRange } | undefined {
+  private checkAgentLevelUseValue(expr: Expr, scope: SemanticScope): void {
+    for (const identifier of this.identifiersInExpression(expr)) {
+      const binding = scope.resolve(identifier.name);
+      if (binding && binding.kind !== "file") {
+        this.error("INVALID_AGENT_USE", "Agent-level use may only reference imported file bindings", identifier.range);
+      }
+    }
+  }
+
+  private identifiersInExpression(expr: Expr): { name: string; range: SourceRange }[] {
     switch (expr.kind) {
       case "IdentifierExpr":
-        return { name: expr.name, range: expr.range };
+        return [{ name: expr.name, range: expr.range }];
       case "MemberExpr":
-        return this.rootIdentifier(expr.object);
+        return this.identifiersInExpression(expr.object);
       case "IndexExpr":
-        return this.rootIdentifier(expr.object);
-      default:
-        return undefined;
+        return [...this.identifiersInExpression(expr.object), ...this.identifiersInExpression(expr.index)];
+      case "ListExpr":
+        return expr.items.flatMap((item) => this.identifiersInExpression(item));
+      case "ObjectExpr":
+        return expr.properties.flatMap((property) => this.identifiersInExpression(property.value));
+      case "UnaryExpr":
+        return this.identifiersInExpression(expr.value);
+      case "BinaryExpr":
+        return [...this.identifiersInExpression(expr.left), ...this.identifiersInExpression(expr.right)];
+      case "CallExpr":
+        return [
+          ...this.identifiersInExpression(expr.callee),
+          ...expr.args.flatMap((arg) => this.identifiersInExpression(arg)),
+        ];
+      case "GenerateExpr":
+        return expr.options.properties.flatMap((property) => this.identifiersInExpression(property.value));
+      case "ParallelForExpr":
+        return [
+          ...this.identifiersInExpression(expr.iterable),
+          ...expr.body.flatMap((stmt) => this.identifiersInStatement(stmt)),
+        ];
+      case "StringExpr":
+      case "NumberExpr":
+      case "BooleanExpr":
+      case "NullExpr":
+      case "ShapeObjectExpr":
+        return [];
+    }
+  }
+
+  private identifiersInStatement(stmt: Stmt): { name: string; range: SourceRange }[] {
+    switch (stmt.kind) {
+      case "ConfigDecl":
+        return this.identifiersInExpression(stmt.value);
+      case "UseStmt":
+        return this.identifiersInExpression(stmt.value);
+      case "AssignStmt":
+        return [...this.identifiersInExpression(stmt.target), ...this.identifiersInExpression(stmt.value)];
+      case "ExprStmt":
+        return this.identifiersInExpression(stmt.expr);
+      case "IfStmt":
+        return [
+          ...this.identifiersInExpression(stmt.condition),
+          ...stmt.thenBody.flatMap((item) => this.identifiersInStatement(item)),
+          ...(stmt.elseBody ?? []).flatMap((item) => this.identifiersInStatement(item)),
+        ];
+      case "ForInStmt":
+        return [
+          ...this.identifiersInExpression(stmt.iterable),
+          ...stmt.body.flatMap((item) => this.identifiersInStatement(item)),
+        ];
+      case "LoopUntilStmt":
+        return [
+          ...this.identifiersInExpression(stmt.condition),
+          ...stmt.body.flatMap((item) => this.identifiersInStatement(item)),
+        ];
+      case "RepeatStmt":
+        return stmt.body.flatMap((item) => this.identifiersInStatement(item));
+      case "ReturnStmt":
+        return this.identifiersInExpression(stmt.value);
+    }
+  }
+
+  private containsCallExpression(expr: Expr): boolean {
+    switch (expr.kind) {
+      case "CallExpr":
+        return true;
+      case "MemberExpr":
+        return this.containsCallExpression(expr.object);
+      case "IndexExpr":
+        return this.containsCallExpression(expr.object) || this.containsCallExpression(expr.index);
+      case "ListExpr":
+        return expr.items.some((item) => this.containsCallExpression(item));
+      case "ObjectExpr":
+        return expr.properties.some((property) => this.containsCallExpression(property.value));
+      case "UnaryExpr":
+        return this.containsCallExpression(expr.value);
+      case "BinaryExpr":
+        return this.containsCallExpression(expr.left) || this.containsCallExpression(expr.right);
+      case "GenerateExpr":
+        return true;
+      case "ParallelForExpr":
+        return true;
+      case "IdentifierExpr":
+      case "StringExpr":
+      case "NumberExpr":
+      case "BooleanExpr":
+      case "NullExpr":
+      case "ShapeObjectExpr":
+        return false;
     }
   }
 

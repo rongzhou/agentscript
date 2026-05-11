@@ -377,6 +377,35 @@ describe("agentscript CLI", () => {
     expect(logSpy.mock.calls.flat().join("\n")).toContain('"text": "hello"');
   });
 
+  it("checks npm and node tool authorization in the REPL", async () => {
+    const input = new PassThrough();
+    const output = new Writable({
+      write(_chunk, _encoding, callback) {
+        callback();
+      },
+    });
+
+    const running = runRepl({ input, output });
+    for (const line of [
+      ':import tool Path from "node:path"',
+      "main agent {",
+      "  main func(input {}) {",
+      "    return input",
+      "  }",
+      "}",
+      ":check",
+      ":exit",
+    ]) {
+      input.write(`${line}\n`);
+      await new Promise((resolve) => setImmediate(resolve));
+    }
+    input.end();
+    const code = await running;
+
+    expect(code).toBe(0);
+    expect(errorSpy.mock.calls.flat().join("\n")).toContain("Node module 'path' is not allowed");
+  });
+
   it("loads a file into the REPL session", async () => {
     const input = new PassThrough();
     const output = new Writable({

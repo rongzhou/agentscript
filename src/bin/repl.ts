@@ -9,6 +9,7 @@ import { formatTrace } from "../runtime/trace.js";
 import type { TraceEvent } from "../runtime/types.js";
 import { analyze } from "../semantic/analyzer.js";
 import { formatSemanticDiagnostics, SemanticError } from "../semantic/diagnostics.js";
+import { loadNpmRegistry } from "../providers/tools/npm-registry.js";
 import { createReadlineInputProvider, parseJsonObjectInput } from "./input.js";
 
 const MAIN_AGENT_PATTERN = /^\s*main\s+agent\b/;
@@ -222,7 +223,7 @@ function setMainAgent(session: ReplSession, name: string): void {
 
 function checkSession(session: ReplSession): boolean {
   const program = loadSessionProgram(session);
-  const result = analyze(program);
+  const result = analyzeSessionProgram(program);
   if (result.diagnostics.length > 0) {
     console.error(formatSemanticDiagnostics(result.diagnostics));
   } else {
@@ -244,11 +245,15 @@ async function runSession(session: ReplSession, inputJson: string, reader: ReplR
 }
 
 function assertSessionSemanticallyValid(program: ReturnType<typeof loadSessionProgram>): void {
-  const result = analyze(program);
+  const result = analyzeSessionProgram(program);
   const errors = result.diagnostics.filter((diagnostic) => diagnostic.severity === "error");
   if (errors.length > 0) {
     throw new SemanticError(errors);
   }
+}
+
+function analyzeSessionProgram(program: ReturnType<typeof loadSessionProgram>) {
+  return analyze(program, { npmRegistry: loadNpmRegistry(process.cwd()) });
 }
 
 function printAgents(session: ReplSession): void {

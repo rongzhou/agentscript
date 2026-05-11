@@ -10,6 +10,10 @@ import type {
 
 export type GenerateOptionKey = "input" | "attempts" | "max_output" | "temperature" | "think" | "strict" | "debug";
 
+export const DEFAULT_GENERATE_ATTEMPTS = 1;
+export const DEFAULT_GENERATE_STRICT = false;
+export const DEFAULT_GENERATE_DEBUG = false;
+
 export interface GenerateOptionSpec {
   invalidCode?: string;
   invalidMessage?: string;

@@ -7,7 +7,8 @@ import { GenerateRuntime } from "./generate.js";
 import { isObject } from "./guards.js";
 import { budgetToJson, sanitizeForJson } from "./json.js";
 import { prepareEntryInput } from "./input.js";
-import { createRuntimeImportBindings, programSourceDir, type RuntimeImportBinding } from "./imports.js";
+import { createRuntimeImportBindings, type RuntimeImportBinding } from "./imports.js";
+import { createRuntimePaths } from "./paths.js";
 import { RuntimeScope } from "./scope.js";
 import { assertNever } from "../utils/assert.js";
 import { isTruthy } from "./truth.js";
@@ -70,15 +71,15 @@ class Interpreter {
     program: Program,
     private readonly options: ExecuteOptions,
   ) {
+    const paths = createRuntimePaths(options);
     this.llmProvider = options.llmProvider ?? new MockLlmProvider();
     this.inputProvider = options.inputProvider;
-    this.toolProvider = options.toolProvider ?? createDefaultToolProvider(options.workspaceRoot);
-    const sourceDir = programSourceDir(options.sourcePath);
+    this.toolProvider = options.toolProvider ?? createDefaultToolProvider(paths.workspaceRoot);
     this.memoryProvider =
       options.memoryProvider ??
       createDefaultMemoryProvider({
-        baseDir: sourceDir,
-        workspaceRoot: options.workspaceRoot ?? sourceDir,
+        baseDir: paths.sourceDir,
+        workspaceRoot: paths.workspaceRoot,
       });
     const generateRuntime = new GenerateRuntime(this.llmProvider, this.trace, {
       currentAgent: () => this.currentAgent,
@@ -97,7 +98,7 @@ class Interpreter {
     this.agent = resolveEntryAgent(program, options.agentName);
     this.currentAgent = this.agent;
     this.entryFunction = options.functionName ?? resolveMainFunction(this.agent).name;
-    this.imports = createRuntimeImportBindings(program, sourceDir);
+    this.imports = createRuntimeImportBindings(program, paths.sourceDir);
   }
 
   async execute(input: RuntimeValue): Promise<RuntimeValue> {

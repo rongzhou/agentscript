@@ -1,5 +1,8 @@
 import type { Budget, Expr, GenerateExpr } from "../ast/types.js";
 import {
+  DEFAULT_GENERATE_ATTEMPTS,
+  DEFAULT_GENERATE_DEBUG,
+  DEFAULT_GENERATE_STRICT,
   findGenerateProperty,
   readBooleanGenerateProperty,
   readNumberGenerateProperty,
@@ -33,7 +36,7 @@ export async function parseGenerateOptions(
     throw new RuntimeError("generate object argument requires an input field", expr.options.range);
   }
   const attemptsExpr = readNumberGenerateProperty(expr.options, "attempts");
-  const attempts = attemptsExpr?.value ?? 1;
+  const attempts = attemptsExpr?.value ?? DEFAULT_GENERATE_ATTEMPTS;
   if (!Number.isInteger(attempts) || attempts <= 0) {
     throw new RuntimeError("generate attempts must be a positive integer", attemptsExpr?.range ?? expr.options.range);
   }
@@ -43,7 +46,7 @@ export async function parseGenerateOptions(
     maxOutput: expr.options.maxOutput,
     temperature: readNumberGenerateProperty(expr.options, "temperature")?.value,
     think: readThinkGenerateProperty(expr.options)?.value,
-    strict: readBooleanGenerateProperty(expr.options, "strict")?.value ?? false,
-    debug: readBooleanGenerateProperty(expr.options, "debug")?.value ?? false,
+    strict: readBooleanGenerateProperty(expr.options, "strict")?.value ?? DEFAULT_GENERATE_STRICT,
+    debug: readBooleanGenerateProperty(expr.options, "debug")?.value ?? DEFAULT_GENERATE_DEBUG,
   };
 }

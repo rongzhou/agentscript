@@ -14,8 +14,13 @@ export interface HostMemoryProviderOptions {
 export class HostMemoryProvider implements MemoryProvider {
   private readonly file = new FileMemoryBackend();
   private readonly sqlite = new SqliteMemoryBackend();
+  private readonly baseDir: string;
+  private readonly workspaceRoot: string;
 
-  constructor(private readonly options: HostMemoryProviderOptions = {}) {}
+  constructor(options: HostMemoryProviderOptions = {}) {
+    this.baseDir = resolve(options.baseDir ?? process.cwd());
+    this.workspaceRoot = resolve(options.workspaceRoot ?? this.baseDir);
+  }
 
   async add(request: MemoryAddRequest): Promise<RuntimeValue> {
     if (!isObject(request.record)) {
@@ -54,16 +59,15 @@ export class HostMemoryProvider implements MemoryProvider {
   }
 
   private resolveWorkspacePath(rawPath: string): string {
-    const path = isAbsolute(rawPath) ? rawPath : resolve(this.options.baseDir ?? process.cwd(), rawPath);
+    const path = isAbsolute(rawPath) ? rawPath : resolve(this.baseDir, rawPath);
     this.assertWithinWorkspace(path);
     return path;
   }
 
   private assertWithinWorkspace(path: string): void {
-    const root = resolve(this.options.workspaceRoot ?? process.cwd());
-    const rel = relative(root, resolve(path));
+    const rel = relative(this.workspaceRoot, resolve(path));
     if (rel.startsWith("..") || isAbsolute(rel)) {
-      throw new RuntimeError(`Memory path '${path}' is outside workspace root '${root}'`);
+      throw new RuntimeError(`Memory path '${path}' is outside workspace root '${this.workspaceRoot}'`);
     }
   }
 }

@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { dirname, extname, isAbsolute, resolve } from "node:path";
+import { extname, isAbsolute, resolve } from "node:path";
 import type { Program } from "../ast/types.js";
 import type { BindingKind } from "../language/bindings.js";
 import type { RuntimeValue } from "./types.js";
@@ -41,10 +41,6 @@ export function createRuntimeImportBindings(program: Program, sourceDir: string)
         throw new Error("agent imports should be resolved before runtime import binding");
     }
   });
-}
-
-export function programSourceDir(sourcePath: string | undefined): string {
-  return sourcePath ? dirname(resolve(sourcePath)) : process.cwd();
 }
 
 function loadImportedFile(uri: string, sourceDir: string): RuntimeValue {

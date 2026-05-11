@@ -7,8 +7,8 @@ import { sanitizeForJson } from "../runtime/json.js";
 import { loadProgramSource } from "../runtime/loader.js";
 import { formatTrace } from "../runtime/trace.js";
 import type { TraceEvent } from "../runtime/types.js";
-import { analyze } from "../semantic/analyzer.js";
-import { formatSemanticDiagnostics, SemanticError } from "../semantic/diagnostics.js";
+import { analyze, assertSemanticallyValid } from "../semantic/analyzer.js";
+import { formatSemanticDiagnostics } from "../semantic/diagnostics.js";
 import { loadNpmRegistry } from "../providers/tools/npm-registry.js";
 import { createReadlineInputProvider, parseJsonObjectInput } from "./input.js";
 
@@ -170,9 +170,7 @@ function loadFile(session: ReplSession, file: string): void {
   }
   for (const [index, agent] of program.agents.entries()) {
     if (agent.isMain) {
-      for (const [name, existingSource] of session.agentSources) {
-        session.agentSources.set(name, existingSource.replace(MAIN_AGENT_PATTERN, "agent"));
-      }
+      demoteAllMainAgents(session);
     }
     session.agentSources.set(agent.name, agentSources[index]!);
   }
@@ -195,9 +193,7 @@ function addAgentSource(session: ReplSession, source: string): void {
   }
 
   if (agent.isMain) {
-    for (const [name, existingSource] of session.agentSources) {
-      session.agentSources.set(name, existingSource.replace(MAIN_AGENT_PATTERN, "agent"));
-    }
+    demoteAllMainAgents(session);
   }
   const replaced = session.agentSources.has(agent.name);
   session.agentSources.set(agent.name, source);
@@ -214,11 +210,15 @@ function setMainAgent(session: ReplSession, name: string): void {
     console.error(`Unknown agent '${name}'`);
     return;
   }
-  for (const [agentName, agentSource] of session.agentSources) {
-    session.agentSources.set(agentName, agentSource.replace(MAIN_AGENT_PATTERN, "agent"));
-  }
+  demoteAllMainAgents(session);
   session.agentSources.set(name, source.replace(/^\s*agent\b/, "main agent"));
   console.log(`main agent ${name}`);
+}
+
+function demoteAllMainAgents(session: ReplSession): void {
+  for (const [name, source] of session.agentSources) {
+    session.agentSources.set(name, source.replace(MAIN_AGENT_PATTERN, "agent"));
+  }
 }
 
 function checkSession(session: ReplSession): boolean {
@@ -234,7 +234,7 @@ function checkSession(session: ReplSession): boolean {
 
 async function runSession(session: ReplSession, inputJson: string, reader: ReplReader): Promise<void> {
   const program = loadSessionProgram(session);
-  assertSessionSemanticallyValid(program);
+  assertSemanticallyValid(program, { npmRegistry: loadNpmRegistry(process.cwd()) });
   const input = inputJson.trim().length > 0 ? parseJsonObjectInput(inputJson, ":run input") : {};
   const result = await executeAgent(program, input, {
     inputProvider: createReadlineInputProvider(reader),
@@ -242,14 +242,6 @@ async function runSession(session: ReplSession, inputJson: string, reader: ReplR
   });
   session.lastTrace = result.trace;
   console.log(JSON.stringify({ value: sanitizeForJson(result.value), trace: result.trace }, null, 2));
-}
-
-function assertSessionSemanticallyValid(program: ReturnType<typeof loadSessionProgram>): void {
-  const result = analyzeSessionProgram(program);
-  const errors = result.diagnostics.filter((diagnostic) => diagnostic.severity === "error");
-  if (errors.length > 0) {
-    throw new SemanticError(errors);
-  }
 }
 
 function analyzeSessionProgram(program: ReturnType<typeof loadSessionProgram>) {

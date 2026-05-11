@@ -1,14 +1,7 @@
 import { uriScheme } from "../language/uri.js";
 import { checkNodeImport, checkNpmImport, loadNpmRegistry } from "../providers/tools/npm-registry.js";
 import { createDefaultToolProvider } from "../providers/tools/index.js";
-import { buildValueFromShape } from "../runtime/shape.js";
-import type { GenerateRequest, LlmProvider, RuntimeValue, ToolCallRequest, ToolProvider } from "../runtime/types.js";
-
-export class DryRunLlmProvider implements LlmProvider {
-  async generate(request: GenerateRequest): Promise<RuntimeValue> {
-    return request.returnShape ? buildValueFromShape(request.returnShape) : null;
-  }
-}
+import type { RuntimeValue, ToolCallRequest, ToolProvider } from "../runtime/types.js";
 
 class DryRunToolProvider implements ToolProvider {
   private readonly registry = loadNpmRegistry(process.cwd());

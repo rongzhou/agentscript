@@ -29,8 +29,8 @@ export function analyze(program: Program, options: AnalyzeOptions = {}): Semanti
   return analyzer.analyze(program);
 }
 
-export function assertSemanticallyValid(program: Program): SemanticResult {
-  const result = analyze(program);
+export function assertSemanticallyValid(program: Program, options: AnalyzeOptions = {}): SemanticResult {
+  const result = analyze(program, options);
   const errors = result.diagnostics.filter((diagnostic) => diagnostic.severity === "error");
   if (errors.length > 0) {
     throw new SemanticError(errors);

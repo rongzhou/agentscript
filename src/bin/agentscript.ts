@@ -4,6 +4,7 @@ import { basename, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { stdin as inputStream, stdout as outputStream } from "node:process";
 import { createInterface } from "node:readline/promises";
+import type { Program } from "../ast/types.js";
 import { executeAgent } from "../runtime/interpreter.js";
 import { loadProgram } from "../runtime/loader.js";
 import { ProtocolLlmProvider } from "../providers/llm/index.js";
@@ -12,13 +13,12 @@ import { loadNpmRegistry } from "../providers/tools/npm-registry.js";
 import { sanitizeForJson } from "../runtime/json.js";
 import { formatTrace } from "../runtime/trace.js";
 import type { InputProvider, JsonObject, LlmProvider } from "../runtime/types.js";
-import { analyze } from "../semantic/analyzer.js";
-import { formatSemanticDiagnostics, SemanticError } from "../semantic/diagnostics.js";
+import { analyze, assertSemanticallyValid } from "../semantic/analyzer.js";
+import { formatSemanticDiagnostics } from "../semantic/diagnostics.js";
 import { parseArgs, printUsage, type CliOptions } from "./args.js";
-import { createDryRunToolProvider, DryRunLlmProvider } from "./dry-run.js";
+import { createDryRunToolProvider } from "./dry-run.js";
 import { createReadlineInputProvider, parseJsonObjectInput } from "./input.js";
 import { runRepl } from "./repl.js";
-import type { Program } from "../ast/types.js";
 
 export async function main(argv = process.argv.slice(2)): Promise<number> {
   try {
@@ -75,7 +75,7 @@ async function runAgent(options: CliOptions): Promise<number> {
   const input = readInput(options);
   const inputProvider = terminalInputProvider();
   const program = loadCliProgram(options);
-  assertCliProgramSemanticallyValid(program);
+  assertSemanticallyValid(program, { npmRegistry: loadNpmRegistry(process.cwd()) });
   const result = await executeAgent(program, input, {
     agentName: options.agentName,
     concurrency: options.concurrency,
@@ -103,21 +103,10 @@ async function runAgent(options: CliOptions): Promise<number> {
 }
 
 function createCliLlmProvider(options: CliOptions): LlmProvider {
-  if (options.dryRun) {
-    return new DryRunLlmProvider();
-  }
-  if (options.mock) {
+  if (options.dryRun || options.mock) {
     return new MockLlmProvider();
   }
   return new ProtocolLlmProvider();
-}
-
-function assertCliProgramSemanticallyValid(program: Program): void {
-  const result = analyze(program, { npmRegistry: loadNpmRegistry(process.cwd()) });
-  const errors = result.diagnostics.filter((diagnostic) => diagnostic.severity === "error");
-  if (errors.length > 0) {
-    throw new SemanticError(errors);
-  }
 }
 
 function loadCliProgram(options: CliOptions): Program {

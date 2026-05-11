@@ -47,13 +47,60 @@ describe("loadProgram", () => {
     const program = loadProgram(mainFile);
 
     expect(program.imports).toEqual([]);
-    expect(program.agents.map((agent) => agent.name)).toEqual(["Planner", "App"]);
+    expect(program.agents.map((agent) => agent.name)).toEqual(["Planner", "Helper", "App"]);
     expect(program.agents.find((agent) => agent.name === "Planner")!.isMain).toBe(false);
 
     const result = await executeAgent(program, { goal: "ship v1" });
     expect(result.value).toEqual({
       ok: true,
       goal: "ship v1",
+    });
+  });
+
+  it("keeps sibling agents needed by an imported agent", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "agentscript-"));
+    mkdirSync(join(dir, "agents"));
+    const mainFile = join(dir, "main.as");
+    const plannerFile = join(dir, "agents", "planner.as");
+
+    writeFileSync(
+      plannerFile,
+      `
+      agent Helper {
+        main func(input) {
+          return {
+            helped: input.goal
+          }
+        }
+      }
+
+      agent Planner {
+        main func(input) {
+          return Helper(input)
+        }
+      }
+    `,
+    );
+    writeFileSync(
+      mainFile,
+      `
+      import agent Planner from "./agents/planner.as"
+
+      main agent App {
+        main func(input) {
+          return Planner(input)
+        }
+      }
+    `,
+    );
+
+    const program = loadProgram(mainFile);
+    const result = await executeAgent(program, { goal: "ship imports" });
+
+    expect(program.agents.map((agent) => agent.name)).toEqual(["Helper", "Planner", "App"]);
+    expect(program.agents.every((agent) => agent.name === "App" || !agent.isMain)).toBe(true);
+    expect(result.value).toEqual({
+      helped: "ship imports",
     });
   });
 
@@ -111,6 +158,52 @@ describe("loadProgram", () => {
     expect(result.value).toEqual({
       value: "dependency context",
     });
+  });
+
+  it("preserves duplicate agent names from distinct imported files for semantic diagnostics", () => {
+    const dir = mkdtempSync(join(tmpdir(), "agentscript-"));
+    mkdirSync(join(dir, "agents"));
+    const mainFile = join(dir, "main.as");
+    const firstFile = join(dir, "agents", "first.as");
+    const secondFile = join(dir, "agents", "second.as");
+
+    writeFileSync(
+      firstFile,
+      `
+      agent Worker {
+        main func(input) {
+          return "first"
+        }
+      }
+    `,
+    );
+    writeFileSync(
+      secondFile,
+      `
+      agent Worker {
+        main func(input) {
+          return "second"
+        }
+      }
+    `,
+    );
+    writeFileSync(
+      mainFile,
+      `
+      import agent Worker from "./agents/first.as"
+      import agent Worker from "./agents/second.as"
+
+      main agent App {
+        main func(input) {
+          return input
+        }
+      }
+    `,
+    );
+
+    const program = loadProgram(mainFile);
+
+    expect(program.agents.map((agent) => agent.name)).toEqual(["Worker", "Worker", "App"]);
   });
 
   it("requires sourcePath when loading source with relative imports", () => {

@@ -1,6 +1,6 @@
 import { RuntimeError } from "../../runtime/errors.js";
 import type { Disposable } from "../../runtime/disposable.js";
-import { uriScheme } from "../../runtime/uri.js";
+import { uriScheme } from "../../language/uri.js";
 import type { RuntimeValue, ToolCallRequest, ToolProvider } from "../../runtime/types.js";
 import { EnvToolProvider } from "./env.js";
 import { FileToolProvider } from "./file.js";

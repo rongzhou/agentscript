@@ -110,6 +110,26 @@ describe("analyze", () => {
     );
   });
 
+  it("reports unsupported budget units", () => {
+    const result = analyze(
+      parse(`
+        agent A {
+          func act(input) {
+            use input max 2K
+            return input
+          }
+        }
+      `),
+    );
+
+    expect(result.diagnostics).toContainEqual(
+      expect.objectContaining({
+        severity: "error",
+        code: "INVALID_BUDGET_UNIT",
+      }),
+    );
+  });
+
   it("reports reserved context labels", () => {
     const result = analyze(
       parse(`
@@ -438,6 +458,42 @@ describe("analyze", () => {
     );
   });
 
+  it("checks nested parallel for body effects", () => {
+    const result = analyze(
+      parse(`
+        import tool Echo from "mcp://echo"
+        import memory Lessons from "file://./.agentscript/lessons.jsonl"
+
+        main agent A {
+          main func(input) {
+            scratch = { count: 0 }
+
+            return parallel for item in input.items max 2 {
+              result = Echo.echo({ text: item.text })
+              wrapped = {
+                saved: Lessons.add({ kind: "lesson", text: item.text })
+              }
+              if item.ok {
+                scratch.count = item.value
+              }
+              result
+            }
+          }
+        }
+      `),
+    );
+
+    expect(result.diagnostics.filter((diagnostic) => diagnostic.code === "PARALLEL_FOR_EFFECTFUL_CALL")).toHaveLength(
+      2,
+    );
+    expect(result.diagnostics).toContainEqual(
+      expect.objectContaining({
+        severity: "error",
+        code: "PARALLEL_FOR_OUTER_MUTATION",
+      }),
+    );
+  });
+
   it("rejects npm and node tool calls inside parallel for", () => {
     const result = analyze(
       parse(`
@@ -516,6 +572,33 @@ describe("analyze", () => {
           code: "INVALID_GENERATE_DEBUG",
         }),
       ]),
+    );
+  });
+
+  it("checks identifiers in all generate option values", () => {
+    const result = analyze(
+      parse(`
+        import llm Qwen from "openai://gpt-4.1-mini"
+
+        main agent A {
+          model Qwen
+          role "Assistant"
+          description "Validate generate option expressions."
+
+          main func act(input) {
+            return generate({ input: input.question, temperature: missing.temperature }) -> {
+                ok boolean
+            }
+          }
+        }
+      `),
+    );
+
+    expect(result.diagnostics).toContainEqual(
+      expect.objectContaining({
+        severity: "error",
+        code: "UNKNOWN_IDENTIFIER",
+      }),
     );
   });
 
@@ -792,6 +875,55 @@ describe("analyze", () => {
         code: "DUPLICATE_BINDING",
       }),
     );
+  });
+
+  it("reports agents that conflict with imported resource names", () => {
+    const result = analyze(
+      parse(`
+        import tool Worker from "mcp://worker"
+
+        main agent App {
+          main func(input) {
+            return input
+          }
+        }
+
+        agent Worker {
+          main func(input) {
+            return input
+          }
+        }
+      `),
+    );
+
+    expect(result.diagnostics).toContainEqual(
+      expect.objectContaining({
+        severity: "error",
+        code: "DUPLICATE_BINDING",
+      }),
+    );
+  });
+
+  it("reports assignments to immutable imported and function bindings", () => {
+    const result = analyze(
+      parse(`
+        import tool Search from "mcp://tools/search"
+
+        main agent A {
+          main func(input) {
+            Search = "local"
+            helper = "local"
+            return input
+          }
+
+          func helper(input) {
+            return input
+          }
+        }
+      `),
+    );
+
+    expect(result.diagnostics.filter((diagnostic) => diagnostic.code === "IMMUTABLE_ASSIGNMENT")).toHaveLength(2);
   });
 
   it("allows imported files as ordinary context values", () => {

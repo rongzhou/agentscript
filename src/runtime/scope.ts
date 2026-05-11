@@ -1,9 +1,7 @@
 import type { Budget, Expr, SourceRange } from "../ast/types.js";
-import type { BindingKind } from "../semantic/scope.js";
+import { type BindingKind, MUTABLE_BINDING_KINDS } from "../language/bindings.js";
 import { RuntimeError } from "./errors.js";
 import type { RuntimeValue } from "./types.js";
-
-const MUTABLE_BINDING_KINDS = new Set<BindingKind>(["local", "param"]);
 
 interface Binding {
   value: RuntimeValue;

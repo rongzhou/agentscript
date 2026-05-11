@@ -1,4 +1,5 @@
-import { SHAPE_TYPE_NAMES, type NamedShapeType, type ShapeObjectExpr, type ShapeTypeExpr } from "../ast/types.js";
+import type { NamedShapeType, ShapeObjectExpr, ShapeTypeExpr } from "../ast/types.js";
+import { isShapeTypeName } from "../language/shape.js";
 import { errorDiagnostic as error, type SemanticDiagnostic } from "./diagnostics.js";
 
 export function checkShapeObject(shape: ShapeObjectExpr): SemanticDiagnostic[] {
@@ -24,7 +25,7 @@ function checkShapeType(type: ShapeTypeExpr): SemanticDiagnostic[] {
 }
 
 function checkNamedShapeType(type: NamedShapeType): SemanticDiagnostic[] {
-  if (!SHAPE_TYPE_NAMES.has(type.name)) {
+  if (!isShapeTypeName(type.name)) {
     return [error("UNKNOWN_SHAPE_TYPE", `Unsupported shape type '${type.name}'`, type.range)];
   }
   return [];

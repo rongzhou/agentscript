@@ -225,7 +225,7 @@ describe("agentscript CLI", () => {
     expect(errorSpy.mock.calls[0]![0]).toContain("Use either --quiet");
 
     errorSpy.mockClear();
-    const pretty = await main([fixture, "--input", fixtureInput, "--quiet", "--trace", "pretty"]);
+    const pretty = await main([fixture, "--input", fixtureInput, "--quiet", "--trace"]);
     expect(pretty).toBe(1);
     expect(errorSpy.mock.calls[0]![0]).toContain("Use either --quiet");
   });
@@ -362,7 +362,7 @@ describe("agentscript CLI", () => {
       "}",
       ":check",
       ":run {}",
-      ":trace pretty",
+      ":trace",
       ":exit",
     ]) {
       input.write(`${line}\n`);

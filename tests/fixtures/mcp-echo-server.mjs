@@ -32,6 +32,8 @@ const tools = [
 ];
 
 const rl = readline.createInterface({ input: process.stdin });
+process.stdin.resume();
+setInterval(() => {}, 1000);
 
 rl.on("line", (line) => {
   if (line.trim().length === 0) return;

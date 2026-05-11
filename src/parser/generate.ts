@@ -30,7 +30,7 @@ function parseGenerateOptions(parser: GenerateParserHost): GenerateOptionsExpr {
   const properties: ObjectProperty[] = [];
   let maxOutput: Budget | undefined;
 
-  while (!parser.check("}") && parser.peek().kind !== "eof") {
+  while (!parser.check("}") && !parser.isAtEnd()) {
     const propStart = parser.peek().range.start;
     const key = parser.consumeObjectKey();
     parser.consume(":");

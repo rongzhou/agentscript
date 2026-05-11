@@ -273,5 +273,5 @@ function isIdentifierStart(char: string): boolean {
 
 function isIdentifierPart(char: string): boolean {
   const code = char.charCodeAt(0);
-  return isIdentifierStart(char) || (code >= 48 && code <= 57) || code === 45;
+  return isIdentifierStart(char) || (code >= 48 && code <= 57);
 }

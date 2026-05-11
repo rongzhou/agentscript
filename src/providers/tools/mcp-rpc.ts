@@ -32,6 +32,7 @@ export class StdioJsonRpcClient {
   private readonly stderr: string[] = [];
   private nextId = 1;
   private closed = false;
+  private failure: RuntimeError | undefined;
 
   constructor(
     private readonly serverKey: string,
@@ -62,6 +63,9 @@ export class StdioJsonRpcClient {
     if (this.closed) {
       return Promise.reject(new RuntimeError(`MCP server '${this.serverKey}' is closed`));
     }
+    if (this.failure) {
+      return Promise.reject(this.failure);
+    }
     const id = this.nextId++;
     const payload = params === undefined ? { jsonrpc: "2.0", id, method } : { jsonrpc: "2.0", id, method, params };
     return new Promise((resolve, reject) => {
@@ -86,6 +90,10 @@ export class StdioJsonRpcClient {
     this.lines.close();
     this.failAll(new RuntimeError(`MCP server '${this.serverKey}' closed`));
     await new Promise<void>((resolve) => {
+      if (this.child.exitCode !== null || this.child.signalCode !== null || this.child.pid === undefined) {
+        resolve();
+        return;
+      }
       const timer = setTimeout(() => {
         this.child.kill("SIGKILL");
         resolve();
@@ -94,7 +102,10 @@ export class StdioJsonRpcClient {
         clearTimeout(timer);
         resolve();
       });
-      this.child.kill("SIGTERM");
+      if (!this.child.kill("SIGTERM")) {
+        clearTimeout(timer);
+        resolve();
+      }
     });
   }
 
@@ -145,6 +156,7 @@ export class StdioJsonRpcClient {
   private failAll(error: Error): void {
     const stderr = this.stderr.length > 0 ? `; stderr: ${this.stderr.join(" | ")}` : "";
     const finalError = new RuntimeError(`${error.message}${stderr}`);
+    this.failure = finalError;
     for (const [id, pending] of this.pending) {
       clearTimeout(pending.timer);
       this.pending.delete(id);

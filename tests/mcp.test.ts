@@ -130,6 +130,21 @@ describe("MCP stdio tools", () => {
     await expect(executeAgent(ast, {}, { workspaceRoot: workspace })).rejects.toThrow(/Unknown MCP tool 'missing'/);
   });
 
+  it("reports MCP server startup failures without waiting for request timeout", async () => {
+    const workspace = mcpWorkspace({ command: join(tmpdir(), "missing-agentscript-mcp-server"), timeoutMs: 10_000 });
+    const ast = parse(`
+      import tool Echo from "mcp://echo"
+
+      main agent A {
+        main func(input) {
+          return Echo.echo({})
+        }
+      }
+    `);
+
+    await expect(executeAgent(ast, {}, { workspaceRoot: workspace })).rejects.toThrow(/MCP server 'echo' failed/);
+  });
+
   it("rejects missing MCP registry entries", async () => {
     const workspace = mcpWorkspace();
     const ast = parse(`
@@ -170,7 +185,7 @@ describe("MCP stdio tools", () => {
   });
 });
 
-function mcpWorkspace(options: { env?: Record<string, string> } = {}): string {
+function mcpWorkspace(options: { command?: string; env?: Record<string, string>; timeoutMs?: number } = {}): string {
   const workspace = mkdtempSync(join(tmpdir(), "agentscript-mcp-"));
   writeFileSync(
     join(workspace, "agentscript.mcp.json"),
@@ -178,9 +193,10 @@ function mcpWorkspace(options: { env?: Record<string, string> } = {}): string {
       mcpServers: {
         echo: {
           transport: "stdio",
-          command: process.execPath,
+          command: options.command ?? process.execPath,
           args: [echoServer],
           env: options.env,
+          timeoutMs: options.timeoutMs,
         },
       },
     }),

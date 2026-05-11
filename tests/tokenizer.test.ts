@@ -53,4 +53,9 @@ describe("tokenize", () => {
     const tokens = tokenize("string number boolean json list");
     expect(tokens.map((token) => token.kind)).toEqual(["keyword", "keyword", "keyword", "keyword", "keyword", "eof"]);
   });
+
+  it("tokenizes hyphen as subtraction instead of part of identifiers", () => {
+    const tokens = tokenize("a-b");
+    expect(tokens.map((token) => token.value)).toEqual(["a", "-", "b", ""]);
+  });
 });

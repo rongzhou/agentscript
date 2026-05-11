@@ -336,7 +336,6 @@ agentscript recipes/code-review.as --quiet
 | `--concurrency <n>` | 设置 `parallel for` 的运行时并发上限 |
 | `--trace <文件>` | 将 trace 写入文件 |
 | `--trace` | 打印可读的 trace |
-| `--trace pretty` | `--trace` 的兼容别名 |
 | `--verbose` | 打印详细 trace |
 | `--quiet` | 仅输出最终结果 |
 

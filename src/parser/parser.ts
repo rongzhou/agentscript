@@ -1,46 +1,27 @@
 import type {
   AgentDecl,
   AssignStmt,
-  BinaryExpr,
-  BooleanExpr,
   Budget,
-  CallExpr,
   ConfigDecl,
   ConfigKey,
   Expr,
   ExprStmt,
-  FuncDecl,
-  FuncParam,
-  IdentifierExpr,
   ImportDecl,
-  ImportResourceKind,
-  IndexExpr,
-  MemberExpr,
-  NullExpr,
-  NumberExpr,
   Program,
   ReturnStmt,
   Stmt,
-  StringExpr,
-  UnaryExpr,
   UseStmt,
 } from "../ast/types.js";
+import { isConfigKey } from "../language/config.js";
 import { ParseError } from "./errors.js";
 import { parseForIn, parseIf, parseLoop, parseRepeat } from "./control-flow.js";
-import { parseGenerate } from "./generate.js";
-import { parseList, parseObject } from "./literals.js";
-import { parseParallelFor } from "./parallel-for.js";
-import { parseShapeObject } from "./shape.js";
+import { parseAgentDecl, parseImportDecl } from "./declarations.js";
+import { parseExpressionExpr, parsePostfixExpr } from "./expressions.js";
 import { type Token, tokenize } from "./tokenizer.js";
 
 export function parse(source: string): Program {
   return new Parser(tokenize(source)).parseProgram();
 }
-
-const IMPORT_RESOURCE_KINDS = new Set<ImportResourceKind>(["tool", "llm", "file", "agent", "memory"]);
-const CONFIG_KEYS = new Set<ConfigKey>(["model", "role", "description"]);
-const ANONYMOUS_MAIN_AGENT = "__main_agent";
-const ANONYMOUS_MAIN_FUNC = "__main";
 
 class Parser {
   private current = 0;
@@ -54,9 +35,9 @@ class Parser {
 
     while (!this.isAtEnd()) {
       if (this.check("import")) {
-        imports.push(this.parseImport());
+        imports.push(parseImportDecl(this));
       } else if (this.check("agent") || this.check("main")) {
-        agents.push(this.parseAgent());
+        agents.push(parseAgentDecl(this));
       } else {
         throw this.error(`Expected 'import', 'agent', or 'main agent'`);
       }
@@ -70,77 +51,7 @@ class Parser {
     };
   }
 
-  private parseImport(): ImportDecl {
-    const start = this.consume("import").range.start;
-    const resourceToken = this.consumeIdentifier("Expected import resource kind");
-    const resourceKind = resourceToken.value;
-    if (!isImportResourceKind(resourceKind)) {
-      throw new ParseError(
-        "Expected import resource kind 'tool', 'llm', 'file', 'agent', or 'memory'",
-        resourceToken.range.start,
-      );
-    }
-    const name = this.consumeIdentifier(`Expected ${resourceKind} name`).value;
-    this.consume("from");
-    const uri = this.consumeKind("string", `Expected ${resourceKind} URI`).value;
-
-    return {
-      kind: "ImportDecl",
-      resourceKind,
-      name,
-      uri,
-      range: { start, end: this.previous().range.end },
-    };
-  }
-
-  private parseAgent(): AgentDecl {
-    const mainToken = this.match("main") ? this.previous() : undefined;
-    const start = (mainToken ?? this.peek()).range.start;
-    const isMain = Boolean(mainToken);
-    this.consume("agent");
-    const name = this.check("{") ? ANONYMOUS_MAIN_AGENT : this.consumeIdentifier("Expected agent name").value;
-    if (!isMain && name === ANONYMOUS_MAIN_AGENT) {
-      throw this.error("Only main agent can omit its name");
-    }
-    this.consume("{");
-
-    const config: ConfigDecl[] = [];
-    const uses: UseStmt[] = [];
-    const functions: FuncDecl[] = [];
-    let seenFunction = false;
-
-    while (!this.check("}") && !this.isAtEnd()) {
-      if (this.isConfigKey(this.peek().value)) {
-        if (seenFunction) {
-          throw this.error("Agent-level configuration must appear before function declarations");
-        }
-        config.push(this.parseConfigDecl());
-      } else if (this.check("use")) {
-        if (seenFunction) {
-          throw this.error("Agent-level use declarations must appear before function declarations");
-        }
-        uses.push(this.parseUse());
-      } else if (this.check("func") || this.check("main")) {
-        seenFunction = true;
-        functions.push(this.parseFunc());
-      } else {
-        throw this.error("Expected configuration declaration, use declaration, or function declaration");
-      }
-    }
-
-    this.consume("}");
-    return {
-      kind: "AgentDecl",
-      name,
-      isMain,
-      config,
-      uses,
-      functions,
-      range: { start, end: this.previous().range.end },
-    };
-  }
-
-  private parseConfigDecl(): ConfigDecl {
+  parseConfigDecl(): ConfigDecl {
     const key = this.consumeConfigKey();
     const value = this.parseConfigValue(key.value);
     return {
@@ -148,41 +59,6 @@ class Parser {
       key: key.value,
       value,
       range: { start: key.range.start, end: value.range.end },
-    };
-  }
-
-  private parseFunc(): FuncDecl {
-    const mainToken = this.match("main") ? this.previous() : undefined;
-    const start = (mainToken ?? this.peek()).range.start;
-    const isMain = Boolean(mainToken);
-    this.consume("func");
-    const name = this.check("(") ? ANONYMOUS_MAIN_FUNC : this.consumeIdentifier("Expected function name").value;
-    if (!isMain && name === ANONYMOUS_MAIN_FUNC) {
-      throw this.error("Only main func can omit its name");
-    }
-    this.consume("(");
-    const params = this.parseCommaSeparatedUntil(")", () => this.parseFuncParam());
-    this.consume(")");
-    const body = this.parseBlock();
-
-    return {
-      kind: "FuncDecl",
-      name,
-      isMain,
-      params,
-      body,
-      range: { start, end: this.previous().range.end },
-    };
-  }
-
-  private parseFuncParam(): FuncParam {
-    const token = this.consumeIdentifier("Expected parameter name");
-    const shape = this.check("{") ? parseShapeObject(this, { allowDefaultStringFields: false }) : undefined;
-    return {
-      kind: "FuncParam",
-      name: token.value,
-      shape,
-      range: { start: token.range.start, end: (shape ?? token).range.end },
     };
   }
 
@@ -221,9 +97,9 @@ class Parser {
     return this.parseAssignmentOrExpressionStatement();
   }
 
-  private parseUse(): UseStmt {
+  parseUse(): UseStmt {
     const start = this.consume("use").range.start;
-    const value = this.parseLogicalOr();
+    const value = this.parseExpression();
     const budget = this.match("max") ? this.parseBudget() : undefined;
     const label = this.match("as") ? this.parseUseLabel() : undefined;
     return {
@@ -253,7 +129,7 @@ class Parser {
 
   private parseConfigValue(key: ConfigKey): Expr {
     if (key === "model") {
-      return this.parsePostfix();
+      return parsePostfixExpr(this);
     }
     return this.parseExpression();
   }
@@ -293,169 +169,19 @@ class Parser {
   }
 
   parseExpression(): Expr {
-    return this.parseLogicalOr();
-  }
-
-  private parseLogicalOr(): Expr {
-    return this.parseBinaryExpression(() => this.parseLogicalAnd(), "or");
-  }
-
-  private parseLogicalAnd(): Expr {
-    return this.parseBinaryExpression(() => this.parseEquality(), "and");
-  }
-
-  private parseEquality(): Expr {
-    return this.parseBinaryExpression(() => this.parseComparison(), "==", "!=");
-  }
-
-  private parseComparison(): Expr {
-    return this.parseBinaryExpression(() => this.parseTerm(), "<", ">");
-  }
-
-  private parseTerm(): Expr {
-    return this.parseBinaryExpression(() => this.parseUnary(), "+", "-");
-  }
-
-  private parseBinaryExpression(parseOperand: () => Expr, ...operators: BinaryExpr["operator"][]): Expr {
-    let expr = parseOperand();
-    while (this.matchAny(operators)) {
-      const operator = this.previous().value as BinaryExpr["operator"];
-      const right = parseOperand();
-      expr = {
-        kind: "BinaryExpr",
-        operator,
-        left: expr,
-        right,
-        range: { start: expr.range.start, end: right.range.end },
-      } satisfies BinaryExpr;
-    }
-    return expr;
-  }
-
-  private parseUnary(): Expr {
-    if (this.match("not")) {
-      const start = this.previous().range.start;
-      const value = this.parseUnary();
-      return {
-        kind: "UnaryExpr",
-        operator: "not",
-        value,
-        range: { start, end: value.range.end },
-      } satisfies UnaryExpr;
-    }
-    return this.parsePostfix();
-  }
-
-  private parsePostfix(): Expr {
-    let expr = this.parsePrimary();
-
-    while (true) {
-      if (this.match(".")) {
-        const property = this.consumeIdentifier("Expected property name").value;
-        expr = {
-          kind: "MemberExpr",
-          object: expr,
-          property,
-          range: { start: expr.range.start, end: this.previous().range.end },
-        } satisfies MemberExpr;
-        continue;
-      }
-
-      if (this.match("(")) {
-        const args = this.parseCommaSeparatedUntil(")", () => this.parseExpression());
-        this.consume(")");
-        expr = {
-          kind: "CallExpr",
-          callee: expr,
-          args,
-          range: { start: expr.range.start, end: this.previous().range.end },
-        } satisfies CallExpr;
-        continue;
-      }
-
-      if (this.match("[")) {
-        const index = this.parseExpression();
-        this.consume("]");
-        expr = {
-          kind: "IndexExpr",
-          object: expr,
-          index,
-          range: { start: expr.range.start, end: this.previous().range.end },
-        } satisfies IndexExpr;
-        continue;
-      }
-
-      break;
-    }
-
-    return expr;
-  }
-
-  private parsePrimary(): Expr {
-    const token = this.peek();
-
-    if (this.check("generate")) {
-      return parseGenerate(this);
-    }
-
-    if (this.check("parallel")) {
-      return parseParallelFor(this);
-    }
-
-    if (this.matchKind("string")) {
-      return {
-        kind: "StringExpr",
-        value: token.value,
-        range: token.range,
-      } satisfies StringExpr;
-    }
-
-    if (this.matchKind("number")) {
-      return {
-        kind: "NumberExpr",
-        value: Number.parseFloat(token.value),
-        raw: token.value,
-        range: token.range,
-      } satisfies NumberExpr;
-    }
-
-    if (this.match("true") || this.match("false")) {
-      return {
-        kind: "BooleanExpr",
-        value: token.value === "true",
-        range: token.range,
-      } satisfies BooleanExpr;
-    }
-
-    if (this.match("none")) {
-      return {
-        kind: "NullExpr",
-        range: token.range,
-      } satisfies NullExpr;
-    }
-
-    if (this.check("{")) {
-      return parseObject(this);
-    }
-
-    if (this.check("[")) {
-      return parseList(this);
-    }
-
-    if (this.matchKind("identifier") || this.matchKind("keyword")) {
-      return {
-        kind: "IdentifierExpr",
-        name: token.value,
-        range: token.range,
-      } satisfies IdentifierExpr;
-    }
-
-    throw this.error("Expected expression");
+    return parseExpressionExpr(this);
   }
 
   consumePropertySeparator(terminator: string): void {
     if (this.check(terminator)) return;
     this.consume(",");
+  }
+
+  consumeShapeFieldSeparator(terminator: string): void {
+    if (this.check(terminator)) return;
+    if (this.match(",")) return;
+    if (this.previous().range.end.line < this.peek().range.start.line) return;
+    throw this.error("Expected ',' or newline between shape fields");
   }
 
   private parseBudget(): Budget {
@@ -526,7 +252,7 @@ class Parser {
     return true;
   }
 
-  private matchAny(values: readonly string[]): boolean {
+  matchAny(values: readonly string[]): boolean {
     if (!values.some((value) => this.check(value))) {
       return false;
     }
@@ -534,7 +260,7 @@ class Parser {
     return true;
   }
 
-  private matchKind(kind: Token["kind"]): boolean {
+  matchKind(kind: Token["kind"]): boolean {
     if (!this.checkKind(kind)) {
       return false;
     }
@@ -554,7 +280,9 @@ class Parser {
     const items: T[] = [];
     while (!this.check(terminator) && !this.isAtEnd()) {
       items.push(parseItem());
-      this.match(",");
+      if (!this.check(terminator)) {
+        this.consume(",");
+      }
     }
     return items;
   }
@@ -566,7 +294,7 @@ class Parser {
     return this.previous();
   }
 
-  private isAtEnd(): boolean {
+  isAtEnd(): boolean {
     return this.peek().kind === "eof";
   }
 
@@ -578,15 +306,11 @@ class Parser {
     return this.tokens[this.current - 1] ?? this.tokens[0]!;
   }
 
-  private error(message: string): ParseError {
+  error(message: string): ParseError {
     return new ParseError(message, this.peek().range.start);
   }
 
-  private isConfigKey(value: string): value is ConfigKey {
-    return CONFIG_KEYS.has(value as ConfigKey);
+  isConfigKey(value: string): value is ConfigKey {
+    return isConfigKey(value);
   }
-}
-
-function isImportResourceKind(value: string): value is ImportResourceKind {
-  return IMPORT_RESOURCE_KINDS.has(value as ImportResourceKind);
 }

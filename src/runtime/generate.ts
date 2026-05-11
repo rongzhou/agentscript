@@ -1,17 +1,16 @@
-import type {
-  AgentDecl,
-  BooleanExpr,
-  Budget,
-  Expr,
-  GenerateExpr,
-  GenerateOptionsExpr,
-  NumberExpr,
-  ObjectProperty,
-  StringExpr,
-} from "../ast/types.js";
+import type { AgentDecl, Expr, GenerateExpr } from "../ast/types.js";
 import { buildContext, builtContextToJson } from "./context.js";
 import { RuntimeError } from "./errors.js";
-import { isLlmBinding, isObject } from "./guards.js";
+import { writeGenerateDebugPrompt } from "./generate-debug.js";
+import { parseGenerateOptions } from "./generate-options.js";
+import {
+  appendGenerateRepair,
+  type GenerateRepair,
+  generateErrorMessage,
+  isRepairableGenerateError,
+  withGenerateRange,
+} from "./generate-repair.js";
+import { isLlmBinding } from "./guards.js";
 import { budgetToJson, sanitizeForJson } from "./json.js";
 import type { RuntimeScope } from "./scope.js";
 import { coerceValueToShape, validateValueAgainstShape } from "./shape.js";
@@ -30,36 +29,6 @@ export interface GenerateRuntimeHost {
   resolveContextUses(scope: RuntimeScope): Promise<ContextUse[]>;
 }
 
-interface GenerateOptions {
-  input: RuntimeValue;
-  attempts: number;
-  maxOutput?: Budget;
-  temperature?: number;
-  think?: boolean | string;
-  strict: boolean;
-  debug: boolean;
-}
-
-function findProperty(options: GenerateOptionsExpr, key: string): ObjectProperty | undefined {
-  return options.properties.find((property) => property.key === key);
-}
-
-function readNumberProperty(options: GenerateOptionsExpr, key: string): NumberExpr | undefined {
-  const property = findProperty(options, key);
-  return property?.value.kind === "NumberExpr" ? property.value : undefined;
-}
-
-function readBooleanProperty(options: GenerateOptionsExpr, key: string): BooleanExpr | undefined {
-  const property = findProperty(options, key);
-  return property?.value.kind === "BooleanExpr" ? property.value : undefined;
-}
-
-function readThinkProperty(options: GenerateOptionsExpr): BooleanExpr | StringExpr | undefined {
-  const property = findProperty(options, "think");
-  if (!property) return undefined;
-  return property.value.kind === "BooleanExpr" || property.value.kind === "StringExpr" ? property.value : undefined;
-}
-
 export class GenerateRuntime {
   constructor(
     private readonly llmProvider: LlmProvider,
@@ -68,7 +37,7 @@ export class GenerateRuntime {
   ) {}
 
   async evaluateGenerate(expr: GenerateExpr, scope: RuntimeScope): Promise<RuntimeValue> {
-    const options = await this.parseOptions(expr, scope);
+    const options = await parseGenerateOptions(expr, scope, this.host);
     const context = await this.host.resolveContextUses(scope);
     const agent = this.host.currentAgent();
     const model = this.requireModel(scope, expr);
@@ -77,7 +46,7 @@ export class GenerateRuntime {
     let lastError: unknown;
 
     for (let attempt = 1; attempt <= options.attempts; attempt += 1) {
-      const instruction = repair ? appendRepair(options.input, repair) : options.input;
+      const instruction = repair ? appendGenerateRepair(options.input, repair) : options.input;
       const builtContext = buildContext({
         agentName: agent.name,
         model,
@@ -89,7 +58,7 @@ export class GenerateRuntime {
       });
 
       if (options.debug) {
-        writeDebugPrompt(agent.name, attempt, builtContext);
+        writeGenerateDebugPrompt(agent.name, attempt, builtContext);
       }
 
       let rawResult: RuntimeValue;
@@ -114,7 +83,7 @@ export class GenerateRuntime {
         }
         lastError = error;
         repair = {
-          error: errorMessage(error),
+          error: generateErrorMessage(error),
         };
         continue;
       }
@@ -151,33 +120,12 @@ export class GenerateRuntime {
         lastError = error;
         repair = {
           output: rawResult,
-          error: errorMessage(error),
+          error: generateErrorMessage(error),
         };
       }
     }
 
     throw lastError instanceof Error ? lastError : new RuntimeError("generate failed", expr.range);
-  }
-
-  private async parseOptions(expr: GenerateExpr, scope: RuntimeScope): Promise<GenerateOptions> {
-    const inputProperty = findProperty(expr.options, "input");
-    if (!inputProperty) {
-      throw new RuntimeError("generate object argument requires an input field", expr.options.range);
-    }
-    const attemptsExpr = readNumberProperty(expr.options, "attempts");
-    const attempts = attemptsExpr?.value ?? 1;
-    if (!Number.isInteger(attempts) || attempts <= 0) {
-      throw new RuntimeError("generate attempts must be a positive integer", attemptsExpr?.range ?? expr.options.range);
-    }
-    return {
-      input: await this.host.evaluate(inputProperty.value, scope),
-      attempts,
-      maxOutput: expr.options.maxOutput,
-      temperature: readNumberProperty(expr.options, "temperature")?.value,
-      think: readThinkProperty(expr.options)?.value,
-      strict: readBooleanProperty(expr.options, "strict")?.value ?? false,
-      debug: readBooleanProperty(expr.options, "debug")?.value ?? false,
-    };
   }
 
   private requireModel(scope: RuntimeScope, expr: GenerateExpr): LlmBinding {
@@ -203,67 +151,4 @@ export class GenerateRuntime {
       description,
     };
   }
-}
-
-interface GenerateRepair {
-  output?: RuntimeValue;
-  error: string;
-}
-
-function appendRepair(input: RuntimeValue, repair: GenerateRepair): RuntimeValue {
-  const message = [
-    "Previous generation failed.",
-    repair.output === undefined
-      ? undefined
-      : `Previous output:\n${JSON.stringify(sanitizeForJson(repair.output), null, 2)}`,
-    `Error:\n${repair.error}`,
-    "Return corrected JSON matching the requested schema only.",
-  ]
-    .filter(Boolean)
-    .join("\n\n");
-
-  if (typeof input === "string") {
-    return `${input}\n\n${message}`;
-  }
-  if (isObject(input)) {
-    return {
-      ...input,
-      repair: message,
-    };
-  }
-  return {
-    input,
-    repair: message,
-  };
-}
-
-function isRepairableGenerateError(error: unknown): boolean {
-  return error instanceof RuntimeError && /LLM provider did not return JSON/.test(error.message);
-}
-
-function errorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
-}
-
-function withGenerateRange(error: unknown, range: GenerateExpr["range"]): Error {
-  if (error instanceof RuntimeError) {
-    // If the error already carries a range, its message already includes the formatted location,
-    // so returning it unchanged avoids double-appending `at L:C`.
-    return error.range ? error : new RuntimeError(error.message, range);
-  }
-  return new RuntimeError(errorMessage(error), range);
-}
-
-function writeDebugPrompt(agentName: string, attempt: number, builtContext: ReturnType<typeof buildContext>): void {
-  const parts = [
-    `--- AgentScript generate debug: ${agentName} attempt ${attempt} ---`,
-    "System:",
-    builtContext.system,
-    "Final user message:",
-    builtContext.finalUserMessage,
-    "Return schema:",
-    JSON.stringify(builtContext.returnSchema, null, 2),
-    "--- end AgentScript generate debug ---",
-  ];
-  console.error(parts.join("\n"));
 }

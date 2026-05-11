@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import { parse } from "../src/parser/parser.js";
 import { executeAgent } from "../src/runtime/interpreter.js";
 import { HostToolProvider, SchemeToolProvider } from "../src/providers/tools/index.js";
-import { uriScheme } from "../src/runtime/uri.js";
+import { uriScheme } from "../src/language/uri.js";
 import type { RuntimeValue, ToolCallRequest, ToolProvider } from "../src/runtime/types.js";
 
 const request: ToolCallRequest = {

@@ -383,7 +383,6 @@ agentscript recipes/code-review.as --quiet
 | `--concurrency <n>` | Set the runtime concurrency limit for `parallel for` |
 | `--trace <file>` | Write execution trace to file |
 | `--trace` | Print human-readable trace |
-| `--trace pretty` | Backward-compatible alias for `--trace` |
 | `--verbose` | Print detailed trace |
 | `--quiet` | Output only the final value |
 

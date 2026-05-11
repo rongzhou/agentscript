@@ -4,17 +4,14 @@ import { RuntimeError } from "./errors.js";
 import { GenerateRuntime } from "./generate.js";
 import { isAgentBinding, isFunctionBinding, isLlmBinding, isMemoryBinding, isObject, isToolBinding } from "./guards.js";
 import { runtimeValuesEqual, sanitizeForJson } from "./json.js";
+import { isModuleTool, ResourceCallRuntime } from "./resource-calls.js";
 import type { RuntimeScope } from "./scope.js";
-import { uriScheme } from "./uri.js";
 import { isTruthy } from "./truth.js";
 import { evaluateParallelFor } from "./parallel-for.js";
 import {
   type ContextUse,
-  type JsonValue,
-  type MemoryBinding,
   type MemoryProvider,
   type RuntimeValue,
-  type ToolBinding,
   type ToolProvider,
   type TraceEvent,
 } from "./types.js";
@@ -29,13 +26,17 @@ export interface EvaluatorHost {
 }
 
 export class Evaluator {
+  private readonly resourceCalls: ResourceCallRuntime;
+
   constructor(
-    private readonly toolProvider: ToolProvider,
-    private readonly memoryProvider: MemoryProvider,
+    toolProvider: ToolProvider,
+    memoryProvider: MemoryProvider,
     private readonly trace: TraceEvent[],
     private readonly generateRuntime: GenerateRuntime,
     private readonly host: EvaluatorHost,
-  ) {}
+  ) {
+    this.resourceCalls = new ResourceCallRuntime(toolProvider, memoryProvider, trace);
+  }
 
   async evaluateConfig(config: ConfigDecl, scope: RuntimeScope): Promise<RuntimeValue> {
     switch (config.key) {
@@ -195,7 +196,7 @@ export class Evaluator {
   private async evaluateMember(expr: MemberExpr, scope: RuntimeScope): Promise<RuntimeValue> {
     const object = await this.evaluate(expr.object, scope);
     if (isToolBinding(object) && isModuleTool(object)) {
-      return this.evaluateToolCall(object, expr, [], true);
+      return this.resourceCalls.callTool(object, expr, [], true);
     }
     return this.readMember(object, expr.property, expr.range);
   }
@@ -269,11 +270,11 @@ export class Evaluator {
     }
 
     if (isToolBinding(object)) {
-      return this.evaluateToolCall(object, callee, args);
+      return this.resourceCalls.callTool(object, callee, args);
     }
 
     if (isMemoryBinding(object)) {
-      return this.evaluateMemoryCall(object, callee, args);
+      return this.resourceCalls.callMemory(object, callee, args);
     }
 
     if (Array.isArray(object) && callee.property === "add") {
@@ -287,99 +288,6 @@ export class Evaluator {
     throw new RuntimeError(`Unsupported member call '${callee.property}'`, callee.range);
   }
 
-  private async evaluateToolCall(
-    object: ToolBinding,
-    callee: MemberExpr,
-    args: RuntimeValue[],
-    propertyRead = false,
-  ): Promise<RuntimeValue> {
-    const request = {
-      toolName: object.name,
-      uri: object.uri,
-      method: callee.property,
-      args,
-      propertyRead,
-    };
-    let result: RuntimeValue;
-    try {
-      result = await this.toolProvider.call(request);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      throw new RuntimeError(`Tool ${object.name}.${callee.property} (${object.uri}) failed: ${message}`, callee.range);
-    }
-    this.trace.push({
-      kind: "tool",
-      data: {
-        tool: object.name,
-        method: callee.property,
-        scheme: uriScheme(object.uri),
-        uri: object.uri,
-        args: sanitizeForJson(args),
-        result: sanitizeForJson(result),
-        effects: this.readEffects(result),
-      },
-    });
-    return result;
-  }
-
-  private async evaluateMemoryCall(
-    object: MemoryBinding,
-    callee: MemberExpr,
-    args: RuntimeValue[],
-  ): Promise<RuntimeValue> {
-    if (args.length !== 1) {
-      throw new RuntimeError(`memory.${callee.property} expects exactly one argument`, callee.range);
-    }
-
-    let result: RuntimeValue;
-    try {
-      if (callee.property === "add") {
-        result = await this.memoryProvider.add({
-          memoryName: object.name,
-          uri: object.uri,
-          record: args[0]!,
-        });
-      } else if (callee.property === "query") {
-        result = await this.memoryProvider.query({
-          memoryName: object.name,
-          uri: object.uri,
-          query: args[0]!,
-        });
-      } else {
-        throw new RuntimeError(`Unknown memory method '${callee.property}'`, callee.range);
-      }
-    } catch (error) {
-      if (error instanceof RuntimeError) {
-        throw error.range ? error : new RuntimeError(error.message, callee.range);
-      }
-      const message = error instanceof Error ? error.message : String(error);
-      throw new RuntimeError(
-        `Memory ${object.name}.${callee.property} (${object.uri}) failed: ${message}`,
-        callee.range,
-      );
-    }
-
-    const traceData = {
-      memory: object.name,
-      operation: callee.property,
-      uri: object.uri,
-      args: sanitizeForJson(args[0]!),
-      result: sanitizeForJson(result),
-      count: Array.isArray(result) ? result.length : null,
-    };
-    if (callee.property === "add" && isObject(result)) {
-      Object.assign(traceData, {
-        id: typeof result.id === "string" ? result.id : null,
-        record: sanitizeForJson(result.record),
-      });
-    }
-    this.trace.push({
-      kind: "memory",
-      data: traceData,
-    });
-    return result;
-  }
-
   private async evaluateAll(exprs: Expr[], scope: RuntimeScope): Promise<RuntimeValue[]> {
     const values: RuntimeValue[] = [];
     for (const expr of exprs) {
@@ -387,20 +295,8 @@ export class Evaluator {
     }
     return values;
   }
-
-  private readEffects(value: RuntimeValue): JsonValue {
-    if (isObject(value) && Array.isArray(value.effects)) {
-      return sanitizeForJson(value.effects);
-    }
-    return null;
-  }
 }
 
 function formatArithmeticOperand(value: RuntimeValue): string {
   return typeof value === "string" || typeof value === "number" || typeof value === "boolean" ? String(value) : "";
-}
-
-function isModuleTool(value: ToolBinding): boolean {
-  const scheme = uriScheme(value.uri);
-  return scheme === "npm" || scheme === "node";
 }

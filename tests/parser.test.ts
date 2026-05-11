@@ -279,6 +279,24 @@ describe("parse", () => {
     });
   });
 
+  it("parses subtraction without requiring surrounding spaces", () => {
+    const ast = parse(`
+      agent A {
+        func act(input) {
+          return input.total-input.used
+        }
+      }
+    `);
+
+    const stmt = ast.agents[0]!.functions[0]!.body[0]!;
+    expect(stmt.kind).toBe("ReturnStmt");
+    if (stmt.kind !== "ReturnStmt") return;
+    expect(stmt.value).toMatchObject({
+      kind: "BinaryExpr",
+      operator: "-",
+    });
+  });
+
   it("parses arithmetic before comparison", () => {
     const ast = parse(`
       agent A {
@@ -362,6 +380,40 @@ describe("parse", () => {
       }
     `),
     ).toThrow(ParseError);
+  });
+
+  it("rejects list items and call arguments with missing commas", () => {
+    expect(() =>
+      parse(`
+      agent A {
+        func act(input) {
+          return [1 2]
+        }
+      }
+    `),
+    ).toThrow(ParseError);
+
+    expect(() =>
+      parse(`
+      agent A {
+        func act(input) {
+          return run(1 2)
+        }
+      }
+    `),
+    ).toThrow(ParseError);
+  });
+
+  it("rejects same-line shape fields with missing separators", () => {
+    expect(() =>
+      parse(`
+      agent A {
+        func act(input) {
+          return generate({ input: "x" }) -> { ok boolean facts string }
+        }
+      }
+    `),
+    ).toThrow("Expected ',' or newline between shape fields");
   });
 
   it("parses list index access as a postfix expression", () => {

@@ -8,6 +8,7 @@ import type {
   RuntimeValue,
   ToolBinding,
 } from "./types.js";
+import { URI_BINDING_KINDS } from "../language/bindings.js";
 
 export function isToolBinding(value: RuntimeValue): value is ToolBinding {
   return isResourceBinding(value, "tool");
@@ -37,8 +38,6 @@ export function isRuntimeResource(value: RuntimeValue): value is RuntimeResource
   return typeof value === "object" && value !== null && !Array.isArray(value) && "__agentScriptResource" in value;
 }
 
-const RESOURCE_KINDS_WITH_URI = new Set(["tool", "llm", "memory"]);
-
 function isResourceBinding(
   value: RuntimeValue,
   resourceKind: "tool" | "llm" | "function" | "agent" | "memory",
@@ -53,7 +52,7 @@ function isResourceBinding(
     return false;
   }
   const binding = value as Record<string, unknown>;
-  if (RESOURCE_KINDS_WITH_URI.has(resourceKind)) {
+  if (URI_BINDING_KINDS.has(resourceKind)) {
     return typeof binding.name === "string" && typeof binding.uri === "string";
   }
   if (resourceKind === "function") {

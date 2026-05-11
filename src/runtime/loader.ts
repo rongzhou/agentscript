@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { dirname, isAbsolute, resolve } from "node:path";
 import type { AgentDecl, ImportDecl, Program } from "../ast/types.js";
 import { parse } from "../parser/parser.js";
-import { splitSqliteUri } from "./uri.js";
+import { splitSqliteUri } from "../language/uri.js";
 
 export interface LoadProgramOptions {
   sourcePath?: string;
@@ -10,6 +10,7 @@ export interface LoadProgramOptions {
 
 interface LoadState {
   agentImportKeys: Set<string>;
+  importedAgentKeys: Set<string>;
   imports: ImportDecl[];
   importKeys: Set<string>;
   loadingFiles: Set<string>;
@@ -53,6 +54,7 @@ function ensureNoRelativeImports(program: Program): void {
 function createLoadState(): LoadState {
   return {
     agentImportKeys: new Set(),
+    importedAgentKeys: new Set(),
     imports: [],
     importKeys: new Set(),
     loadingFiles: new Set(),
@@ -113,10 +115,9 @@ function loadAgentImport(imported: ImportDecl, baseDir: string, state: LoadState
     if (!agent) {
       throw new Error(`Imported agent '${imported.name}' was not found in ${imported.uri}`);
     }
-    state.agents.push({
-      ...agent,
-      isMain: false,
-    });
+    for (const item of program.agents) {
+      addImportedAgent({ ...item, isMain: false }, path, state);
+    }
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     throw new Error(`Failed to load agent import '${imported.name}' from ${path}: ${message}`);
@@ -132,6 +133,15 @@ function addImport(imported: ImportDecl, state: LoadState): void {
   }
   state.importKeys.add(key);
   state.imports.push(imported);
+}
+
+function addImportedAgent(agent: AgentDecl, sourcePath: string, state: LoadState): void {
+  const key = `${sourcePath}#${agent.name}`;
+  if (state.importedAgentKeys.has(key)) {
+    return;
+  }
+  state.importedAgentKeys.add(key);
+  state.agents.push(agent);
 }
 
 function normalizeImport(imported: ImportDecl, baseDir: string): ImportDecl {

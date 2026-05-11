@@ -1,6 +1,5 @@
-import type { ConfigKey, FuncDecl, ImportResourceKind, SourceRange } from "../ast/types.js";
-
-export type BindingKind = "param" | "local" | "function" | "tool" | "llm" | "file" | "agent" | "memory";
+import type { ConfigKey, FuncDecl, SourceRange } from "../ast/types.js";
+import { IMPORTED_BINDING_KINDS, type BindingKind } from "../language/bindings.js";
 
 export interface Binding {
   kind: BindingKind;
@@ -11,17 +10,21 @@ export interface Binding {
   uri?: string;
 }
 
+export type DefineResult = { ok: true } | { ok: false; existing: Binding };
+
 export class SemanticScope {
   private readonly bindings = new Map<string, Binding>();
   private readonly configs = new Set<ConfigKey>();
 
   constructor(private readonly parent?: SemanticScope) {}
 
-  define(name: string, binding: Binding): void {
-    if (this.bindings.has(name)) {
-      return;
+  define(name: string, binding: Binding): DefineResult {
+    const existing = this.bindings.get(name);
+    if (existing) {
+      return { ok: false, existing };
     }
     this.bindings.set(name, binding);
+    return { ok: true };
   }
 
   isLocalToThisScope(name: string): boolean {
@@ -45,9 +48,6 @@ export class SemanticScope {
   }
 }
 
-export const IMPORTED_BINDING_KINDS = new Set<BindingKind>(["tool", "llm", "file", "agent", "memory"]);
-export const NON_CONTEXT_BINDING_KINDS = new Set<BindingKind>(["tool", "llm", "agent", "function", "memory"]);
-
 export function functionBinding(agentName: string, fn: FuncDecl): Binding {
   return {
     kind: "function",
@@ -60,8 +60,4 @@ export function functionBinding(agentName: string, fn: FuncDecl): Binding {
 
 export function isImportedBinding(kind: BindingKind): boolean {
   return IMPORTED_BINDING_KINDS.has(kind);
-}
-
-export function importResourceKindToBindingKind(resourceKind: ImportResourceKind): BindingKind {
-  return resourceKind;
 }

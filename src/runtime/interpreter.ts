@@ -1,14 +1,13 @@
-import { readFileSync } from "node:fs";
-import { dirname, extname, isAbsolute, resolve } from "node:path";
 import type { AgentDecl, CallExpr, FuncDecl, Program, Stmt, UseStmt } from "../ast/types.js";
 import { formatExpressionSource } from "../ast/format.js";
-import { assertSemanticallyValid } from "../semantic/analyzer.js";
+import { createAgentMap, findFunction, requireAgent, resolveEntryAgent, resolveMainFunction } from "./agents.js";
 import { Evaluator } from "./evaluator.js";
 import { RuntimeError } from "./errors.js";
 import { GenerateRuntime } from "./generate.js";
 import { isObject } from "./guards.js";
 import { budgetToJson, sanitizeForJson } from "./json.js";
 import { prepareEntryInput } from "./input.js";
+import { createRuntimeImportBindings, programSourceDir, type RuntimeImportBinding } from "./imports.js";
 import { RuntimeScope } from "./scope.js";
 import { assertNever } from "../utils/assert.js";
 import { isTruthy } from "./truth.js";
@@ -40,12 +39,6 @@ interface ReturnSignal {
   value: RuntimeValue;
 }
 
-interface ImportBinding {
-  name: string;
-  kind: "tool" | "llm" | "file" | "memory";
-  value: RuntimeValue;
-}
-
 type StatementResult = ReturnSignal | undefined;
 const MAX_CALL_DEPTH = 1000;
 
@@ -54,7 +47,6 @@ export async function executeAgent(
   input: RuntimeValue,
   options: ExecuteOptions = {},
 ): Promise<ExecuteResult> {
-  assertSemanticallyValid(program);
   const interpreter = new Interpreter(program, options);
   const value = await interpreter.execute(input);
   return { value, trace: interpreter.trace };
@@ -70,22 +62,23 @@ class Interpreter {
   private readonly entryFunction: string;
   private readonly agent: AgentDecl;
   private currentAgent: AgentDecl;
-  private readonly agents = new Map<string, AgentDecl>();
-  private readonly imports: ImportBinding[] = [];
+  private readonly agents: Map<string, AgentDecl>;
+  private readonly imports: RuntimeImportBinding[];
   private callDepth = 0;
 
   constructor(
-    private readonly program: Program,
+    program: Program,
     private readonly options: ExecuteOptions,
   ) {
     this.llmProvider = options.llmProvider ?? new MockLlmProvider();
     this.inputProvider = options.inputProvider;
     this.toolProvider = options.toolProvider ?? createDefaultToolProvider(options.workspaceRoot);
+    const sourceDir = programSourceDir(options.sourcePath);
     this.memoryProvider =
       options.memoryProvider ??
       createDefaultMemoryProvider({
-        baseDir: this.programSourceDir(),
-        workspaceRoot: options.workspaceRoot ?? this.programSourceDir(),
+        baseDir: sourceDir,
+        workspaceRoot: options.workspaceRoot ?? sourceDir,
       });
     const generateRuntime = new GenerateRuntime(this.llmProvider, this.trace, {
       currentAgent: () => this.currentAgent,
@@ -98,79 +91,18 @@ class Interpreter {
       concurrency: () => this.options.concurrency ?? 4,
       evaluateBlockFinalValue: (statements, scope) => this.evaluateBlockFinalValue(statements, scope),
       requireAgent: (name, range) => this.requireAgent(name, range),
-      resolveMainFunction: (agent) => this.resolveMainFunction(agent),
+      resolveMainFunction,
     });
-    for (const agent of program.agents) {
-      this.agents.set(agent.name, agent);
-    }
-    this.agent = this.resolveAgent(options.agentName);
+    this.agents = createAgentMap(program);
+    this.agent = resolveEntryAgent(program, options.agentName);
     this.currentAgent = this.agent;
-    this.entryFunction = options.functionName ?? this.resolveMainFunction(this.agent).name;
-
-    this.registerImports(program);
-  }
-
-  private registerImports(program: Program): void {
-    for (const imported of program.imports) {
-      switch (imported.resourceKind) {
-        case "tool":
-          this.imports.push({
-            name: imported.name,
-            kind: "tool",
-            value: { __agentScriptResource: "tool", name: imported.name, uri: imported.uri },
-          });
-          break;
-        case "llm":
-          this.imports.push({
-            name: imported.name,
-            kind: "llm",
-            value: { __agentScriptResource: "llm", name: imported.name, uri: imported.uri },
-          });
-          break;
-        case "file":
-          this.imports.push({
-            name: imported.name,
-            kind: "file",
-            value: this.loadImportedFile(imported.uri),
-          });
-          break;
-        case "memory":
-          this.imports.push({
-            name: imported.name,
-            kind: "memory",
-            value: { __agentScriptResource: "memory", name: imported.name, uri: imported.uri },
-          });
-          break;
-      }
-    }
-  }
-
-  private loadImportedFile(uri: string): RuntimeValue {
-    const path = this.resolveImportPath(uri);
-    const content = readFileSync(path, "utf8");
-    if (extname(path).toLowerCase() === ".json") {
-      return JSON.parse(content) as RuntimeValue;
-    }
-    return content;
-  }
-
-  private resolveImportPath(uri: string): string {
-    if (uri.startsWith("file://")) {
-      return new URL(uri).pathname;
-    }
-    if (isAbsolute(uri)) {
-      return uri;
-    }
-    return resolve(this.programSourceDir(), uri);
-  }
-
-  private programSourceDir(): string {
-    return this.options.sourcePath ? dirname(resolve(this.options.sourcePath)) : process.cwd();
+    this.entryFunction = options.functionName ?? resolveMainFunction(this.agent).name;
+    this.imports = createRuntimeImportBindings(program, sourceDir);
   }
 
   async execute(input: RuntimeValue): Promise<RuntimeValue> {
     try {
-      const entry = this.findFunction(this.agent, this.entryFunction);
+      const entry = findFunction(this.agent, this.entryFunction);
       if (!entry) {
         throw new RuntimeError(`Unknown function '${this.entryFunction}'`);
       }
@@ -182,33 +114,13 @@ class Interpreter {
     }
   }
 
-  private resolveAgent(agentName?: string): AgentDecl {
-    if (agentName) {
-      const agent = this.program.agents.find((item) => item.name === agentName);
-      if (!agent) throw new RuntimeError(`Unknown agent '${agentName}'`);
-      return agent;
-    }
-    const main = this.program.agents.find((item) => item.isMain);
-    if (main) return main;
-    if (this.program.agents.length !== 1) {
-      throw new RuntimeError("main agent is required when a program contains multiple agents");
-    }
-    return this.program.agents[0]!;
-  }
-
-  private resolveMainFunction(agent: AgentDecl): FuncDecl {
-    const main = agent.functions.find((fn) => fn.isMain);
-    if (main) return main;
-    throw new RuntimeError(`Agent '${agent.name}' has no main func`);
-  }
-
   private async callFunction(
     agent: AgentDecl,
     name: string,
     args: RuntimeValue[],
     range?: CallExpr["range"],
   ): Promise<RuntimeValue> {
-    const fn = this.findFunction(agent, name);
+    const fn = findFunction(agent, name);
     if (!fn) {
       throw new RuntimeError(`Unknown function '${agent.name}.${name}'`, range);
     }
@@ -268,10 +180,6 @@ class Interpreter {
     return scope;
   }
 
-  private findFunction(agent: AgentDecl, name: string): FuncDecl | undefined {
-    return agent.functions.find((fn) => fn.name === name);
-  }
-
   private async executeBlock(
     statements: Stmt[],
     scope: RuntimeScope,
@@ -309,7 +217,7 @@ class Interpreter {
       case "AssignStmt": {
         const value = await this.evaluator.evaluateAssignmentValue(stmt, scope);
         if (stmt.target.kind === "IdentifierExpr") {
-          scope.set(stmt.target.name, value);
+          scope.set(stmt.target.name, value, stmt.target.range);
           return undefined;
         }
         if (stmt.target.kind === "MemberExpr") {
@@ -410,9 +318,7 @@ class Interpreter {
   }
 
   private requireAgent(name: string, range?: CallExpr["range"]): AgentDecl {
-    const agent = this.agents.get(name);
-    if (!agent) throw new RuntimeError(`Unknown agent '${name}'`, range);
-    return agent;
+    return requireAgent(this.agents, name, range);
   }
 
   private declareUse(stmt: UseStmt, scope: RuntimeScope): void {

@@ -1,7 +1,7 @@
 import { isAbsolute, relative, resolve } from "node:path";
 import { RuntimeError } from "../../runtime/errors.js";
 import { isObject } from "../../runtime/guards.js";
-import { splitSqliteUri, uriScheme } from "../../runtime/uri.js";
+import { splitSqliteUri, uriScheme } from "../../language/uri.js";
 import type { MemoryAddRequest, MemoryProvider, MemoryQueryRequest, RuntimeValue } from "../../runtime/types.js";
 import { FileMemoryBackend } from "./file.js";
 import { SqliteMemoryBackend, type SqliteMemoryTarget } from "./sqlite.js";

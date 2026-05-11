@@ -13,7 +13,7 @@ import { checkNodeImport, checkNpmImport, loadNpmRegistry } from "../providers/t
 import { buildValueFromShape } from "../runtime/shape.js";
 import { sanitizeForJson } from "../runtime/json.js";
 import { formatTrace } from "../runtime/trace.js";
-import { uriScheme } from "../runtime/uri.js";
+import { uriScheme } from "../language/uri.js";
 import type {
   GenerateRequest,
   InputProvider,
@@ -24,7 +24,7 @@ import type {
   ToolProvider,
 } from "../runtime/types.js";
 import { analyze } from "../semantic/analyzer.js";
-import { formatSemanticDiagnostics } from "../semantic/diagnostics.js";
+import { formatSemanticDiagnostics, SemanticError } from "../semantic/diagnostics.js";
 import { createReadlineInputProvider, parseJsonObjectInput } from "./input.js";
 import { runRepl } from "./repl.js";
 import type { Program } from "../ast/types.js";
@@ -146,9 +146,6 @@ function parseArgs(argv: string[]): CliOptions {
           const value = readOptionalOptionValue(argv, index + 1);
           if (!value) {
             options.tracePretty = true;
-          } else if (value === "pretty") {
-            index += 1;
-            options.tracePretty = true;
           } else {
             index += 1;
             options.traceFile = value;
@@ -217,7 +214,9 @@ function runCheck(options: CliOptions): number {
 async function runAgent(options: CliOptions): Promise<number> {
   const input = readInput(options);
   const inputProvider = terminalInputProvider();
-  const result = await executeAgent(loadCliProgram(options), input, {
+  const program = loadCliProgram(options);
+  assertCliProgramSemanticallyValid(program);
+  const result = await executeAgent(program, input, {
     agentName: options.agentName,
     concurrency: options.concurrency,
     functionName: options.functionName,
@@ -251,6 +250,14 @@ function createCliLlmProvider(options: CliOptions): LlmProvider {
     return new MockLlmProvider();
   }
   return new ProtocolLlmProvider();
+}
+
+function assertCliProgramSemanticallyValid(program: Program): void {
+  const result = analyze(program, { npmRegistry: loadNpmRegistry(process.cwd()) });
+  const errors = result.diagnostics.filter((diagnostic) => diagnostic.severity === "error");
+  if (errors.length > 0) {
+    throw new SemanticError(errors);
+  }
 }
 
 class DryRunLlmProvider implements LlmProvider {

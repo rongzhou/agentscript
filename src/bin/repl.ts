@@ -8,7 +8,7 @@ import { loadProgramSource } from "../runtime/loader.js";
 import { formatTrace } from "../runtime/trace.js";
 import type { TraceEvent } from "../runtime/types.js";
 import { analyze } from "../semantic/analyzer.js";
-import { formatSemanticDiagnostics } from "../semantic/diagnostics.js";
+import { formatSemanticDiagnostics, SemanticError } from "../semantic/diagnostics.js";
 import { createReadlineInputProvider, parseJsonObjectInput } from "./input.js";
 
 const MAIN_AGENT_PATTERN = /^\s*main\s+agent\b/;
@@ -121,10 +121,10 @@ async function handleCommand(commandLine: string, session: ReplSession, reader: 
       await runSession(session, args, reader);
       return true;
     case "trace":
-      if (args === "pretty") {
+      if (args.length === 0) {
         console.log(formatTrace(session.lastTrace));
       } else {
-        console.log(JSON.stringify(session.lastTrace, null, 2));
+        console.error("Usage: :trace");
       }
       return true;
     case "reset":
@@ -233,6 +233,7 @@ function checkSession(session: ReplSession): boolean {
 
 async function runSession(session: ReplSession, inputJson: string, reader: ReplReader): Promise<void> {
   const program = loadSessionProgram(session);
+  assertSessionSemanticallyValid(program);
   const input = inputJson.trim().length > 0 ? parseJsonObjectInput(inputJson, ":run input") : {};
   const result = await executeAgent(program, input, {
     inputProvider: createReadlineInputProvider(reader),
@@ -240,6 +241,14 @@ async function runSession(session: ReplSession, inputJson: string, reader: ReplR
   });
   session.lastTrace = result.trace;
   console.log(JSON.stringify({ value: sanitizeForJson(result.value), trace: result.trace }, null, 2));
+}
+
+function assertSessionSemanticallyValid(program: ReturnType<typeof loadSessionProgram>): void {
+  const result = analyze(program);
+  const errors = result.diagnostics.filter((diagnostic) => diagnostic.severity === "error");
+  if (errors.length > 0) {
+    throw new SemanticError(errors);
+  }
 }
 
 function printAgents(session: ReplSession): void {
@@ -263,7 +272,7 @@ function printHelp(): void {
     ":check",
     ":parse",
     ":run [json]",
-    ":trace [pretty]",
+    ":trace",
     ":reset",
     ":exit",
   ];

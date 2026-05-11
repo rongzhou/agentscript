@@ -193,11 +193,7 @@ export interface ShapeField extends NodeBase {
   type: ShapeTypeExpr;
 }
 
-const NAMED_SHAPE_TYPE_NAMES = ["string", "number", "boolean", "json", "list"] as const;
-
-export type NamedShapeTypeName = (typeof NAMED_SHAPE_TYPE_NAMES)[number];
-
-export const SHAPE_TYPE_NAMES: ReadonlySet<string> = new Set(NAMED_SHAPE_TYPE_NAMES);
+export type NamedShapeTypeName = "string" | "number" | "boolean" | "json" | "list";
 
 export type ShapeTypeExpr = NamedShapeType | ListShapeType;
 

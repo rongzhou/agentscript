@@ -1,13 +1,5 @@
 import { assertNever } from "../utils/assert.js";
-import type { Expr, ObjectProperty, SourceLocation, SourceRange } from "./types.js";
-
-export function formatSourceLocation(location: SourceLocation): string {
-  return `${location.line}:${location.column}`;
-}
-
-export function formatSourceRangeStart(range: SourceRange): string {
-  return formatSourceLocation(range.start);
-}
+import type { Expr, ObjectProperty } from "./types.js";
 
 export function formatExpressionSource(expr: Expr): string {
   switch (expr.kind) {

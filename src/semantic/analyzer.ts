@@ -1,4 +1,5 @@
 import type { AgentDecl, ConfigDecl, Expr, GenerateExpr, Program, SourceRange, Stmt } from "../ast/types.js";
+import { childExpressions } from "../ast/walk.js";
 import { REQUIRED_GENERATE_CONFIG_KEYS } from "../language/config.js";
 import type { NpmRegistry } from "../providers/tools/npm-registry.js";
 import { createAgentScope, createFunctionScope, defineAgentFunctions } from "./agents.js";
@@ -17,7 +18,6 @@ import { blockEndsWithExpression, checkParallelForBodyRules } from "./parallel-f
 import { collectProgramDeclarations, type ImportBindingDecl } from "./program.js";
 import { checkShapeObject } from "./shape.js";
 import { SemanticScope } from "./scope.js";
-import { childExpressions } from "./traverse.js";
 import { checkUseRules } from "./use.js";
 
 export interface AnalyzeOptions {

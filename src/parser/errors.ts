@@ -1,5 +1,5 @@
-import { formatSourceLocation } from "../ast/format.js";
 import type { SourceLocation } from "../ast/types.js";
+import { formatSourceLocation } from "../utils/location.js";
 
 export class ParseError extends Error {
   readonly location: SourceLocation;

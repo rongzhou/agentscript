@@ -1,5 +1,5 @@
-import { formatSourceRangeStart } from "../ast/format.js";
 import type { SourceRange } from "../ast/types.js";
+import { formatSourceRangeStart } from "../utils/location.js";
 
 export type DiagnosticSeverity = "error" | "warning";
 

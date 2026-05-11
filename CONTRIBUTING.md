@@ -35,6 +35,7 @@ For language changes:
 - Update semantic tests when name resolution, resource binding, or validation rules change.
 - Update runtime tests when execution behavior changes.
 - Update docs and tutorials when user-facing behavior changes.
+- Prefer exhaustive `switch` statements over AST `kind` unions without a `default` branch so TypeScript reports newly added variants at compile time.
 
 For tool, memory, or provider changes:
 

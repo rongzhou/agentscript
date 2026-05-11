@@ -1,9 +1,10 @@
 import type { Expr, Stmt } from "../ast/types.js";
+import { childExpressions } from "../ast/walk.js";
 import { isEffectfulMemoryMethod } from "../language/memory.js";
 import { isEffectfulToolCall } from "../language/tools.js";
 import { errorDiagnostic as error, type SemanticDiagnostic } from "./diagnostics.js";
 import type { SemanticScope } from "./scope.js";
-import { childExpressions, memberRootName } from "./traverse.js";
+import { memberRootName } from "./traverse.js";
 
 export function blockEndsWithExpression(statements: Stmt[]): boolean {
   return statements.length > 0 && statements[statements.length - 1]?.kind === "ExprStmt";

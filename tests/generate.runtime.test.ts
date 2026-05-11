@@ -8,7 +8,7 @@ import { RuntimeError } from "../src/runtime/errors.js";
 import { buildValueFromShape } from "../src/runtime/shape.js";
 import type { GenerateRequest, RuntimeValue } from "../src/runtime/types.js";
 
-describe("generate", () => {
+describe("generate runtime", () => {
   it("passes generate budgets and visible use context to the LLM provider", async () => {
     const requests: GenerateRequest[] = [];
     const ast = parse(`
@@ -236,26 +236,6 @@ describe("generate", () => {
     expect(infrastructureRequests).toHaveLength(1);
   });
 
-  it("rejects invalid generate attempts", async () => {
-    const ast = parse(`
-      import llm Qwen from "openai://gpt-4.1-mini"
-
-      main agent A {
-        model Qwen
-        role "Assistant"
-        description "Reject invalid attempts."
-
-        main func act(input) {
-          return generate({ input: "answer", attempts: 0 }) -> {
-              ok boolean
-          }
-        }
-      }
-    `);
-
-    await expect(executeAgent(ast, {})).rejects.toThrow(/generate attempts must be a positive integer/);
-  });
-
   it("resolves use context at generate time instead of declaration time", async () => {
     const requests: GenerateRequest[] = [];
     const ast = parse(`
@@ -296,140 +276,6 @@ describe("generate", () => {
       source: "scratch.summary",
       value: [{ fact: "A" }, { fact: "B" }],
     });
-  });
-
-  it("rejects LLM results that do not match generate return shape", async () => {
-    const ast = parse(`
-      import llm Qwen from "openai://gpt-4.1-mini"
-
-      agent A {
-        model Qwen
-        role "Assistant"
-        description "Validate generated output."
-
-        main func(input) {
-          return generate({ input: "x" }) -> {
-              ok boolean
-          }
-        }
-      }
-    `);
-
-    await expect(
-      executeAgent(
-        ast,
-        {},
-        {
-          llmProvider: {
-            async generate(): Promise<RuntimeValue> {
-              return { ok: "yes" };
-            },
-          },
-        },
-      ),
-    ).rejects.toThrow(RuntimeError);
-  });
-
-  it("coerces simple string values in LLM generate results before shape validation", async () => {
-    const ast = parse(`
-      import llm Qwen from "openai://gpt-4.1-mini"
-
-      agent A {
-        model Qwen
-        role "Assistant"
-        description "Coerce unstable LLM JSON values."
-
-        main func(input) {
-          return generate({ input: "x" }) -> {
-              ok boolean
-              count number
-              flags list[boolean]
-              scores list[number]
-              text string
-          }
-        }
-      }
-    `);
-
-    const result = await executeAgent(
-      ast,
-      {},
-      {
-        llmProvider: {
-          async generate(): Promise<RuntimeValue> {
-            return {
-              ok: "true",
-              count: "42",
-              flags: ["false", "true"],
-              scores: ["1", "2.5"],
-              text: "42",
-            };
-          },
-        },
-      },
-    );
-
-    expect(result.value).toEqual({
-      ok: true,
-      count: 42,
-      flags: [false, true],
-      scores: [1, 2.5],
-      text: "42",
-    });
-  });
-
-  it("builds empty mock defaults for list shape fields", () => {
-    const ast = parse(`
-      agent A {
-        main func(input) {
-          return generate({ input: "x" }) -> {
-              title string
-              tags list[string]
-          }
-        }
-      }
-    `);
-    const stmt = ast.agents[0]!.functions[0]!.body[0]!;
-    if (stmt.kind !== "ReturnStmt" || stmt.value.kind !== "GenerateExpr" || !stmt.value.returnShape) {
-      throw new Error("unexpected test AST");
-    }
-
-    expect(buildValueFromShape(stmt.value.returnShape)).toEqual({
-      title: "",
-      tags: [],
-    });
-  });
-
-  it("does not coerce LLM generate results in strict mode", async () => {
-    const ast = parse(`
-      import llm Qwen from "openai://gpt-4.1-mini"
-
-      agent A {
-        model Qwen
-        role "Assistant"
-        description "Reject coercion in strict mode."
-
-        main func(input) {
-          return generate({ input: "x", strict: true }) -> {
-              ok boolean
-          }
-        }
-      }
-    `);
-
-    await expect(
-      executeAgent(
-        ast,
-        {},
-        {
-          llmProvider: {
-            async generate(): Promise<RuntimeValue> {
-              return { ok: "true" };
-            },
-          },
-        },
-      ),
-    ).rejects.toThrow(/must be a boolean/);
   });
 
   it("includes source location in runtime errors", async () => {

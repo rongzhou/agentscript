@@ -49,6 +49,14 @@ export async function postJson(
   return parseProviderJson(text);
 }
 
+export function finalizeLlmResponse(text: string, request: GenerateRequest): RuntimeValue {
+  return request.returnShape ? parseJsonText(text) : text;
+}
+
+/**
+ * Parses LLM text as JSON for structured generate responses.
+ * Candidate order is: the entire text, fenced markdown blocks, then the first balanced JSON object.
+ */
 export function parseJsonText(text: string): RuntimeValue {
   const candidates = [text, ...extractJsonCandidates(text)];
   try {

@@ -1,5 +1,5 @@
 import type { GenerateRequest, JsonObject, RuntimeValue } from "../../runtime/types.js";
-import { budgetToTokenLimit, parseJsonText, postJson, readPath, requireApiKey } from "./shared.js";
+import { budgetToTokenLimit, finalizeLlmResponse, postJson, readPath, requireApiKey } from "./shared.js";
 import type { FetchLike, ParsedLlmUri, ProtocolLlmProviderOptions } from "./types.js";
 
 export async function callOpenAI(
@@ -45,7 +45,7 @@ export async function callOpenAI(
     authorization: `Bearer ${apiKey}`,
   });
   const text = readPath(response, ["choices", 0, "message", "content"]);
-  return request.returnShape ? parseJsonText(text) : text;
+  return finalizeLlmResponse(text, request);
 }
 
 function openAIReasoningEffort(think: boolean | string | undefined): string | undefined {

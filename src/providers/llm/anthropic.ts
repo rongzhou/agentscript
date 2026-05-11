@@ -1,6 +1,6 @@
 import { RuntimeError } from "../../runtime/errors.js";
 import type { GenerateRequest, JsonObject, JsonValue, RuntimeValue } from "../../runtime/types.js";
-import { budgetToTokenLimit, parseJsonText, postJson, requireApiKey } from "./shared.js";
+import { budgetToTokenLimit, finalizeLlmResponse, postJson, requireApiKey } from "./shared.js";
 import type { FetchLike, ParsedLlmUri, ProtocolLlmProviderOptions } from "./types.js";
 
 export async function callAnthropic(
@@ -33,7 +33,7 @@ export async function callAnthropic(
     "anthropic-version": "2023-06-01",
   });
   const text = readAnthropicText(response);
-  return request.returnShape ? parseJsonText(text) : text;
+  return finalizeLlmResponse(text, request);
 }
 
 function readAnthropicText(value: JsonValue): string {

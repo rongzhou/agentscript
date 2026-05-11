@@ -1,6 +1,6 @@
 import { RuntimeError } from "../../runtime/errors.js";
 import type { LlmBinding } from "../../runtime/types.js";
-import { SUPPORTED_LLM_PROTOCOLS, type LlmProtocol, type ParsedLlmUri } from "./types.js";
+import { SUPPORTED_LLM_PROTOCOL_SET, type LlmProtocol, type ParsedLlmUri } from "./types.js";
 
 export function parseLlmUri(model: LlmBinding): ParsedLlmUri {
   if (!model.uri.includes("://")) {
@@ -29,5 +29,5 @@ export function parseLlmUri(model: LlmBinding): ParsedLlmUri {
 }
 
 function isSupportedLlmProtocol(value: string): value is LlmProtocol {
-  return SUPPORTED_LLM_PROTOCOLS.has(value as LlmProtocol);
+  return SUPPORTED_LLM_PROTOCOL_SET.has(value as LlmProtocol);
 }

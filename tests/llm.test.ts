@@ -202,6 +202,48 @@ describe("ProtocolLlmProvider", () => {
     await expect(provider.generate(makeRequest("openai://gpt-4.1-mini"))).resolves.toEqual({ ok: true });
   });
 
+  it("extracts embedded JSON with braces inside strings", async () => {
+    const provider = new ProtocolLlmProvider({
+      openaiApiKey: "test-key",
+      fetch: async () =>
+        jsonResponse({
+          choices: [
+            {
+              message: {
+                content: `Result: ${JSON.stringify({ text: "literal } brace", ok: true })}`,
+              },
+            },
+          ],
+        }),
+    });
+
+    await expect(provider.generate(makeRequest("openai://gpt-4.1-mini"))).resolves.toEqual({
+      text: "literal } brace",
+      ok: true,
+    });
+  });
+
+  it("parses top-level JSON arrays from model text", async () => {
+    const provider = new ProtocolLlmProvider({
+      openaiApiKey: "test-key",
+      fetch: async () =>
+        jsonResponse({
+          choices: [
+            {
+              message: {
+                content: JSON.stringify([{ ok: true }, { ok: false }]),
+              },
+            },
+          ],
+        }),
+    });
+
+    await expect(provider.generate(makeRequest("openai://gpt-4.1-mini"))).resolves.toEqual([
+      { ok: true },
+      { ok: false },
+    ]);
+  });
+
   it("extracts fenced JSON from model text", async () => {
     const provider = new ProtocolLlmProvider({
       openaiApiKey: "test-key",

@@ -1,6 +1,6 @@
 import { RuntimeError } from "../../runtime/errors.js";
 import type { GenerateRequest, JsonObject, RuntimeValue } from "../../runtime/types.js";
-import { budgetToTokenLimit, parseJsonText, postJson, readPath } from "./shared.js";
+import { budgetToTokenLimit, finalizeLlmResponse, postJson, readPath } from "./shared.js";
 import type { FetchLike, ParsedLlmUri } from "./types.js";
 
 export async function callOllama(
@@ -41,7 +41,7 @@ export async function callOllama(
       "Ollama returned thinking output but no final content. Increase generate max_output or disable think.",
     );
   }
-  return request.returnShape ? parseJsonText(text) : text;
+  return finalizeLlmResponse(text, request);
 }
 
 function hasOllamaThinking(response: unknown): boolean {

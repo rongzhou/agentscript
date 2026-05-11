@@ -1,5 +1,5 @@
 import type { AgentDecl, CallExpr, Expr, FuncDecl, SourceRange } from "../ast/types.js";
-import { isMemoryMethod } from "../language/memory.js";
+import { getMemoryMethodSpec } from "../language/memory.js";
 import { errorDiagnostic as error, type SemanticDiagnostic } from "./diagnostics.js";
 import { type Binding, type SemanticScope, functionBinding } from "./scope.js";
 
@@ -47,7 +47,7 @@ function checkCallable(callee: Expr, scope: SemanticScope, host: CallCheckHost):
     host.checkExpression(callee.object, scope);
     if (callee.object.kind === "IdentifierExpr") {
       const binding = scope.resolve(callee.object.name);
-      if (binding?.kind === "memory" && !isMemoryMethod(callee.property)) {
+      if (binding?.kind === "memory" && !getMemoryMethodSpec(callee.property)) {
         return [
           error(
             "UNKNOWN_MEMORY_METHOD",
@@ -109,12 +109,13 @@ function checkMemoryMethodArity(expr: CallExpr): SemanticDiagnostic[] {
     return [];
   }
   const methodName = `${expr.callee.object.name}.${expr.callee.property}`;
-  if (isMemoryMethod(expr.callee.property)) {
-    if (expr.args.length !== 1) {
+  const spec = getMemoryMethodSpec(expr.callee.property);
+  if (spec) {
+    if (expr.args.length !== spec.arity) {
       return [
         error(
           "INVALID_ARGUMENT_COUNT",
-          `Memory method '${methodName}' expects 1 argument(s), got ${expr.args.length}`,
+          `Memory method '${methodName}' expects ${spec.arity} argument(s), got ${expr.args.length}`,
           expr.range,
         ),
       ];

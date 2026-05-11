@@ -1,4 +1,5 @@
 import type { ShapeObjectExpr, ShapeTypeExpr } from "../ast/types.js";
+import { shapeTypeJsonSchema } from "../language/shape.js";
 import type { JsonObject } from "./types.js";
 
 export function shapeToSchema(shape: ShapeObjectExpr): JsonObject {
@@ -18,17 +19,9 @@ export function shapeToSchema(shape: ShapeObjectExpr): JsonObject {
   };
 }
 
-const SHAPE_TYPE_TO_JSON_SCHEMA: Record<string, JsonObject> = {
-  string: { type: "string" },
-  number: { type: "number" },
-  boolean: { type: "boolean" },
-  json: {},
-  list: { type: "array" },
-};
-
 function shapeTypeToSchema(type: ShapeTypeExpr): JsonObject {
   if (type.kind === "ListShapeType") {
     return { type: "array", items: shapeTypeToSchema(type.itemType) };
   }
-  return SHAPE_TYPE_TO_JSON_SCHEMA[type.name] ?? {};
+  return shapeTypeJsonSchema(type.name);
 }

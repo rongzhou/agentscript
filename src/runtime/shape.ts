@@ -1,4 +1,5 @@
 import type { ShapeObjectExpr, ShapeTypeExpr, SourceRange } from "../ast/types.js";
+import { shapeTypeDefaultValue } from "../language/shape.js";
 import { RuntimeError } from "./errors.js";
 import { isObject, isRuntimeResource } from "./guards.js";
 import type { JsonObject, JsonValue, RuntimeObject, RuntimeValue } from "./types.js";
@@ -54,34 +55,29 @@ export function coerceValueToShape(value: RuntimeValue, shape: ShapeObjectExpr):
 type ShapeValidator = (value: RuntimeValue, range?: SourceRange, errorPrefix?: string) => void;
 
 interface ShapeTypeConfig {
-  default: JsonValue;
   validate: ShapeValidator;
   coerce?: (value: RuntimeValue) => RuntimeValue;
 }
 
 const SHAPE_TYPE_CONFIG: Record<string, ShapeTypeConfig> = {
   string: {
-    default: "",
     validate: (value, range, errorPrefix = "LLM result field") => {
       if (typeof value !== "string") throw new RuntimeError(`${errorPrefix} must be a string`, range);
     },
   },
   number: {
-    default: 0,
     validate: (value, range, errorPrefix = "LLM result field") => {
       if (typeof value !== "number") throw new RuntimeError(`${errorPrefix} must be a number`, range);
     },
     coerce: coerceStringToNumber,
   },
   boolean: {
-    default: true,
     validate: (value, range, errorPrefix = "LLM result field") => {
       if (typeof value !== "boolean") throw new RuntimeError(`${errorPrefix} must be a boolean`, range);
     },
     coerce: coerceStringToBoolean,
   },
   json: {
-    default: {},
     validate: (value, range, errorPrefix = "LLM result json field") => {
       if (isRuntimeResource(value)) {
         throw new RuntimeError(`${errorPrefix} cannot contain runtime resource bindings`, range);
@@ -89,7 +85,6 @@ const SHAPE_TYPE_CONFIG: Record<string, ShapeTypeConfig> = {
     },
   },
   list: {
-    default: [],
     validate: (value, range, errorPrefix = "LLM result field") => {
       if (!Array.isArray(value)) throw new RuntimeError(`${errorPrefix} must be a list`, range);
     },
@@ -160,5 +155,5 @@ function buildValueFromShapeType(type: ShapeTypeExpr): JsonValue {
   if (type.kind === "ListShapeType") {
     return [];
   }
-  return SHAPE_TYPE_CONFIG[type.name]?.default ?? {};
+  return shapeTypeDefaultValue(type.name) as JsonValue;
 }

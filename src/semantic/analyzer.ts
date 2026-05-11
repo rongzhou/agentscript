@@ -5,6 +5,12 @@ import { createAgentScope, createFunctionScope, defineAgentFunctions } from "./a
 import { checkAssignmentStatement } from "./assignment.js";
 import { checkCallExpression } from "./calls.js";
 import { checkConfigDeclaration, checkGenerateRequiredConfig } from "./config.js";
+import {
+  checkForInStatement,
+  checkIfStatement,
+  checkLoopUntilStatement,
+  checkRepeatStatement,
+} from "./control-flow.js";
 import { SemanticError, errorDiagnostic, type SemanticDiagnostic, type SemanticResult } from "./diagnostics.js";
 import { checkGenerateOptions } from "./generate.js";
 import { blockEndsWithExpression, checkParallelForBodyRules } from "./parallel-for.js";
@@ -99,28 +105,30 @@ class Analyzer {
         this.checkExpression(stmt.expr, scope);
         break;
       case "IfStmt":
-        this.checkExpression(stmt.condition, scope);
-        this.checkBlock(stmt.thenBody, scope.child());
-        if (stmt.elseBody) {
-          this.checkBlock(stmt.elseBody, scope.child());
-        }
+        checkIfStatement(stmt, scope, {
+          checkBlock: (statements, currentScope) => this.checkBlock(statements, currentScope),
+          checkExpression: (expr, currentScope) => this.checkExpression(expr, currentScope),
+        });
         break;
-      case "ForInStmt": {
-        this.checkExpression(stmt.iterable, scope);
-        if (stmt.maxIterations <= 0) {
-          this.error("INVALID_ITERATION_LIMIT", "For iteration count must be greater than 0", stmt.range);
-        }
-        const child = scope.child();
-        void child.define(stmt.itemName, { kind: "local", range: stmt.itemRange });
-        this.checkBlock(stmt.body, child);
+      case "ForInStmt":
+        this.diagnostics.push(
+          ...checkForInStatement(stmt, scope, {
+            checkBlock: (statements, currentScope) => this.checkBlock(statements, currentScope),
+            checkExpression: (expr, currentScope) => this.checkExpression(expr, currentScope),
+          }),
+        );
         break;
-      }
       case "LoopUntilStmt":
-        this.checkExpression(stmt.condition, scope);
-        this.checkBlock(stmt.body, scope.child());
+        checkLoopUntilStatement(stmt, scope, {
+          checkBlock: (statements, currentScope) => this.checkBlock(statements, currentScope),
+          checkExpression: (expr, currentScope) => this.checkExpression(expr, currentScope),
+        });
         break;
       case "RepeatStmt":
-        this.checkBlock(stmt.body, scope.child());
+        checkRepeatStatement(stmt, scope, {
+          checkBlock: (statements, currentScope) => this.checkBlock(statements, currentScope),
+          checkExpression: (expr, currentScope) => this.checkExpression(expr, currentScope),
+        });
         break;
       case "ReturnStmt":
         this.checkExpression(stmt.value, scope);

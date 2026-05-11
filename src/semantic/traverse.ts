@@ -17,6 +17,19 @@ export function identifiersInExpression(expr: Expr): IdentifierUse[] {
   return identifiers;
 }
 
+export function identifiersInExpressionShallowScopes(expr: Expr): IdentifierUse[] {
+  const identifiers: IdentifierUse[] = [];
+  walkExpression(expr, {
+    enterExpr(value) {
+      if (value.kind === "IdentifierExpr") {
+        identifiers.push({ name: value.name, range: value.range });
+      }
+    },
+    enterNestedScope: false,
+  });
+  return identifiers;
+}
+
 export function identifiersInStatement(stmt: Stmt): IdentifierUse[] {
   const identifiers: IdentifierUse[] = [];
   walkStatement(stmt, {
@@ -41,15 +54,32 @@ export function containsCallExpression(expr: Expr): boolean {
   return containsCall;
 }
 
+export function containsCallExpressionShallowScopes(expr: Expr): boolean {
+  let containsCall = false;
+  walkExpression(expr, {
+    enterExpr(value) {
+      if (value.kind === "CallExpr" || value.kind === "GenerateExpr" || value.kind === "ParallelForExpr") {
+        containsCall = true;
+      }
+    },
+    enterNestedScope: false,
+  });
+  return containsCall;
+}
+
 export interface AstVisitor {
   enterExpr?: (expr: Expr) => void;
   enterStmt?: (stmt: Stmt) => void;
+  enterNestedScope?: boolean;
 }
 
 export function walkExpression(expr: Expr, visitor: AstVisitor): void {
   visitor.enterExpr?.(expr);
   if (expr.kind === "ParallelForExpr") {
     walkExpression(expr.iterable, visitor);
+    if (visitor.enterNestedScope === false) {
+      return;
+    }
     for (const stmt of expr.body) {
       walkStatement(stmt, visitor);
     }

@@ -227,6 +227,26 @@ describe("analyze", () => {
     );
   });
 
+  it("checks use declarations without traversing nested expression scopes as outer context", () => {
+    const result = analyze(
+      parse(`
+        import tool Search from "sh://grep"
+
+        agent A {
+          func act(input) {
+            use parallel for Search in input.items max 2 {
+              Search
+            } as values
+            return input
+          }
+        }
+      `),
+    );
+
+    expect(result.diagnostics.filter((diagnostic) => diagnostic.code === "INVALID_USE_CALL")).toHaveLength(1);
+    expect(result.diagnostics.filter((diagnostic) => diagnostic.code === "INVALID_USE_RESOURCE")).toHaveLength(0);
+  });
+
   it("checks memory resources and methods", () => {
     const valid = analyze(
       parse(`

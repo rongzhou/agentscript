@@ -44,6 +44,7 @@ export class GenerateRuntime {
     const identity = this.buildIdentity(scope, expr);
     let repair: GenerateRepair | undefined;
     let lastError: unknown;
+    const errors: string[] = [];
 
     for (let attempt = 1; attempt <= options.attempts; attempt += 1) {
       const instruction = repair ? appendGenerateRepair(options.input, repair) : options.input;
@@ -78,12 +79,35 @@ export class GenerateRuntime {
           debug: options.debug,
         });
       } catch (error) {
+        const message = generateErrorMessage(error);
         if (attempt >= options.attempts || !isRepairableGenerateError(error)) {
+          this.trace.push({
+            kind: "generate",
+            data: {
+              instruction: sanitizeForJson(options.input),
+              config: {
+                maxOutput: budgetToJson(options.maxOutput),
+                attempts: options.attempts,
+                temperature: options.temperature ?? null,
+                think: options.think ?? false,
+                strict: options.strict,
+                debug: options.debug,
+              },
+              attempts: attempt,
+              context: builtContextToJson(builtContext),
+              validation: null,
+              result: null,
+              ok: false,
+              error: message,
+              errors: [...errors, message],
+            },
+          });
           throw withGenerateRange(error, expr.range);
         }
         lastError = error;
+        errors.push(message);
         repair = {
-          error: generateErrorMessage(error),
+          error: message,
         };
         continue;
       }
@@ -110,17 +134,42 @@ export class GenerateRuntime {
             context: builtContextToJson(builtContext),
             validation: expr.returnShape ? { ok: true, strict: options.strict } : null,
             result: sanitizeForJson(result),
+            ok: true,
+            errors,
           },
         });
         return result;
       } catch (error) {
+        const message = generateErrorMessage(error);
         if (attempt >= options.attempts) {
+          this.trace.push({
+            kind: "generate",
+            data: {
+              instruction: sanitizeForJson(options.input),
+              config: {
+                maxOutput: budgetToJson(options.maxOutput),
+                attempts: options.attempts,
+                temperature: options.temperature ?? null,
+                think: options.think ?? false,
+                strict: options.strict,
+                debug: options.debug,
+              },
+              attempts: attempt,
+              context: builtContextToJson(builtContext),
+              validation: expr.returnShape ? { ok: false, strict: options.strict } : null,
+              result: sanitizeForJson(rawResult),
+              ok: false,
+              error: message,
+              errors: [...errors, message],
+            },
+          });
           throw withGenerateRange(error, expr.range);
         }
         lastError = error;
+        errors.push(message);
         repair = {
           output: rawResult,
-          error: generateErrorMessage(error),
+          error: message,
         };
       }
     }

@@ -23,16 +23,6 @@ export async function evaluateParallelFor(
   const selected = iterable.slice(0, expr.maxIterations);
   const concurrency = Math.max(1, Math.floor(host.concurrency()));
   const start = Date.now();
-  trace.push({
-    kind: "parallel_for",
-    data: {
-      item: expr.itemName,
-      source: formatExpressionSource(expr.iterable),
-      max_items: expr.maxIterations,
-      items: selected.length,
-      concurrency,
-    },
-  });
 
   const result = await mapLimitWaitAll(selected, concurrency, async (item) => {
     const child = scope.child();
@@ -45,6 +35,7 @@ export async function evaluateParallelFor(
       data: {
         item: expr.itemName,
         source: formatExpressionSource(expr.iterable),
+        max_items: expr.maxIterations,
         items: selected.length,
         concurrency,
         duration_ms: Date.now() - start,
@@ -63,6 +54,7 @@ export async function evaluateParallelFor(
     data: {
       item: expr.itemName,
       source: formatExpressionSource(expr.iterable),
+      max_items: expr.maxIterations,
       items: selected.length,
       concurrency,
       duration_ms: Date.now() - start,

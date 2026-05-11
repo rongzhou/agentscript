@@ -3,10 +3,13 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it, vi } from "vitest";
 import { parse } from "../src/parser/parser.js";
+import { GenerateRuntime } from "../src/runtime/generate.js";
 import { executeAgent } from "../src/runtime/interpreter.js";
 import { RuntimeError } from "../src/runtime/errors.js";
+import { RuntimeScope } from "../src/runtime/scope.js";
 import { buildValueFromShape } from "../src/runtime/shape.js";
-import type { GenerateRequest, RuntimeValue } from "../src/runtime/types.js";
+import type { GenerateExpr, Stmt } from "../src/ast/types.js";
+import type { GenerateRequest, RuntimeValue, TraceEvent } from "../src/runtime/types.js";
 
 describe("generate runtime", () => {
   it("passes generate budgets and visible use context to the LLM provider", async () => {
@@ -178,7 +181,68 @@ describe("generate runtime", () => {
     expect(requests).toHaveLength(2);
     expect(requests[1]!.instruction).toContain("Previous generation failed.");
     expect(requests[1]!.instruction).toContain('"ok": "maybe"');
-    expect(result.trace.find((event) => event.kind === "generate")?.data.attempts).toBe(2);
+    const event = result.trace.find((item) => item.kind === "generate");
+    expect(event?.data.attempts).toBe(2);
+    expect(event?.data.ok).toBe(true);
+    expect(event?.data.errors).toEqual([expect.stringContaining("LLM result field must be a boolean")]);
+  });
+
+  it("records generate failure details in trace", async () => {
+    const ast = parse(`
+      import llm Qwen from "openai://gpt-4.1-mini"
+
+      main agent A {
+        model Qwen
+        role "Assistant"
+        description "Record failed attempts."
+
+        main func act(input) {
+          return generate({ input: "answer", attempts: 2 }) -> {
+              ok boolean
+          }
+        }
+      }
+    `);
+    const agent = ast.agents[0]!;
+    const expr = returnGenerateExpr(agent.functions[0]!.body[0]!);
+    const scope = new RuntimeScope();
+    scope.setConfig("model", { __agentScriptResource: "llm", name: "Qwen", uri: "openai://gpt-4.1-mini" });
+    scope.setConfig("role", "Assistant");
+    scope.setConfig("description", "Record failed attempts.");
+    const trace: TraceEvent[] = [];
+    const runtime = new GenerateRuntime(
+      {
+        async generate(): Promise<RuntimeValue> {
+          return { ok: "maybe" };
+        },
+      },
+      trace,
+      {
+        currentAgent: () => agent,
+        async evaluate(value) {
+          return value.kind === "StringExpr" ? value.value : null;
+        },
+        async resolveContextUses() {
+          return [];
+        },
+      },
+    );
+
+    await expect(runtime.evaluateGenerate(expr, scope)).rejects.toThrow(/must be a boolean/);
+    expect(trace).toHaveLength(1);
+    expect(trace[0]).toMatchObject({
+      kind: "generate",
+      data: {
+        attempts: 2,
+        ok: false,
+        error: expect.stringContaining("LLM result field must be a boolean"),
+        errors: [
+          expect.stringContaining("LLM result field must be a boolean"),
+          expect.stringContaining("LLM result field must be a boolean"),
+        ],
+        result: { ok: "maybe" },
+      },
+    });
   });
 
   it("retries provider JSON parse failures but does not retry infrastructure errors", async () => {
@@ -343,8 +407,12 @@ describe("generate runtime", () => {
 });
 
 function buildValueFromRequestShape(request: GenerateRequest): RuntimeValue {
-  if (!request.returnShape) {
-    throw new Error("unexpected missing return shape");
+  return request.returnShape ? buildValueFromShape(request.returnShape) : null;
+}
+
+function returnGenerateExpr(stmt: Stmt): GenerateExpr {
+  if (stmt.kind !== "ReturnStmt" || stmt.value.kind !== "GenerateExpr") {
+    throw new Error("Expected return generate expression");
   }
-  return buildValueFromShape(request.returnShape);
+  return stmt.value;
 }

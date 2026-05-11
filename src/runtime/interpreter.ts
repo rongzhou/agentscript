@@ -111,7 +111,12 @@ class Interpreter {
         entry.params.length === 0 ? [] : [await prepareEntryInput(input, entry, this.inputProvider, this.trace)];
       return await this.callFunction(this.agent, entry.name, args, entry.range);
     } finally {
-      await closeIfDisposable(this.toolProvider);
+      await Promise.all([
+        closeIfDisposable(this.toolProvider),
+        closeIfDisposable(this.memoryProvider),
+        closeIfDisposable(this.llmProvider),
+        closeIfDisposable(this.inputProvider),
+      ]);
     }
   }
 

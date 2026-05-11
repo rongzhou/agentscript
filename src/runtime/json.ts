@@ -4,33 +4,56 @@ import { isRuntimeResource } from "./guards.js";
 import type { JsonObject, JsonValue, RuntimeResource, RuntimeValue } from "./types.js";
 
 export function sanitizeForJson(value: RuntimeValue): JsonValue {
-  return sanitizeForJsonValue(value, new WeakSet<object>());
+  const sanitized = sanitizeForJsonValue(value, new WeakSet<object>());
+  return sanitized === OMIT_JSON_VALUE ? null : sanitized;
 }
 
 export function runtimeValuesEqual(left: RuntimeValue | undefined, right: RuntimeValue | undefined): boolean {
   return renderJsonForComparison(left ?? null) === renderJsonForComparison(right ?? null);
 }
 
-function sanitizeForJsonValue(value: RuntimeValue, seen: WeakSet<object>): JsonValue {
+const OMIT_JSON_VALUE = Symbol("omit_json_value");
+
+type SanitizedJsonValue = JsonValue | typeof OMIT_JSON_VALUE;
+
+function sanitizeForJsonValue(value: unknown, seen: WeakSet<object>): SanitizedJsonValue {
   if (value === null || typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
     return value;
   }
-  if (isRuntimeResource(value)) {
-    return runtimeResourceToJson(value);
+  if (typeof value === "undefined" || typeof value === "function" || typeof value === "symbol") {
+    return OMIT_JSON_VALUE;
+  }
+  if (typeof value === "bigint") {
+    throw new TypeError("Cannot sanitize bigint value for JSON");
+  }
+  if (value instanceof Map || value instanceof Set) {
+    throw new TypeError("Cannot sanitize Map or Set value for JSON");
+  }
+  if (typeof value === "object") {
+    const runtimeValue = value as RuntimeValue;
+    if (isRuntimeResource(runtimeValue)) {
+      return runtimeResourceToJson(runtimeValue);
+    }
   }
   if (seen.has(value)) {
     return "[Circular]";
   }
   seen.add(value);
   if (Array.isArray(value)) {
-    const result = value.map((item) => sanitizeForJsonValue(item, seen));
+    const result = value.map((item) => {
+      const sanitized = sanitizeForJsonValue(item, seen);
+      return sanitized === OMIT_JSON_VALUE ? null : sanitized;
+    });
     seen.delete(value);
     return result;
   }
 
   const result: JsonObject = {};
   for (const [key, item] of Object.entries(value)) {
-    result[key] = sanitizeForJsonValue(item, seen);
+    const sanitized = sanitizeForJsonValue(item, seen);
+    if (sanitized !== OMIT_JSON_VALUE) {
+      result[key] = sanitized;
+    }
   }
   seen.delete(value);
   return result;

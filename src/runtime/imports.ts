@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { extname, isAbsolute, resolve } from "node:path";
 import type { Program } from "../ast/types.js";
 import type { BindingKind } from "../language/bindings.js";
+import { RuntimeError } from "./errors.js";
 import type { RuntimeValue } from "./types.js";
 
 export interface RuntimeImportBinding {
@@ -38,7 +39,7 @@ export function createRuntimeImportBindings(program: Program, sourceDir: string)
           value: { __agentScriptResource: "memory", name: imported.name, uri: imported.uri },
         };
       case "agent":
-        throw new Error("agent imports should be resolved before runtime import binding");
+        throw new RuntimeError("Agent imports should be resolved before runtime import binding", imported.range);
     }
   });
 }

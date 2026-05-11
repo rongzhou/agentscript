@@ -3,6 +3,14 @@ import { describe, expect, it } from "vitest";
 import { MockToolProvider } from "../src/providers/mock/index.js";
 import { parse } from "../src/parser/parser.js";
 import { executeAgent } from "../src/runtime/interpreter.js";
+import type {
+  GenerateRequest,
+  InputRequest,
+  MemoryAddRequest,
+  MemoryQueryRequest,
+  RuntimeValue,
+  ToolCallRequest,
+} from "../src/runtime/types.js";
 
 describe("runtime core", () => {
   it("executes the V0 regression fixture with mock providers", async () => {
@@ -39,6 +47,65 @@ describe("runtime core", () => {
     `);
 
     await expect(executeAgent(ast, {})).rejects.toThrow(/Maximum call depth/);
+  });
+
+  it("closes disposable providers after execution", async () => {
+    const ast = parse(`
+      main agent A {
+        main func act(input) {
+          return input
+        }
+      }
+    `);
+    const closed: string[] = [];
+    const toolProvider = {
+      async call(_request: ToolCallRequest): Promise<RuntimeValue> {
+        return null;
+      },
+      async close(): Promise<void> {
+        closed.push("tool");
+      },
+    };
+    const memoryProvider = {
+      async add(_request: MemoryAddRequest): Promise<RuntimeValue> {
+        return null;
+      },
+      async query(_request: MemoryQueryRequest): Promise<RuntimeValue> {
+        return [];
+      },
+      async close(): Promise<void> {
+        closed.push("memory");
+      },
+    };
+    const llmProvider = {
+      async generate(_request: GenerateRequest): Promise<RuntimeValue> {
+        return null;
+      },
+      async close(): Promise<void> {
+        closed.push("llm");
+      },
+    };
+    const inputProvider = {
+      async read(_request: InputRequest): Promise<RuntimeValue> {
+        return null;
+      },
+      async close(): Promise<void> {
+        closed.push("input");
+      },
+    };
+
+    await executeAgent(
+      ast,
+      {},
+      {
+        toolProvider,
+        memoryProvider,
+        llmProvider,
+        inputProvider,
+      },
+    );
+
+    expect(new Set(closed)).toEqual(new Set(["tool", "memory", "llm", "input"]));
   });
 
   it("updates outer variables from repeat attempt scopes", async () => {

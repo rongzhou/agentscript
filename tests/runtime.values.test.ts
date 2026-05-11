@@ -26,6 +26,27 @@ describe("runtime values", () => {
     });
   });
 
+  it("sanitizes JSON-unsafe values predictably", () => {
+    const value = {
+      keep: "value",
+      omitUndefined: undefined,
+      omitFunction: () => "ignored",
+      omitSymbol: Symbol("ignored"),
+      list: [undefined, () => "ignored", Symbol("ignored"), "ok"],
+    } as unknown as RuntimeValue;
+
+    expect(sanitizeForJson(value)).toEqual({
+      keep: "value",
+      list: [null, null, null, "ok"],
+    });
+  });
+
+  it("rejects unsupported native containers during JSON sanitization", () => {
+    expect(() => sanitizeForJson(1n as unknown as RuntimeValue)).toThrow(/bigint/);
+    expect(() => sanitizeForJson(new Map() as unknown as RuntimeValue)).toThrow(/Map or Set/);
+    expect(() => sanitizeForJson(new Set() as unknown as RuntimeValue)).toThrow(/Map or Set/);
+  });
+
   it("rejects assignment to list properties", async () => {
     const ast = parse(`
       main agent A {

@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
+import { NPM_SCHEME } from "../../language/schemes.js";
 import { RuntimeError } from "../../runtime/errors.js";
 import type { RuntimeValue, ToolCallRequest, ToolProvider } from "../../runtime/types.js";
 import { invokeModuleMember } from "./module-tool.js";
@@ -23,7 +24,7 @@ export class NpmToolProvider implements ToolProvider {
     const checked = checkNpmImport(request.uri, this.registry);
     this.verifyInstalledVersion(checked.packageName, checked.entry);
     const mod = await this.loadModule(checked.packageName, checked.subPath);
-    return invokeModuleMember(mod, request, { schemeLabel: "npm", toolLabel: request.toolName });
+    return invokeModuleMember(mod, request, { schemeLabel: NPM_SCHEME, toolLabel: request.toolName });
   }
 
   private async loadModule(packageName: string, subPath?: string): Promise<unknown> {

@@ -1,7 +1,8 @@
+import { HOST_SCHEME, MCP_SCHEME, NODE_SCHEME, NPM_SCHEME } from "./schemes.js";
 import { uriScheme } from "./uri.js";
 
 const EFFECTFUL_TOOL_METHODS = new Set(["write", "patch", "delete", "post", "put"]);
-const EFFECTFUL_TOOL_SCHEMES = new Set(["mcp", "npm", "node"]);
+const EFFECTFUL_TOOL_SCHEMES = new Set([HOST_SCHEME, MCP_SCHEME, NPM_SCHEME, NODE_SCHEME]);
 
 export function isEffectfulToolCall(method: string, uri?: string): boolean {
   if (uri && EFFECTFUL_TOOL_SCHEMES.has(uriScheme(uri))) {

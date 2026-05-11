@@ -8,7 +8,13 @@ export function checkGenerateOptions(expr: GenerateExpr): SemanticDiagnostic[] {
   let hasInput = false;
   const seen = new Set<string>();
 
+  if (expr.options.maxOutput) {
+    diagnostics.push(...checkGenerateMaxOutput(expr));
+  }
+
   for (const property of expr.options.properties) {
+    const spec = getGenerateOptionSpec(property.key);
+
     if (seen.has(property.key)) {
       diagnostics.push(
         error("DUPLICATE_GENERATE_OPTION", `Duplicate generate option '${property.key}'`, property.range),
@@ -16,17 +22,13 @@ export function checkGenerateOptions(expr: GenerateExpr): SemanticDiagnostic[] {
     }
     seen.add(property.key);
 
-    const spec = getGenerateOptionSpec(property.key);
-
     if (property.key === "input") {
       hasInput = true;
-    } else if (property.key === "max_output") {
-      diagnostics.push(...checkBudget(expr.options.maxOutput, property.value.range));
     } else if (!isGenerateOptionKey(property.key)) {
       diagnostics.push(error("UNKNOWN_GENERATE_OPTION", `Unknown generate option '${property.key}'`, property.range));
     }
 
-    if (spec?.isValid && !spec.isValid(property.value, expr.options.maxOutput)) {
+    if (spec?.isValid && !spec.isValid(property.value)) {
       diagnostics.push(
         error(
           spec.invalidCode ?? "INVALID_GENERATE_OPTION",
@@ -44,4 +46,13 @@ export function checkGenerateOptions(expr: GenerateExpr): SemanticDiagnostic[] {
   }
 
   return diagnostics;
+}
+
+function checkGenerateMaxOutput(expr: GenerateExpr): SemanticDiagnostic[] {
+  return checkBudget(expr.options.maxOutput, expr.options.maxOutputRange ?? expr.options.range, {
+    invalidAmountCode: "INVALID_GENERATE_MAX_OUTPUT",
+    invalidAmountMessage: "generate max_output must be a positive budget",
+    invalidUnitCode: "INVALID_GENERATE_MAX_OUTPUT_UNIT",
+    invalidUnitMessage: "generate max_output unit must be omitted or 'k'",
+  });
 }

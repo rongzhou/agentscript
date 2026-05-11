@@ -35,6 +35,7 @@ AgentScript 应维护这些不变量：
 - **作用域可见性**：context 可见性遵循 scope。子作用域可继承父作用域 context；function 和 Agent 调用创建独立 context boundary。
 - **能力隔离**：imported tool、model、agent、memory handle、function、provider URI 和 runtime 配置是能力，不是 prompt data。
 - **延迟解析 context**：`use expr` 声明 source，值在可见的 `generate` 构建 prompt 时解析。
+- **确定性裁剪**：context budget 按前缀裁剪渲染值，不排序、不摘要、不做语义压缩。
 - **prompt 分层**：prompt 区分 agent identity、selected context、instruction 和 output contract。
 - **trace 可审计**：trace 必须解释 LLM 调用实际看到了什么，包括 source expression、label、budget、clipping 和结果。
 
@@ -141,6 +142,7 @@ func helper(input) {
 - 是否让 caller context 污染 callee？
 - 是否把 tool/model/agent/function binding 当作 prompt data 暴露？
 - 是否保留 source、label、budget 和 clipping 信息用于审计？
+- 是否保留字符串、list 和 object 已文档化的裁剪顺序？
 - 是否把 `use` 退化成快照赋值，而不是延迟 context source？
 - 是否混淆 context budget 和 generation budget？
 - 是否混淆 AgentScript context label 和 provider message role？

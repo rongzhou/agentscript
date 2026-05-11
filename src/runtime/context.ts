@@ -5,8 +5,6 @@ import { shapeToSchema } from "./context-schema.js";
 import { budgetToJson, sanitizeForJson } from "./json.js";
 import type { ContextUse, JsonObject, JsonValue, LlmBinding, RuntimeValue } from "./types.js";
 
-export { shapeToSchema } from "./context-schema.js";
-
 export interface ContextBuildInput {
   agentName: string;
   model?: LlmBinding;
@@ -121,7 +119,7 @@ function buildFinalUserMessage(
 
 export function builtContextToJson(context: BuiltContext): JsonObject {
   return {
-    agentName: context.agentName,
+    agent_name: context.agentName,
     model: context.model ? { name: context.model.name, uri: context.model.uri } : null,
     identity: context.identity,
     system: context.system,
@@ -133,12 +131,11 @@ export function builtContextToJson(context: BuiltContext): JsonObject {
       text: item.text,
       budget: budgetToJson(item.budget),
       clipped: item.clipped,
-      originalSize: item.originalSize,
-      clippedSize: item.clippedSize,
+      original_size: item.originalSize,
+      clipped_size: item.clippedSize,
     })),
-    instruction: context.instruction,
-    returnSchema: context.returnSchema ?? null,
-    maxOutput: budgetToJson(context.maxOutput),
-    finalUserMessage: context.finalUserMessage,
+    return_schema: context.returnSchema ?? null,
+    max_output: budgetToJson(context.maxOutput),
+    final_user_message: context.finalUserMessage,
   };
 }

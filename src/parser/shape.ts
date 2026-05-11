@@ -6,13 +6,9 @@ import {
   type ShapeTypeExpr,
 } from "../ast/types.js";
 import { isShapeTypeName } from "../language/shape.js";
-import { ParseError } from "./errors.js";
-import type { TokenParserHost } from "./host.js";
-import { isNewLineBetween, type Token } from "./tokenizer.js";
-
-export interface ShapeParserHost extends TokenParserHost {
-  consumeShapeFieldSeparator(terminator: string): void;
-}
+import type { ShapeParserHost } from "./host.js";
+import { isNewLineBetween } from "./tokens.js";
+import type { Token } from "./tokenizer.js";
 
 type ShapeParseMode = "strict" | "shorthand";
 
@@ -69,8 +65,9 @@ function defaultStringShapeType(fieldName: Token): NamedShapeType {
 }
 
 function parseShapeType(parser: ShapeParserHost): ShapeTypeExpr {
-  const start = parser.peek().range.start;
-  const name = parser.consumeIdentifier("Expected shape type").value;
+  const token = parser.consumeIdentifier("Expected shape type");
+  const start = token.range.start;
+  const name = token.value;
   if (name === "list" && parser.match("[")) {
     const itemType = parseShapeType(parser);
     parser.consume("]");
@@ -81,7 +78,7 @@ function parseShapeType(parser: ShapeParserHost): ShapeTypeExpr {
     } satisfies ListShapeType;
   }
   if (!isShapeTypeName(name)) {
-    throw new ParseError(`Unsupported shape type '${name}'`, { ...start });
+    throw parser.errorAtRange(`Unsupported shape type '${name}'`, token.range);
   }
   return {
     kind: "NamedShapeType",

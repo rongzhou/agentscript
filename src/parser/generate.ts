@@ -1,10 +1,15 @@
-import type { Budget, Expr, GenerateExpr, GenerateOptionsExpr, NumberExpr, ObjectProperty } from "../ast/types.js";
+import type {
+  Budget,
+  GenerateExpr,
+  GenerateOptionsExpr,
+  NumberExpr,
+  ObjectProperty,
+  SourceRange,
+} from "../ast/types.js";
 import type { ExpressionParserHost } from "./host.js";
 import { parseShapeObject } from "./shape.js";
 
-export interface GenerateParserHost extends ExpressionParserHost {}
-
-export function parseGenerate(parser: GenerateParserHost): GenerateExpr {
+export function parseGenerate(parser: ExpressionParserHost): GenerateExpr {
   const start = parser.consume("generate").range.start;
   parser.consume("(");
   const options = parseGenerateOptions(parser);
@@ -19,34 +24,35 @@ export function parseGenerate(parser: GenerateParserHost): GenerateExpr {
   };
 }
 
-function parseGenerateOptions(parser: GenerateParserHost): GenerateOptionsExpr {
+function parseGenerateOptions(parser: ExpressionParserHost): GenerateOptionsExpr {
   const start = parser.consume("{").range.start;
   const properties: ObjectProperty[] = [];
   let maxOutput: Budget | undefined;
+  let maxOutputRange: SourceRange | undefined;
 
   while (!parser.check("}") && !parser.isAtEnd()) {
     const propStart = parser.peek().range.start;
     const key = parser.consumeObjectKey();
     parser.consume(":");
-    let value: Expr;
     if (key === "max_output") {
       const token = parser.consumeKind("number", "Expected generate max_output");
       maxOutput = parser.parseBudgetToken(token);
-      value = {
-        kind: "NumberExpr",
-        value: Number.parseFloat(token.value),
-        raw: token.value,
-        range: token.range,
-      } satisfies NumberExpr;
+      maxOutputRange = token.range;
+      properties.push({
+        kind: "ObjectProperty",
+        key,
+        value: numberExprFromToken(token),
+        range: { start: propStart, end: token.range.end },
+      });
     } else {
-      value = parser.parseExpression();
+      const value = parser.parseExpression();
+      properties.push({
+        kind: "ObjectProperty",
+        key,
+        value,
+        range: { start: propStart, end: value.range.end },
+      });
     }
-    properties.push({
-      kind: "ObjectProperty",
-      key,
-      value,
-      range: { start: propStart, end: value.range.end },
-    });
     parser.consumePropertySeparator("}");
   }
   parser.consume("}");
@@ -54,6 +60,16 @@ function parseGenerateOptions(parser: GenerateParserHost): GenerateOptionsExpr {
     kind: "GenerateOptionsExpr",
     properties,
     maxOutput,
+    maxOutputRange,
     range: { start, end: parser.previous().range.end },
+  };
+}
+
+function numberExprFromToken(token: { value: string; range: SourceRange }): NumberExpr {
+  return {
+    kind: "NumberExpr",
+    value: Number.parseFloat(token.value),
+    raw: token.value,
+    range: token.range,
   };
 }

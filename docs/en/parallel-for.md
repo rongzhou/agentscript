@@ -336,8 +336,9 @@ AgentScript is conservative about side effects inside `parallel for`.
 Read-only tools may be used inside `parallel for`:
 
 ```agentscript
-contents = parallel for file in files max 20 {
-    File.read({ path: file.path })
+read_results = parallel for file in files max 20 {
+    read = File.read({ path: file.path })
+    read.content
 }
 ```
 

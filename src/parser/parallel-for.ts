@@ -1,24 +1,14 @@
 import type { ParallelForExpr } from "../ast/types.js";
-import type { BlockParserHost } from "./host.js";
+import { parseForTail } from "./for-tail.js";
+import type { ExpressionParserHost } from "./host.js";
 
-export interface ParallelForParserHost extends BlockParserHost {}
-
-export function parseParallelFor(parser: ParallelForParserHost): ParallelForExpr {
+export function parseParallelFor(parser: ExpressionParserHost): ParallelForExpr {
   const start = parser.consume("parallel").range.start;
   parser.consume("for");
-  const item = parser.consumeIdentifier("Expected parallel for item name");
-  parser.consume("in");
-  const iterable = parser.parseExpression();
-  parser.consume("max");
-  const maxIterations = parser.parsePositiveInteger("Expected parallel for iteration count");
-  const body = parser.parseBlock();
+  const tail = parseForTail(parser, "parallel for");
   return {
     kind: "ParallelForExpr",
-    itemName: item.value,
-    itemRange: item.range,
-    iterable,
-    maxIterations,
-    body,
+    ...tail,
     range: { start, end: parser.previous().range.end },
   };
 }

@@ -79,7 +79,7 @@ describe("parser control-flow-context", () => {
     const stmt = ast.agents[0]!.functions[0]!.body[0]!;
     expect(stmt.kind).toBe("ForInStmt");
     if (stmt.kind !== "ForInStmt") return;
-    expect(stmt.itemName).toBe("step");
+    expect(stmt.item.name).toBe("step");
     expect(stmt.maxIterations).toBe(6);
     expect(stmt.iterable.kind).toBe("MemberExpr");
     expect(stmt.body[0]).toMatchObject({
@@ -104,7 +104,7 @@ describe("parser control-flow-context", () => {
     if (stmt.kind !== "AssignStmt") return;
     expect(stmt.value.kind).toBe("ParallelForExpr");
     if (stmt.value.kind !== "ParallelForExpr") return;
-    expect(stmt.value.itemName).toBe("step");
+    expect(stmt.value.item.name).toBe("step");
     expect(stmt.value.maxIterations).toBe(3);
     expect(stmt.value.iterable.kind).toBe("MemberExpr");
     expect(stmt.value.body.at(-1)).toMatchObject({

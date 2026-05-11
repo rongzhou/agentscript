@@ -19,6 +19,7 @@ import { collectProgramDeclarations, type ImportBindingDecl } from "./program.js
 import { checkShapeObject } from "./shape.js";
 import { SemanticScope } from "./scope.js";
 import { checkAgentUse, checkFunctionUse } from "./use.js";
+import { scopeWithItemBinding } from "./walker.js";
 
 export interface AnalyzeOptions {
   npmRegistry?: NpmRegistry;
@@ -69,7 +70,7 @@ class Analyzer {
       this.checkConfig(config, agentScope);
     }
     for (const use of agent.uses) {
-      this.checkUse(use, agentScope, true);
+      this.checkAgentUseStatement(use, agentScope);
     }
 
     for (const fn of agent.functions) {
@@ -92,7 +93,7 @@ class Analyzer {
         this.checkConfig(stmt, scope);
         break;
       case "UseStmt":
-        this.checkUse(stmt, scope, false);
+        this.checkFunctionUseStatement(stmt, scope);
         break;
       case "AssignStmt":
         this.diagnostics.push(
@@ -146,9 +147,14 @@ class Analyzer {
     this.diagnostics.push(...checkConfigDeclaration(config, scope));
   }
 
-  private checkUse(stmt: Extract<Stmt, { kind: "UseStmt" }>, scope: SemanticScope, agentLevel: boolean): void {
+  private checkAgentUseStatement(stmt: Extract<Stmt, { kind: "UseStmt" }>, scope: SemanticScope): void {
     this.checkExpression(stmt.value, scope);
-    this.diagnostics.push(...(agentLevel ? checkAgentUse(stmt, scope) : checkFunctionUse(stmt, scope)));
+    this.diagnostics.push(...checkAgentUse(stmt, scope));
+  }
+
+  private checkFunctionUseStatement(stmt: Extract<Stmt, { kind: "UseStmt" }>, scope: SemanticScope): void {
+    this.checkExpression(stmt.value, scope);
+    this.diagnostics.push(...checkFunctionUse(stmt, scope));
   }
 
   private checkBlock(statements: Stmt[], scope: SemanticScope): void {
@@ -204,9 +210,7 @@ class Analyzer {
     if (!blockEndsWithExpression(expr.body)) {
       this.error("INVALID_PARALLEL_FOR_BODY", "parallel for body must end with a value expression", expr.range);
     }
-    const child = scope.child();
-    void child.define(expr.itemName, { kind: "local", range: expr.itemRange });
-    this.checkParallelForBody(expr.body, child);
+    this.checkParallelForBody(expr.body, scopeWithItemBinding(scope, expr.item));
   }
 
   private checkParallelForBody(statements: Stmt[], scope: SemanticScope): void {

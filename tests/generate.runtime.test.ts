@@ -7,7 +7,6 @@ import { GenerateRuntime } from "../src/runtime/generate.js";
 import { executeAgent } from "../src/runtime/interpreter.js";
 import { RuntimeError } from "../src/runtime/errors.js";
 import { RuntimeScope } from "../src/runtime/scope.js";
-import { buildValueFromShape } from "../src/runtime/shape.js";
 import type { GenerateExpr, Stmt } from "../src/ast/types.js";
 import type { GenerateRequest, RuntimeValue, TraceEvent } from "../src/runtime/types.js";
 
@@ -179,8 +178,8 @@ describe("generate runtime", () => {
 
     expect(result.value).toEqual({ ok: true });
     expect(requests).toHaveLength(2);
-    expect(requests[1]!.instruction).toContain("Previous generation failed.");
-    expect(requests[1]!.instruction).toContain('"ok": "maybe"');
+    expect(requests[1]!.builtContext.instructionText).toContain("Previous generation failed.");
+    expect(requests[1]!.builtContext.instructionText).toContain('"ok": "maybe"');
     const event = result.trace.find((item) => item.kind === "generate");
     expect(event?.data.attempts).toBe(2);
     expect(event?.data.ok).toBe(true);
@@ -407,7 +406,7 @@ describe("generate runtime", () => {
 });
 
 function buildValueFromRequestShape(request: GenerateRequest): RuntimeValue {
-  return request.returnShape ? buildValueFromShape(request.returnShape) : null;
+  return request.builtContext.returnSchema ? { ok: false } : null;
 }
 
 function returnGenerateExpr(stmt: Stmt): GenerateExpr {

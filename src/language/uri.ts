@@ -1,3 +1,5 @@
+import { SQLITE_SCHEME, schemePrefix } from "./schemes.js";
+
 export function uriScheme(uri: string): string {
   try {
     const parsed = new URL(uri);
@@ -14,7 +16,7 @@ export interface SqliteUriParts {
 }
 
 export function splitSqliteUri(uri: string): SqliteUriParts {
-  const raw = uri.slice("sqlite://".length);
+  const raw = uri.slice(schemePrefix(SQLITE_SCHEME).length);
   const hashIndex = raw.indexOf("#");
   return {
     rawPath: hashIndex >= 0 ? raw.slice(0, hashIndex) : raw,

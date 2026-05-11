@@ -1,45 +1,35 @@
 import type { NamedShapeTypeName } from "../ast/types.js";
 
-export const SHAPE_TYPE_NAMES = new Set<NamedShapeTypeName>(["string", "number", "boolean", "json", "list"]);
+export const SHAPE_TYPE_KEYS = new Set<NamedShapeTypeName>(["string", "number", "boolean", "json", "list"]);
 
 export type ShapeJsonSchema = Record<string, string>;
 
-export interface ShapeTypeMetadata {
-  defaultValue: unknown;
+export interface ShapeTypeSpec {
   jsonSchema: ShapeJsonSchema;
 }
 
-export const SHAPE_TYPE_METADATA: Record<NamedShapeTypeName, ShapeTypeMetadata> = {
+export const SHAPE_TYPE_SPECS: Record<NamedShapeTypeName, ShapeTypeSpec> = {
   string: {
-    defaultValue: "",
     jsonSchema: { type: "string" },
   },
   number: {
-    defaultValue: 0,
     jsonSchema: { type: "number" },
   },
   boolean: {
-    defaultValue: true,
     jsonSchema: { type: "boolean" },
   },
   json: {
-    defaultValue: {},
     jsonSchema: {},
   },
   list: {
-    defaultValue: [],
     jsonSchema: { type: "array" },
   },
 };
 
 export function isShapeTypeName(value: string): value is NamedShapeTypeName {
-  return SHAPE_TYPE_NAMES.has(value as NamedShapeTypeName);
-}
-
-export function shapeTypeDefaultValue(name: NamedShapeTypeName): unknown {
-  return SHAPE_TYPE_METADATA[name].defaultValue;
+  return SHAPE_TYPE_KEYS.has(value as NamedShapeTypeName);
 }
 
 export function shapeTypeJsonSchema(name: NamedShapeTypeName): ShapeJsonSchema {
-  return SHAPE_TYPE_METADATA[name].jsonSchema;
+  return SHAPE_TYPE_SPECS[name].jsonSchema;
 }

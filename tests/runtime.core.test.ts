@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { MockToolProvider } from "../src/providers/mock/index.js";
+import { MockToolProvider } from "../src/providers/mock/provider.js";
 import { parse } from "../src/parser/parser.js";
 import { executeAgent } from "../src/runtime/interpreter.js";
 import type {
@@ -47,6 +47,23 @@ describe("runtime core", () => {
     `);
 
     await expect(executeAgent(ast, {})).rejects.toThrow(/Maximum call depth/);
+  });
+
+  it("allows callers to configure maximum call depth", async () => {
+    const ast = parse(`
+      main agent A {
+        main func act(input) {
+          return recurse(input)
+        }
+
+        func recurse(input) {
+          return recurse(input)
+        }
+      }
+    `);
+
+    await expect(executeAgent(ast, {}, { maxCallDepth: 2 })).rejects.toThrow(/Maximum call depth of 2 exceeded/);
+    await expect(executeAgent(ast, {}, { maxCallDepth: 0 })).rejects.toThrow(/maxCallDepth must be a positive integer/);
   });
 
   it("closes disposable providers after execution", async () => {
@@ -173,6 +190,50 @@ describe("runtime core", () => {
     const result = await executeAgent(ast, { question: "What is AgentScript?" });
 
     expect(result.value).toBe("What is AgentScript?");
+  });
+
+  it("evaluates extended arithmetic and comparison operators", async () => {
+    const ast = parse(`
+      main agent A {
+        main func(input) {
+          return {
+            product: 3 * 4,
+            quotient: 12 / 3,
+            lte: 3 <= 3,
+            gte: 4 >= 5
+          }
+        }
+      }
+    `);
+
+    const result = await executeAgent(ast, {});
+
+    expect(result.value).toEqual({
+      product: 12,
+      quotient: 4,
+      lte: true,
+      gte: false,
+    });
+  });
+
+  it("short-circuits boolean operators", async () => {
+    const ast = parse(`
+      main agent A {
+        main func(input) {
+          return {
+            and_value: false and input.missing.value,
+            or_value: true or input.missing.value
+          }
+        }
+      }
+    `);
+
+    const result = await executeAgent(ast, {});
+
+    expect(result.value).toEqual({
+      and_value: false,
+      or_value: true,
+    });
   });
 
   it("supports final expression return for generate output", async () => {

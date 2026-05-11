@@ -1,8 +1,8 @@
 import type { FuncDecl, ShapeField, ShapeObjectExpr } from "../ast/types.js";
 import { RuntimeError } from "./errors.js";
 import { isObject } from "./guards.js";
-import { sanitizeForJson } from "./json.js";
 import { validateValueAgainstShapeType } from "./shape.js";
+import { buildTraceEvent } from "./trace-event.js";
 import type { InputProvider, RuntimeValue, TraceEvent } from "./types.js";
 
 export async function prepareEntryInput(
@@ -42,10 +42,7 @@ async function fillShape(
       const filled = await inputProvider.read({ name: field.name, path: fieldPath });
       validateInputField(filled, field);
       target[field.name] = filled;
-      trace.push({
-        kind: "input",
-        data: { path: fieldPath.join("."), value: sanitizeForJson(filled) },
-      });
+      trace.push(buildTraceEvent("input", { path: fieldPath.join("."), value: filled }));
       continue;
     }
     validateInputField(value, field);

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { parse } from "../src/parser/parser.js";
-import { buildContext, shapeToSchema } from "../src/runtime/context.js";
+import { buildContext, builtContextToJson } from "../src/runtime/context.js";
+import { shapeToSchema } from "../src/runtime/context-schema.js";
 
 describe("buildContext", () => {
   it("builds system prompt, clipped context, final instruction, and schema", () => {
@@ -46,6 +47,19 @@ describe("buildContext", () => {
       type: "object",
       additionalProperties: false,
     });
+    expect(builtContextToJson(context)).toMatchObject({
+      agent_name: "A",
+      context: [
+        expect.objectContaining({
+          original_size: 26,
+          clipped_size: 5,
+        }),
+      ],
+      return_schema: expect.objectContaining({ type: "object" }),
+      max_output: { amount: 100 },
+      final_user_message: expect.any(String),
+    });
+    expect(builtContextToJson(context)).not.toHaveProperty("instruction");
   });
 
   it("clips lists and objects without splitting items or fields", () => {

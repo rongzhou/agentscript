@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import { parse } from "../src/parser/parser.js";
 import { executeAgent } from "../src/runtime/interpreter.js";
 import { RuntimeError } from "../src/runtime/errors.js";
-import { buildValueFromShape } from "../src/runtime/shape.js";
 import type { RuntimeValue } from "../src/runtime/types.js";
 
 describe("generate validation", () => {
@@ -106,9 +105,15 @@ describe("generate validation", () => {
     });
   });
 
-  it("builds empty mock defaults for list shape fields", () => {
+  it("builds empty mock defaults for list shape fields", async () => {
     const ast = parse(`
+      import llm Qwen from "openai://gpt-4.1-mini"
+
       agent A {
+        model Qwen
+        role "Assistant"
+        description "Build mock defaults."
+
         main func(input) {
           return generate({ input: "x" }) -> {
               title string
@@ -117,12 +122,9 @@ describe("generate validation", () => {
         }
       }
     `);
-    const stmt = ast.agents[0]!.functions[0]!.body[0]!;
-    if (stmt.kind !== "ReturnStmt" || stmt.value.kind !== "GenerateExpr" || !stmt.value.returnShape) {
-      throw new Error("unexpected test AST");
-    }
+    const result = await executeAgent(ast, {});
 
-    expect(buildValueFromShape(stmt.value.returnShape)).toEqual({
+    expect(result.value).toEqual({
       title: "",
       tags: [],
     });

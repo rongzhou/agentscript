@@ -79,7 +79,7 @@ Tools use URI schemes for dispatch:
 
 | Scheme | Provider | Example |
 |--------|----------|---------|
-| `sh://` | Shell-based tools | `sh://find`, `sh://grep` |
+| `sh://` | Shell-based tools | `sh://find`, `sh://grep`, `sh://read-range` |
 | `file://` | File operations | `file://workspace` |
 | `env://` | Environment variables | `env://process` |
 | `http://` / `https://` | HTTP requests | `https://api.example.com` |
@@ -255,7 +255,7 @@ if answer.ok and not input.dry_run {
 }
 ```
 
-Supported operators: `+`, `-`, `==`, `!=`, `<`, `>`, `and`, `or`, `not`. Compound assignment supports `+=` and `-=`. Context budgets and loop limits use `max`, so `<` remains an ordinary comparison operator like `==`.
+Supported operators: `+`, `-`, `*`, `/`, `==`, `!=`, `<`, `<=`, `>`, `>=`, `and`, `or`, `not`. Compound assignment supports `+=` and `-=`. Context budgets and loop limits use `max`, so `<` remains an ordinary comparison operator like `==`.
 
 ### Loop until
 
@@ -353,10 +353,10 @@ matches = Grep.run({
 })
 ```
 
-### Sed
+### ReadRange
 
 ```agentscript
-lines = Sed.run({
+lines = ReadRange.run({
     path: "src/main.as",
     start: 1,
     max: 20
@@ -366,7 +366,7 @@ lines = Sed.run({
 ### File
 
 ```agentscript
-content = File.read({
+file = File.read({
     path: "README.md"
 })
 entries = File.list({
@@ -384,7 +384,7 @@ result = File.patch({
 result = File.undo(effects)
 ```
 
-Write and patch operations return undoable effect records. `File.undo` accepts a list of effect records and reverses them.
+Tool success results are objects with `ok: true`. `File.read` returns `content`, `File.list` returns `entries`, and write/patch operations return undoable effect records. `File.undo` accepts a list of effect records and reverses them.
 
 ### Env
 
@@ -393,6 +393,8 @@ home = Env.get({
     name: "HOME"
 })
 ```
+
+`Env.get` returns `{ ok: true, value }`, where `value` is `null` when the variable is unset.
 
 ### Http
 
@@ -411,6 +413,13 @@ response = Http.post({
 
 HTTP requests are restricted to the origin of the import URI.
 
+HTTP methods return `{ ok, status, body, json }`. `ok` is true for 2xx status
+codes, `body` is the response text, and `json` is the parsed JSON value or
+`null` when the response body is not valid JSON. Relative URLs resolve against
+the import URI, and cross-origin targets are rejected. Object request bodies are
+JSON-sanitized and serialized; set `content-type: application/json` explicitly
+when the server requires it.
+
 ### MCP
 
 MCP support is stdio-only. `mcp://name` resolves to a server entry in
@@ -427,6 +436,10 @@ MCP support is stdio-only. `mcp://name` resolves to a server entry in
   }
 }
 ```
+
+Server `env` values may reference host environment variables with `$NAME`
+segments. Missing variables expand to an empty string. `${NAME}` and default
+value syntax are not part of the config format.
 
 Use `call({ tool, args })` for MCP tool names that are not AgentScript
 identifiers:
@@ -513,7 +526,7 @@ use past max 2k
 - Memory bindings cannot be used directly as prompt context.
 - Query results are ordinary data and must be explicitly selected with `use`.
 - `add` takes one object argument. Runtime adds `id`, `created_at`, `updated_at`.
-- `query` supports `text` (case-insensitive substring), `kind` (exact match), `where` (exact field match), and `limit`.
+- `query` supports `text` (case-insensitive substring over `record.text` and the JSON-safe record view), `kind` (exact match), `where` (exact field match), and `limit`.
 - File memory uses JSONL format with automatic file and directory creation.
 - SQLite memory uses a fixed schema. No arbitrary SQL is exposed.
 

@@ -1,9 +1,10 @@
 import type { Budget, Expr, GenerateExpr } from "../ast/types.js";
 import {
   findGenerateProperty,
-  readBooleanGenerateProperty,
-  readNumberGenerateProperty,
-  readThinkGenerateProperty,
+  isBooleanExpression,
+  isGenerateThinkExpression,
+  isNumberExpression,
+  readGenerateProperty,
   requiredGenerateOptionDefault,
 } from "../language/generate-options.js";
 import { RuntimeError } from "./errors.js";
@@ -33,7 +34,7 @@ export async function parseGenerateOptions(
   if (!inputProperty) {
     throw new RuntimeError("generate object argument requires an input field", expr.options.range);
   }
-  const attemptsExpr = readNumberGenerateProperty(expr.options, "attempts");
+  const attemptsExpr = readGenerateProperty(expr.options, "attempts", isNumberExpression);
   const attempts = attemptsExpr?.value ?? requiredGenerateOptionDefault<number>("attempts");
   if (!Number.isInteger(attempts) || attempts <= 0) {
     throw new RuntimeError("generate attempts must be a positive integer", attemptsExpr?.range ?? expr.options.range);
@@ -42,10 +43,13 @@ export async function parseGenerateOptions(
     input: await host.evaluate(inputProperty.value, scope),
     attempts,
     maxOutput: expr.options.maxOutput,
-    temperature: readNumberGenerateProperty(expr.options, "temperature")?.value,
-    think: readThinkGenerateProperty(expr.options)?.value,
+    temperature: readGenerateProperty(expr.options, "temperature", isNumberExpression)?.value,
+    think: readGenerateProperty(expr.options, "think", isGenerateThinkExpression)?.value,
     strict:
-      readBooleanGenerateProperty(expr.options, "strict")?.value ?? requiredGenerateOptionDefault<boolean>("strict"),
-    debug: readBooleanGenerateProperty(expr.options, "debug")?.value ?? requiredGenerateOptionDefault<boolean>("debug"),
+      readGenerateProperty(expr.options, "strict", isBooleanExpression)?.value ??
+      requiredGenerateOptionDefault<boolean>("strict"),
+    debug:
+      readGenerateProperty(expr.options, "debug", isBooleanExpression)?.value ??
+      requiredGenerateOptionDefault<boolean>("debug"),
   };
 }

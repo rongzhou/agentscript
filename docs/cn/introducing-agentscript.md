@@ -116,12 +116,12 @@ main agent FileSummarizer {
     description "Read one local file and produce a useful structured summary."
 
     main func(input { path string }) {
-        content = File.read({
+        file = File.read({
             path: input.path
         })
 
         use input.path as "source path"
-        use content max 8k as "file content"
+        use file.content max 8k as "file content"
 
         generate({
             input: "Summarize the file for a busy teammate",
@@ -355,7 +355,7 @@ AgentScript 仍然是实验性的，但核心语言设计已经到位。
 - compound assignment
 - `parallel for`
 - `parallel for` runtime concurrency control
-- CLI 支持 `--mock`、`--dry-run`、`--trace`、`--check` 和 `--concurrency`
+- CLI 支持 `--mock`、`--dry-run`、`--trace`、`--trace-file`、`--check` 和 `--concurrency`
 
 当前实现已经可以用于实验、示例和本地 workflow，但语言仍然是 pre-1.0，未来可能变化。
 

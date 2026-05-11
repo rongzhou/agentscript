@@ -1,11 +1,15 @@
-import { isAbsolute, relative, resolve } from "node:path";
+import { resolve } from "node:path";
+import { FILE_SCHEME, SQLITE_SCHEME, schemePrefix } from "../../language/schemes.js";
+import { splitSqliteUri, uriScheme } from "../../language/uri.js";
 import { RuntimeError } from "../../runtime/errors.js";
 import { isObject } from "../../runtime/guards.js";
-import { splitSqliteUri, uriScheme } from "../../language/uri.js";
 import type { Disposable } from "../../runtime/disposable.js";
 import type { MemoryAddRequest, MemoryProvider, MemoryQueryRequest, RuntimeValue } from "../../runtime/types.js";
+import { Workspace } from "../shared/workspace.js";
 import { FileMemoryBackend } from "./file.js";
 import { SqliteMemoryBackend, type SqliteMemoryTarget } from "./sqlite.js";
+
+type MemoryBackendKind = typeof FILE_SCHEME | typeof SQLITE_SCHEME;
 
 export interface HostMemoryProviderOptions {
   baseDir?: string;
@@ -16,11 +20,11 @@ export class HostMemoryProvider implements MemoryProvider, Disposable {
   private readonly file = new FileMemoryBackend();
   private readonly sqlite = new SqliteMemoryBackend();
   private readonly baseDir: string;
-  private readonly workspaceRoot: string;
+  private readonly workspace: Workspace;
 
   constructor(options: HostMemoryProviderOptions = {}) {
     this.baseDir = resolve(options.baseDir ?? process.cwd());
-    this.workspaceRoot = resolve(options.workspaceRoot ?? this.baseDir);
+    this.workspace = new Workspace(options.workspaceRoot ?? this.baseDir);
   }
 
   async add(request: MemoryAddRequest): Promise<RuntimeValue> {
@@ -45,35 +49,25 @@ export class HostMemoryProvider implements MemoryProvider, Disposable {
     await this.sqlite.close();
   }
 
-  private backend(uri: string): "file" | "sqlite" {
-    if (uri.startsWith("file://")) return "file";
-    if (uri.startsWith("sqlite://")) return "sqlite";
+  private backend(uri: string): MemoryBackendKind {
+    if (uri.startsWith(schemePrefix(FILE_SCHEME))) return FILE_SCHEME;
+    if (uri.startsWith(schemePrefix(SQLITE_SCHEME))) return SQLITE_SCHEME;
     throw new RuntimeError(`Unsupported memory URI scheme '${uriScheme(uri)}'`);
   }
 
   private resolveFileMemoryPath(uri: string): string {
-    return this.resolveWorkspacePath(decodeURIComponent(uri.slice("file://".length)));
+    return this.workspace.resolveWorkspacePath(
+      decodeURIComponent(uri.slice(schemePrefix(FILE_SCHEME).length)),
+      this.baseDir,
+    );
   }
 
   private resolveSqliteMemory(uri: string): SqliteMemoryTarget {
     const { rawPath, rawNamespace } = splitSqliteUri(uri);
     return {
-      path: this.resolveWorkspacePath(decodeURIComponent(rawPath)),
+      path: this.workspace.resolveWorkspacePath(decodeURIComponent(rawPath), this.baseDir),
       namespace: rawNamespace.length > 0 ? decodeURIComponent(rawNamespace) : "memory",
     };
-  }
-
-  private resolveWorkspacePath(rawPath: string): string {
-    const path = isAbsolute(rawPath) ? rawPath : resolve(this.baseDir, rawPath);
-    this.assertWithinWorkspace(path);
-    return path;
-  }
-
-  private assertWithinWorkspace(path: string): void {
-    const rel = relative(this.workspaceRoot, resolve(path));
-    if (rel.startsWith("..") || isAbsolute(rel)) {
-      throw new RuntimeError(`Memory path '${path}' is outside workspace root '${this.workspaceRoot}'`);
-    }
   }
 }
 

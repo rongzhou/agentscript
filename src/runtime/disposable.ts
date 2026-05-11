@@ -1,5 +1,5 @@
 export interface Disposable {
-  close(): Promise<void>;
+  close(): void | Promise<void>;
 }
 
 export function isDisposable<T>(value: T): value is T & Disposable {

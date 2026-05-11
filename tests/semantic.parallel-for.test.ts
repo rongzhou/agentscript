@@ -121,4 +121,28 @@ describe("semantic parallel-for", () => {
       2,
     );
   });
+
+  it("rejects host tool calls inside parallel for", () => {
+    const result = analyze(
+      parse(`
+        import tool Search from "host://search"
+
+        main agent A {
+          main func(input) {
+            return parallel for item in input.items max 2 {
+              Search.run({ query: item })
+              item
+            }
+          }
+        }
+      `),
+    );
+
+    expect(result.diagnostics).toContainEqual(
+      expect.objectContaining({
+        severity: "error",
+        code: "PARALLEL_FOR_EFFECTFUL_CALL",
+      }),
+    );
+  });
 });

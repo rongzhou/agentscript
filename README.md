@@ -76,11 +76,11 @@ main agent FileSummarizer {
     description "Read one local file and produce a useful structured summary."
 
     main func(input { path string }) {
-        content = File.read({
+        file = File.read({
             path: input.path
         })
         use input.path as "source path"
-        use content max 8k as "file content"
+        use file.content max 8k as "file content"
 
         generate({
             input: "Summarize the file for a busy teammate",
@@ -365,6 +365,7 @@ agentscript recipes/code-review.as --input '{"path":"src"}'
 agentscript recipes/code-review.as --input '{"path":"src"}' --mock
 agentscript recipes/code-review.as --input '{"path":"src"}' --dry-run
 agentscript recipes/code-review.as --input '{"path":"src"}' --trace
+agentscript recipes/code-review.as --input '{"path":"src"}' --trace-file trace.json
 agentscript recipes/code-review.as --check
 agentscript examples/arithmetic.as --parse
 agentscript recipes/code-review.as --quiet
@@ -381,8 +382,8 @@ agentscript recipes/code-review.as --quiet
 | `--mock` | Use deterministic mock providers instead of real model calls |
 | `--dry-run` | Build prompts and trace without model calls |
 | `--concurrency <n>` | Set the runtime concurrency limit for `parallel for` |
-| `--trace <file>` | Write execution trace to file |
 | `--trace` | Print human-readable trace |
+| `--trace-file <path>` | Write execution trace to a JSON file |
 | `--verbose` | Print detailed trace |
 | `--quiet` | Output only the final value |
 

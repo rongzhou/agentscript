@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { RuntimeError } from "../../runtime/errors.js";
 import type { JsonObject, RuntimeValue, ToolCallRequest, ToolProvider } from "../../runtime/types.js";
+import type { WorkspaceContext } from "../shared/workspace.js";
 import {
   DEFAULT_MAX_RESULTS,
   expectObject,
@@ -9,11 +10,10 @@ import {
   readPositiveInteger,
   readRequiredString,
   toolUriTarget,
-  type WorkspaceContext,
 } from "./shared.js";
 
 const FORBIDDEN_SHELL_TOOLS = new Set(["sh", "bash", "zsh", "fish"]);
-const SUPPORTED_SHELL_COMMANDS = new Set(["find", "grep", "sed"]);
+const SUPPORTED_SHELL_COMMANDS = new Set(["find", "grep", "read-range"]);
 const MAX_GREP_FILE_BYTES = 1024 * 1024;
 
 export class ShellToolProvider implements ToolProvider {
@@ -29,8 +29,8 @@ export class ShellToolProvider implements ToolProvider {
         return this.runFind(request.args[0]);
       case "grep":
         return this.runGrep(request.args[0]);
-      case "sed":
-        return this.runSed(request.args[0]);
+      case "read-range":
+        return this.runReadRange(request.args[0]);
       default:
         throw new RuntimeError(
           `Unsupported shell tool '${command}'. Supported: ${[...SUPPORTED_SHELL_COMMANDS].join(", ")}`,
@@ -82,9 +82,9 @@ export class ShellToolProvider implements ToolProvider {
     return { ok: true, matches };
   }
 
-  private runSed(value: RuntimeValue): RuntimeValue {
-    const args = expectObject(value, "Sed.run");
-    const path = this.workspace.resolveWorkspacePath(readRequiredString(args.path, "Sed.run.path"));
+  private runReadRange(value: RuntimeValue): RuntimeValue {
+    const args = expectObject(value, "ReadRange.run");
+    const path = this.workspace.resolveWorkspacePath(readRequiredString(args.path, "ReadRange.run.path"));
     const start = readPositiveInteger(args.start, 1);
     const max = readPositiveInteger(args.max, DEFAULT_MAX_RESULTS);
     const lines = readFileSync(path, "utf8")

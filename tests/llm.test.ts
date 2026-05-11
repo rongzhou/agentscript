@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { parse } from "../src/parser/parser.js";
 import { buildContext } from "../src/runtime/context.js";
-import { ProtocolLlmProvider, parseLlmUri } from "../src/providers/llm/index.js";
+import { ProtocolLlmProvider } from "../src/providers/llm/protocol.js";
+import { parseLlmUri } from "../src/providers/llm/uri.js";
 import type { GenerateRequest, JsonObject, LlmBinding } from "../src/runtime/types.js";
 
 const mainModel: LlmBinding = {
@@ -19,6 +20,16 @@ describe("parseLlmUri", () => {
     expect(parseLlmUri({ ...mainModel, uri: "anthropic://claude-sonnet-4-0" })).toEqual({
       protocol: "anthropic",
       model: "claude-sonnet-4-0",
+    });
+    expect(parseLlmUri({ ...mainModel, uri: "openai://proxy.example.com/v1/gpt-4.1-mini" })).toEqual({
+      protocol: "openai",
+      model: "gpt-4.1-mini",
+      baseUrl: "https://proxy.example.com/v1",
+    });
+    expect(parseLlmUri({ ...mainModel, uri: "anthropic://localhost:8080/v1/claude-sonnet-4-0" })).toEqual({
+      protocol: "anthropic",
+      model: "claude-sonnet-4-0",
+      baseUrl: "http://localhost:8080/v1",
     });
     expect(parseLlmUri({ ...mainModel, uri: "ollama://localhost:11434/qwen3.6" })).toEqual({
       protocol: "ollama",
@@ -58,6 +69,38 @@ describe("ProtocolLlmProvider", () => {
     expect(calls[0]!.url).toBe("https://api.openai.com/v1/chat/completions");
     expect(calls[0]!.body.response_format).toMatchObject({
       type: "json_schema",
+    });
+  });
+
+  it("uses OpenAI-compatible base URLs from model URIs", async () => {
+    const calls: Array<{ url: string; body: JsonObject }> = [];
+    const provider = new ProtocolLlmProvider({
+      openaiApiKey: "test-key",
+      fetch: async (input, init) => {
+        calls.push({
+          url: String(input),
+          body: JSON.parse(String(init?.body)) as JsonObject,
+        });
+        return jsonResponse({
+          choices: [
+            {
+              message: {
+                content: JSON.stringify({ ok: true }),
+              },
+            },
+          ],
+        });
+      },
+    });
+
+    const result = await provider.generate(makeRequest("openai://localhost:8080/v1/gpt-4.1-mini"));
+
+    expect(result).toEqual({ ok: true });
+    expect(calls[0]).toMatchObject({
+      url: "http://localhost:8080/v1/chat/completions",
+      body: {
+        model: "gpt-4.1-mini",
+      },
     });
   });
 
@@ -119,6 +162,59 @@ describe("ProtocolLlmProvider", () => {
       model: "claude-sonnet-4-0",
       max_tokens: 100,
     });
+  });
+
+  it("maps Anthropic thinking hints to extended thinking budgets", async () => {
+    const calls: JsonObject[] = [];
+    const provider = new ProtocolLlmProvider({
+      anthropicApiKey: "test-key",
+      fetch: async (_input, init) => {
+        calls.push(JSON.parse(String(init?.body)) as JsonObject);
+        return jsonResponse({
+          content: [
+            {
+              type: "thinking",
+              thinking: "summary",
+              signature: "sig",
+            },
+            {
+              type: "text",
+              text: JSON.stringify({ ok: true }),
+            },
+          ],
+        });
+      },
+    });
+
+    const result = await provider.generate({
+      ...makeRequest("anthropic://claude-sonnet-4-0"),
+      think: "high",
+    });
+
+    expect(result).toEqual({ ok: true });
+    expect(calls[0]).toMatchObject({
+      max_tokens: 10100,
+      thinking: {
+        type: "enabled",
+        budget_tokens: 10000,
+      },
+    });
+    expect(calls[0]).not.toHaveProperty("temperature");
+  });
+
+  it("rejects Anthropic temperature when extended thinking is enabled", async () => {
+    const provider = new ProtocolLlmProvider({
+      anthropicApiKey: "test-key",
+      fetch: async () => jsonResponse({ content: [] }),
+    });
+
+    await expect(
+      provider.generate({
+        ...makeRequest("anthropic://claude-sonnet-4-0"),
+        temperature: 0.2,
+        think: true,
+      }),
+    ).rejects.toThrow("not compatible with generate temperature");
   });
 
   it("calls Ollama chat API with schema format and generation options", async () => {
@@ -309,8 +405,6 @@ function makeRequest(uri: string): GenerateRequest {
     agentName: "A",
     model,
     identity: {},
-    instruction: "answer",
-    returnShape: stmt.value.returnShape,
     context: [],
     builtContext,
     maxOutput,

@@ -99,11 +99,15 @@ export interface IfStmt extends NodeBase {
 
 export interface ForInStmt extends NodeBase {
   kind: "ForInStmt";
-  itemName: string;
-  itemRange: SourceRange;
+  item: ItemBinding;
   iterable: Expr;
   maxIterations: number;
   body: Stmt[];
+}
+
+export interface ItemBinding {
+  name: string;
+  range: SourceRange;
 }
 
 export interface LoopUntilStmt extends NodeBase {
@@ -233,7 +237,7 @@ export interface UnaryExpr extends NodeBase {
 
 export interface BinaryExpr extends NodeBase {
   kind: "BinaryExpr";
-  operator: "==" | "!=" | "<" | ">" | "+" | "-" | "and" | "or";
+  operator: "==" | "!=" | "<" | "<=" | ">" | ">=" | "+" | "-" | "*" | "/" | "and" | "or";
   left: Expr;
   right: Expr;
 }
@@ -246,8 +250,7 @@ export interface GenerateExpr extends NodeBase {
 
 export interface ParallelForExpr extends NodeBase {
   kind: "ParallelForExpr";
-  itemName: string;
-  itemRange: SourceRange;
+  item: ItemBinding;
   iterable: Expr;
   maxIterations: number;
   body: Stmt[];
@@ -256,12 +259,8 @@ export interface ParallelForExpr extends NodeBase {
 export interface GenerateOptionsExpr extends NodeBase {
   kind: "GenerateOptionsExpr";
   properties: ObjectProperty[];
-  /**
-   * Parsed from the `max_output` property when present. It's the only derived
-   * field because budget parsing needs to split `2k` into amount + unit; all
-   * other options are accessed via `properties`.
-   */
   maxOutput?: Budget;
+  maxOutputRange?: SourceRange;
 }
 
 export interface Budget {

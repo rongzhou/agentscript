@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { MockToolProvider } from "../src/providers/mock/index.js";
+import { MockToolProvider } from "../src/providers/mock/provider.js";
 import { parse } from "../src/parser/parser.js";
 import { executeAgent } from "../src/runtime/interpreter.js";
+import { formatTrace } from "../src/runtime/trace.js";
+import type { ToolProvider } from "../src/runtime/types.js";
 
 describe("runtime calls", () => {
   it("calls another agent with AgentName(input) shorthand", async () => {
@@ -64,6 +66,113 @@ describe("runtime calls", () => {
         kind: "tool",
       }),
     ]);
+  });
+
+  it("mock tools follow URI schemes instead of import names", async () => {
+    const ast = parse(`
+      import tool Workspace from "file://workspace"
+      import tool Process from "env://process"
+
+      main agent A {
+        main func(input) {
+          return {
+            file: Workspace.read({ path: "README.md" }),
+            env: Process.get({ name: "AGENTSCRIPT_TEST_MISSING_ENV" })
+          }
+        }
+      }
+    `);
+
+    const result = await executeAgent(ast, {}, { toolProvider: new MockToolProvider() });
+
+    expect(result.value).toEqual({
+      file: {
+        ok: true,
+        content: "mock file content from file://workspace",
+      },
+      env: {
+        ok: true,
+        value: null,
+      },
+    });
+  });
+
+  it("keeps concurrent subagent traces isolated under each agent call", async () => {
+    const ast = parse(`
+      import tool Search from "mcp://tools/search"
+
+      main agent App {
+        main func(input) {
+          return parallel for item in input.items max 2 {
+            Worker(item)
+          }
+        }
+      }
+
+      agent Worker {
+        main func search(input) {
+          observation = Search.search(input.query, input.delay)
+          return observation
+        }
+      }
+    `);
+    const toolProvider: ToolProvider = {
+      async call(request) {
+        const query = String(request.args[0]);
+        const delay = Number(request.args[1] ?? 0);
+        await new Promise((resolve) => setTimeout(resolve, delay));
+        return { query };
+      },
+    };
+
+    const result = await executeAgent(
+      ast,
+      {
+        items: [
+          { query: "slow", delay: 20 },
+          { query: "fast", delay: 0 },
+        ],
+      },
+      { concurrency: 2, toolProvider },
+    );
+
+    expect(result.value).toEqual([{ query: "slow" }, { query: "fast" }]);
+    expect(result.trace).toHaveLength(1);
+    const parallelFor = result.trace[0]!;
+    expect(parallelFor).toMatchObject({
+      kind: "parallel_for",
+      data: { ok: true },
+    });
+    const iterations = parallelFor.data.iterations as Array<{
+      index: number;
+      input: { query: string; delay: number };
+      result: { query: string };
+      trace: Array<{ kind: string; data: { result: unknown; trace: unknown[] } }>;
+    }>;
+    expect(iterations.map((iteration) => iteration.input.query)).toEqual(["slow", "fast"]);
+
+    for (const iteration of iterations) {
+      expect(iteration.result).toEqual({ query: iteration.input.query });
+      expect(iteration.trace).toHaveLength(1);
+      const agentEvent = iteration.trace[0]!;
+      expect(agentEvent).toMatchObject({
+        kind: "agent",
+        data: {
+          agent: "Worker",
+          result: { query: iteration.input.query },
+        },
+      });
+      const nestedTrace = agentEvent.data.trace as Array<{ kind: string; data: { args: unknown[]; result: unknown } }>;
+      expect(nestedTrace[0]).toMatchObject({
+        kind: "tool",
+        data: {
+          args: [iteration.input.query, iteration.input.delay],
+          result: { query: iteration.input.query },
+        },
+      });
+    }
+    expect(formatTrace(result.trace)).toContain("- iteration [0] ok");
+    expect(formatTrace(result.trace)).toContain("- agent Worker.search");
   });
 
   it("calls a named function on another agent", async () => {

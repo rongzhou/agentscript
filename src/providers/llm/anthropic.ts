@@ -12,10 +12,15 @@ export async function callAnthropic(
   baseUrl: string,
 ): Promise<RuntimeValue> {
   const apiKey = requireApiKey(options.anthropicApiKey, "ANTHROPIC_API_KEY", "anthropic");
+  const finalTokenLimit = budgetToTokenLimit(request) ?? 1024;
+  const thinkingBudget = anthropicThinkingBudget(request.think);
+  if (thinkingBudget !== undefined && request.temperature !== undefined) {
+    throw new RuntimeError("Anthropic extended thinking is not compatible with generate temperature");
+  }
 
   const body: JsonObject = {
     model: parsed.model,
-    max_tokens: budgetToTokenLimit(request) ?? 1024,
+    max_tokens: finalTokenLimit + (thinkingBudget ?? 0),
     system: request.builtContext.system,
     messages: [
       {
@@ -24,7 +29,12 @@ export async function callAnthropic(
       },
     ],
   };
-  if (request.temperature !== undefined) {
+  if (thinkingBudget !== undefined) {
+    body.thinking = {
+      type: "enabled",
+      budget_tokens: thinkingBudget,
+    };
+  } else if (request.temperature !== undefined) {
     body.temperature = request.temperature;
   }
 
@@ -34,6 +44,24 @@ export async function callAnthropic(
   });
   const text = readAnthropicText(response);
   return finalizeLlmResponse(text, request);
+}
+
+function anthropicThinkingBudget(think: boolean | string | undefined): number | undefined {
+  switch (think) {
+    case true:
+    case "auto":
+    case "low":
+      return 1024;
+    case "medium":
+      return 4096;
+    case "high":
+      return 10000;
+    case false:
+    case undefined:
+      return undefined;
+    default:
+      return undefined;
+  }
 }
 
 function readAnthropicText(value: JsonValue): string {

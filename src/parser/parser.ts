@@ -17,7 +17,8 @@ import { ParseError } from "./errors.js";
 import { parseForIn, parseIf, parseLoop, parseRepeat } from "./control-flow.js";
 import { parseAgentDecl, parseImportDecl } from "./declarations.js";
 import { parseExpressionExpr, parsePostfixExpr } from "./expressions.js";
-import { isNewLineBetween, isOnSameLine, type Token, tokenize } from "./tokenizer.js";
+import { isNewLineBetween, isOnSameLine } from "./tokens.js";
+import { type Token, tokenize } from "./tokenizer.js";
 
 export function parse(source: string): Program {
   return new Parser(tokenize(source)).parseProgram();
@@ -149,7 +150,7 @@ class Parser {
     if (this.matchAny(["=", "+=", "-="])) {
       const operator = this.previous().value as AssignStmt["operator"];
       if (expr.kind !== "IdentifierExpr" && expr.kind !== "MemberExpr") {
-        throw new ParseError("Assignment target must be an identifier or member expression", expr.range.start);
+        throw this.errorAt("Assignment target must be an identifier or member expression", expr.range.start);
       }
       const value = this.parseExpression();
       return {
@@ -308,6 +309,14 @@ class Parser {
 
   error(message: string): ParseError {
     return new ParseError(message, this.peek().range.start);
+  }
+
+  errorAt(message: string, location: Token["range"]["start"]): ParseError {
+    return new ParseError(message, location);
+  }
+
+  errorAtRange(message: string, range: Token["range"]): ParseError {
+    return new ParseError(message, range.start, range);
   }
 
   isConfigKey(value: string): value is ConfigKey {

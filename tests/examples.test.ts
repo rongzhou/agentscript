@@ -3,8 +3,8 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { executeAgent } from "../src/runtime/interpreter.js";
 import { loadProgram } from "../src/runtime/loader.js";
-import { MockMemoryProvider, MockToolProvider } from "../src/providers/mock/index.js";
-import { createDefaultToolProvider } from "../src/providers/tools/index.js";
+import { MockMemoryProvider, MockToolProvider } from "../src/providers/mock/provider.js";
+import { createDefaultToolProvider } from "../src/providers/tools/host.js";
 import type { JsonObject } from "../src/runtime/types.js";
 import { analyze } from "../src/semantic/analyzer.js";
 

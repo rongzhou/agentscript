@@ -1,9 +1,11 @@
 import type { MemberExpr } from "../ast/types.js";
-import { MEMORY_ADD_METHOD, MEMORY_QUERY_METHOD } from "../language/memory.js";
+import { MEMORY_ADD_METHOD, type MemoryMethod, getMemoryMethodSpec } from "../language/memory.js";
+import { NODE_SCHEME, NPM_SCHEME } from "../language/schemes.js";
 import { uriScheme } from "../language/uri.js";
 import { RuntimeError } from "./errors.js";
 import { isObject } from "./guards.js";
 import { sanitizeForJson } from "./json.js";
+import { buildTraceEvent } from "./trace-event.js";
 import type {
   JsonValue,
   MemoryBinding,
@@ -34,86 +36,92 @@ export class ResourceCallRuntime {
       args,
       propertyRead,
     };
-    let result: RuntimeValue;
-    try {
-      result = await this.toolProvider.call(request);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      throw new RuntimeError(`Tool ${object.name}.${callee.property} (${object.uri}) failed: ${message}`, callee.range);
-    }
-    this.trace.push({
-      kind: "tool",
-      data: {
+    const result = await callProvider(
+      () => this.toolProvider.call(request),
+      `Tool ${object.name}.${callee.property} (${object.uri})`,
+      callee,
+    );
+    this.trace.push(
+      buildTraceEvent("tool", {
         tool: object.name,
         method: callee.property,
         scheme: uriScheme(object.uri),
         uri: object.uri,
-        args: sanitizeForJson(args),
-        result: sanitizeForJson(result),
+        args,
+        result,
         effects: readEffects(result),
-      },
-    });
+      }),
+    );
     return result;
   }
 
-  async callMemory(object: MemoryBinding, callee: MemberExpr, args: RuntimeValue[]): Promise<RuntimeValue> {
-    if (args.length !== 1) {
-      throw new RuntimeError(`memory.${callee.property} expects exactly one argument`, callee.range);
+  async readToolMember(object: ToolBinding, member: MemberExpr): Promise<RuntimeValue> {
+    if (isModuleTool(object)) {
+      return this.callTool(object, member, [], true);
     }
+    return { tool: object.name, method: member.property };
+  }
 
-    let result: RuntimeValue;
-    try {
-      if (callee.property === MEMORY_ADD_METHOD) {
-        result = await this.memoryProvider.add({
-          memoryName: object.name,
-          uri: object.uri,
-          record: args[0]!,
-        });
-      } else if (callee.property === MEMORY_QUERY_METHOD) {
-        result = await this.memoryProvider.query({
-          memoryName: object.name,
-          uri: object.uri,
-          query: args[0]!,
-        });
-      } else {
-        throw new RuntimeError(`Unknown memory method '${callee.property}'`, callee.range);
-      }
-    } catch (error) {
-      if (error instanceof RuntimeError) {
-        throw error.range ? error : new RuntimeError(error.message, callee.range);
-      }
-      const message = error instanceof Error ? error.message : String(error);
+  async callMemory(object: MemoryBinding, callee: MemberExpr, args: RuntimeValue[]): Promise<RuntimeValue> {
+    const spec = getMemoryMethodSpec(callee.property);
+    if (!spec) {
+      throw new RuntimeError(`Unknown memory method '${callee.property}'`, callee.range);
+    }
+    if (args.length !== spec.arity) {
       throw new RuntimeError(
-        `Memory ${object.name}.${callee.property} (${object.uri}) failed: ${message}`,
+        `Memory method '${object.name}.${callee.property}' expects ${spec.arity} argument(s), got ${args.length}`,
         callee.range,
       );
     }
 
-    const traceData = {
-      memory: object.name,
-      operation: callee.property,
-      uri: object.uri,
-      args: sanitizeForJson(args[0]!),
-      result: sanitizeForJson(result),
-      count: Array.isArray(result) ? result.length : null,
-    };
-    if (callee.property === MEMORY_ADD_METHOD && isObject(result)) {
-      Object.assign(traceData, {
-        id: typeof result.id === "string" ? result.id : null,
-        record: sanitizeForJson(result.record),
-      });
-    }
-    this.trace.push({
-      kind: "memory",
-      data: traceData,
-    });
+    const method = callee.property as MemoryMethod;
+    const result = await callProvider(
+      () => this.dispatchMemoryCall(method, object, args),
+      `Memory ${object.name}.${callee.property} (${object.uri})`,
+      callee,
+    );
+
+    this.trace.push(buildTraceEvent("memory", memoryTraceData(object, method, args[0]!, result)));
     return result;
   }
+
+  private dispatchMemoryCall(method: MemoryMethod, object: MemoryBinding, args: RuntimeValue[]): Promise<RuntimeValue> {
+    if (method === MEMORY_ADD_METHOD) {
+      return this.memoryProvider.add({
+        memoryName: object.name,
+        uri: object.uri,
+        record: args[0]!,
+      });
+    }
+    return this.memoryProvider.query({
+      memoryName: object.name,
+      uri: object.uri,
+      query: args[0]!,
+    });
+  }
+}
+
+function memoryTraceData(object: MemoryBinding, method: MemoryMethod, arg: RuntimeValue, result: RuntimeValue) {
+  const traceData = {
+    memory: object.name,
+    operation: method,
+    uri: object.uri,
+    args: arg,
+    result,
+    count: Array.isArray(result) ? result.length : null,
+  };
+  if (method === MEMORY_ADD_METHOD && isObject(result)) {
+    Object.assign(traceData, {
+      id: typeof result.id === "string" ? result.id : null,
+      record: result.record,
+    });
+  }
+  return traceData;
 }
 
 export function isModuleTool(value: ToolBinding): boolean {
   const scheme = uriScheme(value.uri);
-  return scheme === "npm" || scheme === "node";
+  return scheme === NPM_SCHEME || scheme === NODE_SCHEME;
 }
 
 function readEffects(value: RuntimeValue): JsonValue {
@@ -121,4 +129,17 @@ function readEffects(value: RuntimeValue): JsonValue {
     return sanitizeForJson(value.effects);
   }
   return null;
+}
+
+async function callProvider(
+  call: () => Promise<RuntimeValue>,
+  label: string,
+  callee: MemberExpr,
+): Promise<RuntimeValue> {
+  try {
+    return await call();
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new RuntimeError(`${label} failed: ${message}`, callee.range);
+  }
 }

@@ -8,6 +8,6 @@ export class EnvToolProvider implements ToolProvider {
       throw new RuntimeError(`Unsupported env method '${request.method}'. Supported: get`);
     }
     const args = expectObject(request.args[0], "Env.get");
-    return process.env[readRequiredString(args.name, "Env.get.name")] ?? null;
+    return { ok: true, value: process.env[readRequiredString(args.name, "Env.get.name")] ?? null };
   }
 }

@@ -64,6 +64,44 @@ describe("parser expressions", () => {
     });
   });
 
+  it("parses factor operators before term operators", () => {
+    const ast = parse(`
+      agent A {
+        func act(input) {
+          return 1 + 2 * 3 <= 7
+        }
+      }
+    `);
+
+    const stmt = ast.agents[0]!.functions[0]!.body[0]!;
+    expect(stmt.kind).toBe("ReturnStmt");
+    if (stmt.kind !== "ReturnStmt") return;
+    expect(stmt.value).toMatchObject({
+      kind: "BinaryExpr",
+      operator: "<=",
+      left: {
+        kind: "BinaryExpr",
+        operator: "+",
+        right: {
+          kind: "BinaryExpr",
+          operator: "*",
+        },
+      },
+    });
+  });
+
+  it("rejects budget literals outside budget positions", () => {
+    expect(() =>
+      parse(`
+      agent A {
+        func act(input) {
+          return 2k
+        }
+      }
+    `),
+    ).toThrow("Invalid number literal '2k'");
+  });
+
   it("rejects object literals with missing commas", () => {
     expect(() =>
       parse(`

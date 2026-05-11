@@ -35,6 +35,7 @@ AgentScript should preserve these invariants:
 - **Scoped visibility**: context visibility follows scope. Child scopes can inherit parent context; function and agent calls create independent context boundaries.
 - **Capability isolation**: imported tools, models, agents, memory handles, functions, provider URIs, and runtime configuration are capabilities, not prompt data.
 - **Deferred context resolution**: `use expr` declares a source. The value is resolved when a visible `generate` builds its prompt.
+- **Deterministic clipping**: context budgets clip rendered values by prefix. They do not rank, summarize, or semantically compress content.
 - **Layered prompts**: prompts distinguish agent identity, selected context, instruction, and output contract.
 - **Auditable traces**: trace output must explain what the LLM call actually saw, including source expressions, labels, budgets, clipping, and generated results.
 
@@ -141,6 +142,7 @@ Before changing `use`, scope, context builder, trace, or LLM provider behavior, 
 - Does this let caller context pollute a callee?
 - Does this expose tool/model/agent/function bindings as prompt data?
 - Does this preserve source, label, budget, and clipping information for audit?
+- Does this preserve the documented clipping order for strings, lists, and objects?
 - Does this reduce `use` to a snapshot assignment instead of a deferred context source?
 - Does this confuse context budget with generation budget?
 - Does this confuse AgentScript context labels with provider message roles?

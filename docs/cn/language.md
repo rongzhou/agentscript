@@ -79,7 +79,7 @@ import llm Local from "ollama://localhost:11434/qwen3.6"
 
 | Scheme | Provider | 示例 |
 |--------|----------|------|
-| `sh://` | 基于 shell 的工具 | `sh://find`, `sh://grep` |
+| `sh://` | 基于 shell 的工具 | `sh://find`, `sh://grep`, `sh://read-range` |
 | `file://` | 文件操作 | `file://workspace` |
 | `env://` | 环境变量 | `env://process` |
 | `http://` / `https://` | HTTP 请求 | `https://api.example.com` |
@@ -255,7 +255,7 @@ if answer.ok and not input.dry_run {
 }
 ```
 
-支持的运算符：`+`、`-`、`==`、`!=`、`<`、`>`、`and`、`or`、`not`。复合赋值支持 `+=` 和 `-=`。Context budget 和循环上限使用 `max`，因此 `<` 恢复为类似 `==` 的普通比较运算符。
+支持的运算符：`+`、`-`、`*`、`/`、`==`、`!=`、`<`、`<=`、`>`、`>=`、`and`、`or`、`not`。复合赋值支持 `+=` 和 `-=`。Context budget 和循环上限使用 `max`，因此 `<` 恢复为类似 `==` 的普通比较运算符。
 
 ### Loop until
 
@@ -353,10 +353,10 @@ matches = Grep.run({
 })
 ```
 
-### Sed
+### ReadRange
 
 ```agentscript
-lines = Sed.run({
+lines = ReadRange.run({
     path: "src/main.as",
     start: 1,
     max: 20
@@ -366,7 +366,7 @@ lines = Sed.run({
 ### File
 
 ```agentscript
-content = File.read({
+file = File.read({
     path: "README.md"
 })
 entries = File.list({
@@ -384,7 +384,7 @@ result = File.patch({
 result = File.undo(effects)
 ```
 
-写和 patch 操作返回可撤销的 effect 记录。`File.undo` 接受 effect 记录列表并逆转。
+Tool 成功结果统一是带 `ok: true` 的对象。`File.read` 返回 `content`，`File.list` 返回 `entries`，写和 patch 操作返回可撤销的 effect 记录。`File.undo` 接受 effect 记录列表并逆转。
 
 ### Env
 
@@ -393,6 +393,8 @@ home = Env.get({
     name: "HOME"
 })
 ```
+
+`Env.get` 返回 `{ ok: true, value }`；环境变量不存在时 `value` 为 `null`。
 
 ### Http
 
@@ -411,6 +413,8 @@ response = Http.post({
 
 HTTP 请求限制在 import URI 的 origin 内。
 
+HTTP 方法返回 `{ ok, status, body, json }`。`ok` 表示 HTTP status 是否为 2xx，`body` 是响应文本，`json` 是解析后的 JSON 值；响应体不是合法 JSON 时为 `null`。相对 URL 基于 import URI 解析，跨 origin 目标会被拒绝。对象类型 request body 会先转为 JSON-safe 值再序列化；服务端要求时需要显式设置 `content-type: application/json`。
+
 ### MCP
 
 MCP 支持目前只覆盖 stdio transport。`mcp://name` 会解析到 workspace root
@@ -427,6 +431,8 @@ MCP 支持目前只覆盖 stdio transport。`mcp://name` 会解析到 workspace 
   }
 }
 ```
+
+Server `env` value 可以用 `$NAME` 片段引用宿主环境变量。不存在的变量展开为空字符串。`${NAME}` 和默认值语法不属于当前配置格式。
 
 对于不是 AgentScript identifier 的 MCP tool name，使用 `call({ tool, args })`：
 
@@ -511,7 +517,7 @@ use past max 2k
 - Memory 绑定不能直接用 `use` 作为 prompt context。
 - 查询结果是普通数据，必须显式 `use`。
 - `add` 接受一个对象参数。运行时自动补充 `id`、`created_at`、`updated_at`。
-- `query` 支持 `text`（大小写不敏感子串匹配）、`kind`（精确匹配）、`where`（精确字段匹配）和 `limit`。
+- `query` 支持 `text`（在 `record.text` 和 JSON-safe record view 上做大小写不敏感子串匹配）、`kind`（精确匹配）、`where`（精确字段匹配）和 `limit`。
 - File memory 使用 JSONL 格式，文件和父目录自动创建。
 - SQLite memory 使用固定 schema，不暴露任意 SQL。
 

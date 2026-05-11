@@ -1,3 +1,13 @@
+import {
+  FILE_SCHEME,
+  ENV_SCHEME,
+  HTTP_SCHEME,
+  HTTPS_SCHEME,
+  MCP_SCHEME,
+  NODE_SCHEME,
+  NPM_SCHEME,
+  SHELL_SCHEME,
+} from "../../language/schemes.js";
 import type { ToolProvider } from "../../runtime/types.js";
 import { EnvToolProvider } from "./env.js";
 import { FileToolProvider } from "./file.js";
@@ -8,7 +18,7 @@ import { NpmToolProvider } from "./npm.js";
 import { loadNpmRegistry } from "./npm-registry.js";
 import { SchemeToolProvider } from "./scheme.js";
 import { ShellToolProvider } from "./shell.js";
-import { Workspace } from "./shared.js";
+import { Workspace } from "../shared/workspace.js";
 
 export class HostToolProvider extends SchemeToolProvider {
   constructor(workspaceRoot = process.cwd()) {
@@ -18,14 +28,14 @@ export class HostToolProvider extends SchemeToolProvider {
     const npmRegistry = loadNpmRegistry(workspaceRoot);
     super(
       {
-        env: new EnvToolProvider(),
-        file: new FileToolProvider(workspace),
-        http,
-        https: http,
-        mcp,
-        node: new NodeToolProvider(npmRegistry),
-        npm: new NpmToolProvider(npmRegistry, workspaceRoot),
-        sh: new ShellToolProvider(workspace),
+        [ENV_SCHEME]: new EnvToolProvider(),
+        [FILE_SCHEME]: new FileToolProvider(workspace),
+        [HTTP_SCHEME]: http,
+        [HTTPS_SCHEME]: http,
+        [MCP_SCHEME]: mcp,
+        [NODE_SCHEME]: new NodeToolProvider(npmRegistry),
+        [NPM_SCHEME]: new NpmToolProvider(npmRegistry, workspaceRoot),
+        [SHELL_SCHEME]: new ShellToolProvider(workspace),
       },
       "host tool scheme",
     );

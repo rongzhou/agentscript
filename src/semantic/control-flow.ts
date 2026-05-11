@@ -1,6 +1,7 @@
 import type { Expr, Stmt } from "../ast/types.js";
 import { errorDiagnostic as error, type SemanticDiagnostic } from "./diagnostics.js";
 import { SemanticScope } from "./scope.js";
+import { scopeWithItemBinding } from "./walker.js";
 
 export interface ControlFlowCheckHost {
   checkBlock(statements: Stmt[], scope: SemanticScope): void;
@@ -30,9 +31,7 @@ export function checkForInStatement(
   if (stmt.maxIterations <= 0) {
     diagnostics.push(error("INVALID_ITERATION_LIMIT", "For iteration count must be greater than 0", stmt.range));
   }
-  const child = scope.child();
-  void child.define(stmt.itemName, { kind: "local", range: stmt.itemRange });
-  host.checkBlock(stmt.body, child);
+  host.checkBlock(stmt.body, scopeWithItemBinding(scope, stmt.item));
   return diagnostics;
 }
 

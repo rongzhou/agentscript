@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { extname, isAbsolute, resolve } from "node:path";
 import type { Program } from "../ast/types.js";
 import type { BindingKind } from "../language/bindings.js";
+import { FILE_SCHEME, schemePrefix } from "../language/schemes.js";
 import { RuntimeError } from "./errors.js";
 import type { RuntimeValue } from "./types.js";
 
@@ -54,7 +55,7 @@ function loadImportedFile(uri: string, sourceDir: string): RuntimeValue {
 }
 
 function resolveImportPath(uri: string, sourceDir: string): string {
-  if (uri.startsWith("file://")) {
+  if (uri.startsWith(schemePrefix(FILE_SCHEME))) {
     return new URL(uri).pathname;
   }
   if (isAbsolute(uri)) {

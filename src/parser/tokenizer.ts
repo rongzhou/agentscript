@@ -9,14 +9,6 @@ export interface Token {
   range: SourceRange;
 }
 
-export function isNewLineBetween(prev: Token, next: Token): boolean {
-  return prev.range.end.line < next.range.start.line;
-}
-
-export function isOnSameLine(a: Token, b: Token): boolean {
-  return a.range.start.line === b.range.start.line;
-}
-
 const KEYWORDS = new Set([
   "import",
   "main",
@@ -48,7 +40,7 @@ const KEYWORDS = new Set([
   "max",
 ]);
 
-const SYMBOLS = new Set(["{", "}", "(", ")", "[", "]", ".", ",", ":", "=", "!", "<", ">", "+", "-", "*"]);
+const SYMBOLS = new Set(["{", "}", "(", ")", "[", "]", ".", ",", ":", "=", "!", "<", ">", "+", "-", "*", "/"]);
 
 export function tokenize(source: string): Token[] {
   const scanner = new Scanner(source);
@@ -91,7 +83,15 @@ class Scanner {
 
       if (SYMBOLS.has(char)) {
         const twoChar = `${char}${this.peekNext()}`;
-        if (twoChar === "==" || twoChar === "!=" || twoChar === "->" || twoChar === "+=" || twoChar === "-=") {
+        if (
+          twoChar === "==" ||
+          twoChar === "!=" ||
+          twoChar === "<=" ||
+          twoChar === ">=" ||
+          twoChar === "->" ||
+          twoChar === "+=" ||
+          twoChar === "-="
+        ) {
           this.advance();
           this.advance();
           tokens.push({

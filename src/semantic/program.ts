@@ -1,5 +1,7 @@
 import type { AgentDecl, Program, SourceRange } from "../ast/types.js";
 import { type BindingKind, importResourceKindToBindingKind } from "../language/bindings.js";
+import { defaultEntryAgent } from "../language/entry.js";
+import { NODE_SCHEME, NPM_SCHEME } from "../language/schemes.js";
 import { uriScheme } from "../language/uri.js";
 import { checkNodeImport, checkNpmImport, type NpmRegistry } from "../providers/tools/npm-registry.js";
 import { errorDiagnostic, type SemanticDiagnostic } from "./diagnostics.js";
@@ -60,9 +62,9 @@ function checkToolImportAuthorization(
 ): void {
   if (!options.npmRegistry) return;
   try {
-    if (uriScheme(uri) === "npm") {
+    if (uriScheme(uri) === NPM_SCHEME) {
       checkNpmImport(uri, options.npmRegistry);
-    } else if (uriScheme(uri) === "node") {
+    } else if (uriScheme(uri) === NODE_SCHEME) {
       checkNodeImport(uri, options.npmRegistry);
     }
   } catch (error) {
@@ -114,7 +116,7 @@ function collectAgentBindings(
     }
   }
 
-  const entryAgent = mainAgent ?? (program.agents.length === 1 ? program.agents[0] : undefined);
+  const entryAgent = defaultEntryAgent(program);
   if (entryAgent && !entryAgent.functions.some((fn) => fn.isMain)) {
     diagnostics.push(errorDiagnostic("MISSING_MAIN_FUNC", "Entry agent must declare one main func", entryAgent.range));
   }

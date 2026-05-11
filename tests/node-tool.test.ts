@@ -19,7 +19,7 @@ describe("node tool provider", () => {
     ).rejects.toThrow("cannot be read as a property");
   });
 
-  it("supports dynamic call", async () => {
+  it("treats call like a normal module member", async () => {
     const provider = new NodeToolProvider(registry(["path"]));
 
     await expect(
@@ -29,7 +29,7 @@ describe("node tool provider", () => {
         method: "call",
         args: [{ method: "basename", args: ["/tmp/file.txt"] }],
       }),
-    ).resolves.toBe("file.txt");
+    ).rejects.toThrow("Unknown method 'call'");
   });
 
   it("rejects unauthorized modules", async () => {

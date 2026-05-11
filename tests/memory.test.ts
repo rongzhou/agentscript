@@ -3,8 +3,9 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { parse } from "../src/parser/parser.js";
-import { HostMemoryProvider } from "../src/providers/memory/index.js";
+import { HostMemoryProvider } from "../src/providers/memory/host.js";
 import { executeAgent } from "../src/runtime/interpreter.js";
+import type { MemoryProvider, RuntimeValue } from "../src/runtime/types.js";
 
 describe("memory", () => {
   it("adds and queries file memory records with trace", async () => {
@@ -198,7 +199,7 @@ describe("memory", () => {
     ]);
   });
 
-  it("matches file and sqlite memory text queries consistently", async () => {
+  it("matches file and sqlite memory query semantics consistently", async () => {
     const dir = mkdtempSync(join(tmpdir(), "agentscript-memory-query-"));
     const provider = new HostMemoryProvider({ baseDir: dir, workspaceRoot: dir });
     const fileUri = "file://./.agentscript/lessons.jsonl";
@@ -207,13 +208,25 @@ describe("memory", () => {
       kind: "lesson",
       text: "unrelated",
       note: "CaseFold Target",
+      tags: ["runtime", "memory"],
+    };
+    const decoy = {
+      kind: "note",
+      text: "CaseFold Target",
+      tags: ["runtime", "memory"],
     };
 
     await provider.add({ memoryName: "FileLessons", uri: fileUri, record });
+    await provider.add({ memoryName: "FileLessons", uri: fileUri, record: decoy });
     await provider.add({ memoryName: "SqliteLessons", uri: sqliteUri, record });
+    await provider.add({ memoryName: "SqliteLessons", uri: sqliteUri, record: decoy });
 
     const query = {
+      kind: "lesson",
       text: "casefold target",
+      where: {
+        tags: ["runtime", "memory"],
+      },
       limit: 5,
     };
     const fileResult = await provider.query({ memoryName: "FileLessons", uri: fileUri, query });
@@ -222,5 +235,29 @@ describe("memory", () => {
 
     expect(fileResult).toMatchObject([{ record }]);
     expect(sqliteResult).toMatchObject([{ record }]);
+  });
+
+  it("adds memory call context to provider failures", async () => {
+    const ast = parse(`
+      import memory Lessons from "file://./.agentscript/lessons.jsonl"
+
+      main agent A {
+        main func(input) {
+          return Lessons.query({ limit: 5 })
+        }
+      }
+    `);
+    const memoryProvider: MemoryProvider = {
+      async add(): Promise<RuntimeValue> {
+        return null;
+      },
+      async query(): Promise<RuntimeValue> {
+        throw new Error("disk unavailable");
+      },
+    };
+
+    await expect(executeAgent(ast, {}, { memoryProvider })).rejects.toThrow(
+      "Memory Lessons.query (file://./.agentscript/lessons.jsonl) failed: disk unavailable",
+    );
   });
 });

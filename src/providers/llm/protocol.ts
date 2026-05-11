@@ -1,10 +1,15 @@
 import { RuntimeError } from "../../runtime/errors.js";
 import type { GenerateRequest, LlmProvider, RuntimeValue } from "../../runtime/types.js";
-import { callAnthropic } from "./anthropic.js";
-import { callOllama } from "./ollama.js";
-import { callOpenAI } from "./openai.js";
+import { LLM_ADAPTERS } from "./adapters.js";
 import { trimTrailingSlash } from "./shared.js";
-import type { FetchLike, ParsedLlmUri, ProtocolLlmProviderOptions } from "./types.js";
+import {
+  ANTHROPIC_PROTOCOL,
+  OLLAMA_PROTOCOL,
+  OPENAI_PROTOCOL,
+  type FetchLike,
+  type ParsedLlmUri,
+  type ProtocolLlmProviderOptions,
+} from "./types.js";
 import { parseLlmUri } from "./uri.js";
 
 export class ProtocolLlmProvider implements LlmProvider {
@@ -21,14 +26,14 @@ export class ProtocolLlmProvider implements LlmProvider {
 
     const parsed = parseLlmUri(request.model);
     const timeoutMs = this.requestTimeoutMs();
-    switch (parsed.protocol) {
-      case "openai":
-        return callOpenAI(request, parsed, this.options, this.fetchImpl, timeoutMs, this.openAIBaseUrl(parsed));
-      case "anthropic":
-        return callAnthropic(request, parsed, this.options, this.fetchImpl, timeoutMs, this.anthropicBaseUrl(parsed));
-      case "ollama":
-        return callOllama(request, parsed, this.fetchImpl, timeoutMs, this.ollamaBaseUrl(parsed));
-    }
+    const adapter = LLM_ADAPTERS[parsed.protocol];
+    return adapter.call(request, {
+      parsed,
+      fetchImpl: this.fetchImpl,
+      options: this.options,
+      timeoutMs,
+      baseUrl: this.baseUrl(parsed),
+    });
   }
 
   private requestTimeoutMs(): number {
@@ -36,21 +41,20 @@ export class ProtocolLlmProvider implements LlmProvider {
     return Number.isFinite(value) && value > 0 ? value : 30_000;
   }
 
-  private openAIBaseUrl(parsed: ParsedLlmUri): string {
-    return this.providerBaseUrl(parsed, this.options.openaiBaseUrl, "OPENAI_BASE_URL", "https://api.openai.com/v1");
-  }
-
-  private anthropicBaseUrl(parsed: ParsedLlmUri): string {
-    return this.providerBaseUrl(
-      parsed,
-      this.options.anthropicBaseUrl,
-      "ANTHROPIC_BASE_URL",
-      "https://api.anthropic.com/v1",
-    );
-  }
-
-  private ollamaBaseUrl(parsed: ParsedLlmUri): string {
-    return this.providerBaseUrl(parsed, this.options.ollamaBaseUrl, "OLLAMA_BASE_URL", "http://localhost:11434");
+  private baseUrl(parsed: ParsedLlmUri): string {
+    switch (parsed.protocol) {
+      case OPENAI_PROTOCOL:
+        return this.providerBaseUrl(parsed, this.options.openaiBaseUrl, "OPENAI_BASE_URL", "https://api.openai.com/v1");
+      case ANTHROPIC_PROTOCOL:
+        return this.providerBaseUrl(
+          parsed,
+          this.options.anthropicBaseUrl,
+          "ANTHROPIC_BASE_URL",
+          "https://api.anthropic.com/v1",
+        );
+      case OLLAMA_PROTOCOL:
+        return this.providerBaseUrl(parsed, this.options.ollamaBaseUrl, "OLLAMA_BASE_URL", "http://localhost:11434");
+    }
   }
 
   private providerBaseUrl(

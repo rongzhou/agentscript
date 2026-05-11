@@ -50,7 +50,7 @@ export async function postJson(
 }
 
 export function finalizeLlmResponse(text: string, request: GenerateRequest): RuntimeValue {
-  return request.returnShape ? parseJsonText(text) : text;
+  return request.builtContext.returnSchema ? parseJsonText(text) : text;
 }
 
 /**

@@ -1,7 +1,7 @@
 import llm Qwen from "ollama://localhost:11434/qwen3.6"
 import tool Find from "sh://find"
 import tool Grep from "sh://grep"
-import tool Sed from "sh://sed"
+import tool ReadRange from "sh://read-range"
 
 main agent RepoReviewAssistant {
     model Qwen
@@ -28,12 +28,12 @@ main agent RepoReviewAssistant {
             include: "*",
             max: 100
         })
-        package_metadata = Sed.run({
+        package_metadata = ReadRange.run({
             path: "package.json",
             start: 1,
             max: 120
         })
-        ci_config = Sed.run({
+        ci_config = ReadRange.run({
             path: ".github/workflows/ci.yml",
             start: 1,
             max: 120

@@ -1,4 +1,5 @@
 import type { AgentDecl, FuncDecl, Program, SourceRange } from "../ast/types.js";
+import { defaultEntryAgent, findMainFunction } from "../language/entry.js";
 import { RuntimeError } from "./errors.js";
 
 export function createAgentMap(program: Program): Map<string, AgentDecl> {
@@ -15,16 +16,15 @@ export function resolveEntryAgent(program: Program, agentName?: string): AgentDe
     if (!agent) throw new RuntimeError(`Unknown agent '${agentName}'`);
     return agent;
   }
-  const main = program.agents.find((item) => item.isMain);
-  if (main) return main;
-  if (program.agents.length !== 1) {
+  const agent = defaultEntryAgent(program);
+  if (!agent) {
     throw new RuntimeError("main agent is required when a program contains multiple agents");
   }
-  return program.agents[0]!;
+  return agent;
 }
 
 export function resolveMainFunction(agent: AgentDecl): FuncDecl {
-  const main = agent.functions.find((fn) => fn.isMain);
+  const main = findMainFunction(agent);
   if (main) return main;
   throw new RuntimeError(`Agent '${agent.name}' has no main func`);
 }

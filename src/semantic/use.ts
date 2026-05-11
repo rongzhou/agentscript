@@ -3,7 +3,7 @@ import { NON_CONTEXT_BINDING_KINDS } from "../language/bindings.js";
 import { checkBudget } from "./budget.js";
 import { errorDiagnostic as error, type SemanticDiagnostic } from "./diagnostics.js";
 import type { Binding } from "./scope.js";
-import { containsCallExpression, identifiersInExpression } from "./traverse.js";
+import { containsCallExpression, identifiersInExpression } from "../ast/walk.js";
 
 interface UseScope {
   resolve(name: string): Binding | undefined;
@@ -12,14 +12,14 @@ interface UseScope {
 const RESERVED_CONTEXT_LABELS = new Set(["system", "assistant", "tool", "developer"]);
 
 export function checkAgentUse(stmt: UseStmt, scope: UseScope): SemanticDiagnostic[] {
-  return checkUseRules(stmt, scope, { agentLevel: true });
+  return [...checkCommonUseRules(stmt, scope), ...checkAgentLevelUseValue(stmt, scope)];
 }
 
 export function checkFunctionUse(stmt: UseStmt, scope: UseScope): SemanticDiagnostic[] {
-  return checkUseRules(stmt, scope, { agentLevel: false });
+  return checkCommonUseRules(stmt, scope);
 }
 
-function checkUseRules(stmt: UseStmt, scope: UseScope, options: { agentLevel: boolean }): SemanticDiagnostic[] {
+function checkCommonUseRules(stmt: UseStmt, scope: UseScope): SemanticDiagnostic[] {
   const diagnostics: SemanticDiagnostic[] = [];
 
   diagnostics.push(...checkUseValue(stmt, scope));
@@ -31,9 +31,6 @@ function checkUseRules(stmt: UseStmt, scope: UseScope, options: { agentLevel: bo
         stmt.value.range,
       ),
     );
-  }
-  if (options.agentLevel) {
-    diagnostics.push(...checkAgentLevelUseValue(stmt, scope));
   }
   diagnostics.push(...checkBudget(stmt.budget, stmt.range));
   if (stmt.label && RESERVED_CONTEXT_LABELS.has(stmt.label)) {

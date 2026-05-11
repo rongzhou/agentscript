@@ -14,7 +14,7 @@ function formatEvent(event: TraceEvent, depth: number): string {
     case "agent": {
       const agent = readString(event.data.agent);
       const fn = readString(event.data.function);
-      const nested = Array.isArray(event.data.trace) ? (event.data.trace as TraceEvent[]) : [];
+      const nested = isTraceEventArray(event.data.trace) ? event.data.trace : [];
       const header = `${indent}- agent ${agent}.${fn}`;
       if (nested.length === 0) return header;
       return [header, ...nested.map((child) => formatEvent(child, depth + 1))].join("\n");
@@ -36,12 +36,30 @@ function formatEvent(event: TraceEvent, depth: number): string {
     case "for":
       return `${indent}- for ${readString(event.data.item)}[${summarize(event.data.index)}]`;
     case "parallel_for":
-      return `${indent}- parallel for ${readString(event.data.item)} (${summarize(event.data.items)} items, concurrency ${summarize(event.data.concurrency)})`;
+      return formatParallelFor(event, depth);
     case "use":
       return `${indent}- use ${summarize(event.data.source)}`;
     default:
       assertNever(event.kind);
   }
+}
+
+function formatParallelFor(event: TraceEvent, depth: number): string {
+  const indent = "  ".repeat(depth);
+  const header = `${indent}- parallel for ${readString(event.data.item)} (${summarize(event.data.items)} items, concurrency ${summarize(event.data.concurrency)})`;
+  const iterations = Array.isArray(event.data.iterations) ? event.data.iterations : [];
+  if (iterations.length === 0) return header;
+
+  const lines = [header];
+  for (const iteration of iterations) {
+    if (!isJsonObject(iteration)) continue;
+    const iterationIndent = "  ".repeat(depth + 1);
+    const status = iteration.ok === true ? "ok" : "failed";
+    lines.push(`${iterationIndent}- iteration [${summarize(iteration.index)}] ${status}`);
+    const nested = isTraceEventArray(iteration.trace) ? iteration.trace : [];
+    lines.push(...nested.map((child) => formatEvent(child, depth + 2)));
+  }
+  return lines.join("\n");
 }
 
 function readString(value: JsonValue | undefined): string {
@@ -57,4 +75,21 @@ function summarize(value: JsonValue | undefined): string {
   }
   const json = JSON.stringify(value);
   return json.length > 72 ? `${json.slice(0, 69)}...` : json;
+}
+
+function isJsonObject(value: unknown): value is Record<string, JsonValue> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function isTraceEventArray(value: unknown): value is TraceEvent[] {
+  return Array.isArray(value) && value.every(isTraceEvent);
+}
+
+function isTraceEvent(value: unknown): value is TraceEvent {
+  return (
+    isJsonObject(value) &&
+    typeof value.kind === "string" &&
+    isJsonObject(value.data) &&
+    ["use", "generate", "tool", "input", "agent", "for", "parallel_for", "memory"].includes(value.kind)
+  );
 }

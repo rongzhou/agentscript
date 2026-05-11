@@ -58,4 +58,22 @@ describe("tokenize", () => {
     const tokens = tokenize("a-b");
     expect(tokens.map((token) => token.value)).toEqual(["a", "-", "b", ""]);
   });
+
+  it("tokenizes extended arithmetic and comparison operators", () => {
+    const tokens = tokenize("value <= 10 and total >= 4 * 2 / 1");
+    expect(tokens.map((token) => token.value)).toEqual([
+      "value",
+      "<=",
+      "10",
+      "and",
+      "total",
+      ">=",
+      "4",
+      "*",
+      "2",
+      "/",
+      "1",
+      "",
+    ]);
+  });
 });

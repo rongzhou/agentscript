@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { dirname, isAbsolute, resolve } from "node:path";
 import type { AgentDecl, ImportDecl, Program } from "../ast/types.js";
+import { FILE_SCHEME, SQLITE_SCHEME, schemePrefix } from "../language/schemes.js";
 import { parse } from "../parser/parser.js";
 import { splitSqliteUri } from "../language/uri.js";
 
@@ -161,22 +162,22 @@ function normalizeImport(imported: ImportDecl, baseDir: string): ImportDecl {
 }
 
 function normalizeMemoryImportUri(uri: string, baseDir: string): string {
-  if (uri.startsWith("file://")) {
-    return `file://${resolveImportPath(uri, baseDir)}`;
+  if (uri.startsWith(schemePrefix(FILE_SCHEME))) {
+    return `${schemePrefix(FILE_SCHEME)}${resolveImportPath(uri, baseDir)}`;
   }
-  if (uri.startsWith("sqlite://")) {
+  if (uri.startsWith(schemePrefix(SQLITE_SCHEME))) {
     const { rawPath, rawNamespace } = splitSqliteUri(uri);
     const decodedPath = decodeURIComponent(rawPath);
     const path = isAbsolute(decodedPath) ? decodedPath : resolve(baseDir, decodedPath);
     const suffix = rawNamespace.length > 0 ? `#${rawNamespace}` : "";
-    return `sqlite://${path}${suffix}`;
+    return `${schemePrefix(SQLITE_SCHEME)}${path}${suffix}`;
   }
   return uri;
 }
 
 function resolveImportPath(uri: string, baseDir: string): string {
-  if (uri.startsWith("file://")) {
-    const path = decodeURIComponent(uri.slice("file://".length));
+  if (uri.startsWith(schemePrefix(FILE_SCHEME))) {
+    const path = decodeURIComponent(uri.slice(schemePrefix(FILE_SCHEME).length));
     return isAbsolute(path) ? path : resolve(baseDir, path);
   }
   if (isAbsolute(uri)) {
@@ -186,7 +187,9 @@ function resolveImportPath(uri: string, baseDir: string): string {
 }
 
 function isRelativeImport(uri: string): boolean {
-  return !uri.startsWith("file://") && !isAbsolute(uri) && (uri.startsWith("./") || uri.startsWith("../"));
+  return (
+    !uri.startsWith(schemePrefix(FILE_SCHEME)) && !isAbsolute(uri) && (uri.startsWith("./") || uri.startsWith("../"))
+  );
 }
 
 const FILE_RESOLUTION_KINDS = new Set(["agent", "file"]);
@@ -199,10 +202,10 @@ function requiresFileResolution(imported: ImportDecl): boolean {
 }
 
 function memoryUriHasRelativePath(uri: string): boolean {
-  if (uri.startsWith("file://")) {
-    return isRelativeImport(uri.slice("file://".length));
+  if (uri.startsWith(schemePrefix(FILE_SCHEME))) {
+    return isRelativeImport(uri.slice(schemePrefix(FILE_SCHEME).length));
   }
-  if (uri.startsWith("sqlite://")) {
+  if (uri.startsWith(schemePrefix(SQLITE_SCHEME))) {
     return isRelativeImport(splitSqliteUri(uri).rawPath);
   }
   return false;

@@ -42,17 +42,9 @@ describe("npm tool provider", () => {
     ).resolves.toBe("fixed");
   });
 
-  it("supports dynamic call and rejects invalid host returns", async () => {
+  it("rejects invalid host returns", async () => {
     const provider = new NpmToolProvider(registry(), workspaceWithPackage());
 
-    await expect(
-      provider.call({
-        toolName: "Pkg",
-        uri: "npm:fake-npm-pkg",
-        method: "call",
-        args: [{ method: "hello", args: ["AgentScript"] }],
-      }),
-    ).resolves.toEqual({ greeting: "Hi, AgentScript" });
     await expect(
       provider.call({ toolName: "Pkg", uri: "npm:fake-npm-pkg", method: "getBad", args: [] }),
     ).rejects.toThrow("Map is not JSON-safe");

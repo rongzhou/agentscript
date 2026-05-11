@@ -136,6 +136,60 @@ describe("semantic config-generate-shape", () => {
     );
   });
 
+  it("checks duplicate max_output generate options", () => {
+    const result = analyze(
+      parse(`
+        import llm Qwen from "openai://gpt-4.1-mini"
+
+        main agent A {
+          model Qwen
+          role "Assistant"
+          description "Validate generate options."
+
+          main func act(input) {
+            return generate({ input: "x", max_output: 100, max_output: 200 }) -> {
+                ok boolean
+            }
+          }
+        }
+      `),
+    );
+
+    expect(result.diagnostics).toContainEqual(
+      expect.objectContaining({
+        severity: "error",
+        code: "DUPLICATE_GENERATE_OPTION",
+      }),
+    );
+  });
+
+  it("uses generate-specific diagnostics for invalid max_output units", () => {
+    const result = analyze(
+      parse(`
+        import llm Qwen from "openai://gpt-4.1-mini"
+
+        main agent A {
+          model Qwen
+          role "Assistant"
+          description "Validate generate options."
+
+          main func act(input) {
+            return generate({ input: "x", max_output: 2K }) -> {
+                ok boolean
+            }
+          }
+        }
+      `),
+    );
+
+    expect(result.diagnostics).toContainEqual(
+      expect.objectContaining({
+        severity: "error",
+        code: "INVALID_GENERATE_MAX_OUTPUT_UNIT",
+      }),
+    );
+  });
+
   it("checks identifiers in all generate option values", () => {
     const result = analyze(
       parse(`

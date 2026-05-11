@@ -3,8 +3,9 @@ import type { AgentDecl, CallExpr, ConfigDecl, Expr, MemberExpr, SourceRange, St
 import { RuntimeError } from "./errors.js";
 import { GenerateRuntime } from "./generate.js";
 import { isAgentBinding, isFunctionBinding, isLlmBinding, isMemoryBinding, isObject, isToolBinding } from "./guards.js";
-import { runtimeValuesEqual, sanitizeForJson } from "./json.js";
-import { isModuleTool, ResourceCallRuntime } from "./resource-calls.js";
+import { sanitizeForJson } from "./json.js";
+import { evaluateBinaryOperator } from "./operators.js";
+import { ResourceCallRuntime } from "./resource-calls.js";
 import type { RuntimeScope } from "./scope.js";
 import { isTruthy } from "./truth.js";
 import { evaluateParallelFor } from "./parallel-for.js";
@@ -20,7 +21,11 @@ export interface EvaluatorHost {
   callAgent(agentName: string, functionName: string, args: RuntimeValue[], range: SourceRange): Promise<RuntimeValue>;
   callFunction(agent: AgentDecl, name: string, args: RuntimeValue[], range?: SourceRange): Promise<RuntimeValue>;
   concurrency(): number;
-  evaluateBlockFinalValue(statements: Stmt[], scope: RuntimeScope): Promise<RuntimeValue>;
+  evaluateBlockFinalValue(
+    statements: Stmt[],
+    scope: RuntimeScope,
+    options?: { trace?: TraceEvent[] },
+  ): Promise<RuntimeValue>;
   requireAgent(name: string, range?: SourceRange): AgentDecl;
   resolveMainFunction(agent: AgentDecl): { name: string };
 }
@@ -67,7 +72,7 @@ export class Evaluator {
       return right;
     }
     const left = await this.evaluate(stmt.target, scope);
-    return this.evaluateArithmetic(stmt.operator === "+=" ? "+" : "-", left, right, stmt.range);
+    return evaluateBinaryOperator(stmt.operator === "+=" ? "+" : "-", left, right, stmt.range);
   }
 
   async evaluate(expr: Expr, scope: RuntimeScope): Promise<RuntimeValue> {
@@ -109,8 +114,8 @@ export class Evaluator {
         return evaluateParallelFor(expr, scope, this.trace, {
           concurrency: () => this.host.concurrency(),
           evaluateExpression: (value, currentScope) => this.evaluate(value, currentScope),
-          evaluateBlockFinalValue: (statements, currentScope) =>
-            this.host.evaluateBlockFinalValue(statements, currentScope),
+          evaluateBlockFinalValue: (statements, currentScope, trace) =>
+            this.host.evaluateBlockFinalValue(statements, currentScope, { trace }),
         });
       default:
         assertNever(expr);
@@ -135,68 +140,41 @@ export class Evaluator {
     scope: RuntimeScope,
   ): Promise<RuntimeValue> {
     switch (expr.operator) {
-      case "and":
-        return isTruthy(await this.evaluate(expr.left, scope)) && isTruthy(await this.evaluate(expr.right, scope));
-      case "or":
-        return isTruthy(await this.evaluate(expr.left, scope)) || isTruthy(await this.evaluate(expr.right, scope));
-      case "==":
-        return this.valuesEqual(await this.evaluate(expr.left, scope), await this.evaluate(expr.right, scope));
-      case "!=":
-        return !this.valuesEqual(await this.evaluate(expr.left, scope), await this.evaluate(expr.right, scope));
+      case "and": {
+        const left = await this.evaluate(expr.left, scope);
+        return isTruthy(left)
+          ? evaluateBinaryOperator(expr.operator, left, await this.evaluate(expr.right, scope), expr.range)
+          : false;
+      }
+      case "or": {
+        const left = await this.evaluate(expr.left, scope);
+        return isTruthy(left)
+          ? true
+          : evaluateBinaryOperator(expr.operator, left, await this.evaluate(expr.right, scope), expr.range);
+      }
       case "<":
+      case "<=":
       case ">":
-        return this.evaluateComparison(
-          expr.operator,
-          await this.evaluate(expr.left, scope),
-          await this.evaluate(expr.right, scope),
-          expr.range,
-        );
+      case ">=":
       case "+":
       case "-":
-        return this.evaluateArithmetic(
+      case "*":
+      case "/":
+      case "==":
+      case "!=":
+        return evaluateBinaryOperator(
           expr.operator,
           await this.evaluate(expr.left, scope),
           await this.evaluate(expr.right, scope),
           expr.range,
         );
     }
-  }
-
-  private evaluateComparison(
-    operator: "<" | ">",
-    left: RuntimeValue,
-    right: RuntimeValue,
-    range: SourceRange,
-  ): boolean {
-    if (typeof left !== "number" || typeof right !== "number") {
-      throw new RuntimeError(`operator '${operator}' requires number operands`, range);
-    }
-    return operator === "<" ? left < right : left > right;
-  }
-
-  private evaluateArithmetic(
-    operator: "+" | "-",
-    left: RuntimeValue,
-    right: RuntimeValue,
-    range: SourceRange,
-  ): RuntimeValue {
-    if (operator === "+" && (typeof left === "string" || typeof right === "string")) {
-      return `${formatArithmeticOperand(left)}${formatArithmeticOperand(right)}`;
-    }
-    if (typeof left !== "number" || typeof right !== "number") {
-      throw new RuntimeError(`operator '${operator}' requires number operands`, range);
-    }
-    return operator === "+" ? left + right : left - right;
-  }
-
-  private valuesEqual(left: RuntimeValue, right: RuntimeValue): boolean {
-    return runtimeValuesEqual(left, right);
   }
 
   private async evaluateMember(expr: MemberExpr, scope: RuntimeScope): Promise<RuntimeValue> {
     const object = await this.evaluate(expr.object, scope);
-    if (isToolBinding(object) && isModuleTool(object)) {
-      return this.resourceCalls.callTool(object, expr, [], true);
+    if (isToolBinding(object)) {
+      return this.resourceCalls.readToolMember(object, expr);
     }
     return this.readMember(object, expr.property, expr.range);
   }
@@ -234,7 +212,6 @@ export class Evaluator {
       return object[property]!;
     }
 
-    if (isToolBinding(object)) return { tool: object.name, method: property };
     if (isMemoryBinding(object)) return { memory: object.name, method: property };
 
     throw new RuntimeError(`Cannot read property '${property}'`, range);
@@ -295,8 +272,4 @@ export class Evaluator {
     }
     return values;
   }
-}
-
-function formatArithmeticOperand(value: RuntimeValue): string {
-  return typeof value === "string" || typeof value === "number" || typeof value === "boolean" ? String(value) : "";
 }

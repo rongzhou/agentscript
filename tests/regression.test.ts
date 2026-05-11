@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { executeAgent } from "../src/runtime/interpreter.js";
 import { loadProgram, loadProgramSource } from "../src/runtime/loader.js";
-import { MockToolProvider } from "../src/providers/mock/index.js";
+import { MockToolProvider } from "../src/providers/mock/provider.js";
 import { analyze } from "../src/semantic/analyzer.js";
 
 describe("regression fixtures", () => {

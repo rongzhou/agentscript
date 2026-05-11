@@ -9,12 +9,12 @@ main agent FileSummarizer {
     main func(input {
         path string
     }) {
-        content = File.read({
+        file = File.read({
             path: input.path
         })
 
         use input.path as "source path"
-        use content max 8k as "file content"
+        use file.content max 8k as "file content"
 
         generate({ input: "Summarize the file for a busy teammate", max_output: 1000 }) -> {
             title

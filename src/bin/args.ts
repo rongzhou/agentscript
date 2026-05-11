@@ -73,15 +73,10 @@ export function parseArgs(argv: string[]): CliOptions {
         options.version = true;
         break;
       case "--trace":
-        {
-          const value = readOptionalOptionValue(argv, index + 1);
-          if (!value) {
-            options.tracePretty = true;
-          } else {
-            index += 1;
-            options.traceFile = value;
-          }
-        }
+        options.tracePretty = true;
+        break;
+      case "--trace-file":
+        options.traceFile = readOptionValue(argv, ++index, arg);
         break;
       case "--verbose":
         options.verbose = true;
@@ -113,6 +108,7 @@ export function printUsage(write: (message: string) => void): void {
       "  agentscript <file.as> --mock",
       "  agentscript <file.as> --dry-run",
       "  agentscript <file.as> --trace",
+      "  agentscript <file.as> --trace-file trace.json",
       "  agentscript <file.as> --concurrency 4",
       "  agentscript <file.as> --input-file input.json --agent AgentName",
       "  agentscript <file.as> --input '{}' --quiet",
@@ -136,14 +132,6 @@ function readPositiveIntegerOption(args: string[], index: number, option: string
   const value = Number.parseInt(raw, 10);
   if (!Number.isInteger(value) || value <= 0 || String(value) !== raw) {
     throw new Error(`${option} must be a positive integer`);
-  }
-  return value;
-}
-
-function readOptionalOptionValue(args: string[], index: number): string | undefined {
-  const value = args[index];
-  if (!value || value.startsWith("--")) {
-    return undefined;
   }
   return value;
 }

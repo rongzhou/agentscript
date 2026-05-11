@@ -3,7 +3,8 @@ import { dirname } from "node:path";
 import { RuntimeError } from "../../runtime/errors.js";
 import { isObject } from "../../runtime/guards.js";
 import type { JsonObject, RuntimeValue, ToolCallRequest, ToolProvider } from "../../runtime/types.js";
-import { expectObject, readRequiredString, type WorkspaceContext } from "./shared.js";
+import type { WorkspaceContext } from "../shared/workspace.js";
+import { expectObject, readRequiredString } from "./shared.js";
 
 const FILE_EFFECT_ACTIONS = new Set(["write", "patch"]);
 
@@ -18,13 +19,16 @@ export class FileToolProvider implements ToolProvider {
 
     switch (request.method) {
       case "read":
-        return readFileSync(
-          this.workspace.resolveWorkspacePath(readRequiredString(args.path, "File.read.path")),
-          "utf8",
-        );
+        return {
+          ok: true,
+          content: readFileSync(
+            this.workspace.resolveWorkspacePath(readRequiredString(args.path, "File.read.path")),
+            "utf8",
+          ),
+        };
       case "list": {
         const path = this.workspace.resolveWorkspacePath(readRequiredString(args.path, "File.list.path"));
-        return readdirSync(path).map((entry: string) => entry);
+        return { ok: true, entries: readdirSync(path).map((entry: string) => entry) };
       }
       case "write":
         return this.writeFile(request.toolName, args);
@@ -63,7 +67,7 @@ export class FileToolProvider implements ToolProvider {
     const replace = readRequiredString(args.replace, "File.patch.replace");
     const previous = readFileSync(path, "utf8");
     if (search.length === 0 || !previous.includes(search)) {
-      return { ok: false, error: "patch search text not found", effects: [] };
+      throw new RuntimeError("File.patch search text not found");
     }
     writeFileSync(path, previous.replace(search, replace));
     return fileEffectResult({

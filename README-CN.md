@@ -76,11 +76,11 @@ main agent FileSummarizer {
     description "Read one local file and produce a useful structured summary."
 
     main func(input { path string }) {
-        content = File.read({
+        file = File.read({
             path: input.path
         })
         use input.path as "source path"
-        use content max 8k as "file content"
+        use file.content max 8k as "file content"
 
         generate({
             input: "Summarize the file for a busy teammate",

@@ -12,6 +12,10 @@ main agent ArithmeticExample {
             total: total,
             label: label,
             above_five: total > 5,
+            at_least_start: total >= start,
+            within_limit: total <= 10,
+            doubled: total * 2,
+            average: total / 2,
             delta: total - start
         }
     }

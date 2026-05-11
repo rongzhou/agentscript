@@ -145,7 +145,7 @@ describe("agentscript CLI", () => {
   it("writes trace to a file", async () => {
     const dir = mkdtempSync(join(tmpdir(), "agentscript-"));
     const traceFile = join(dir, "trace.json");
-    const code = await main([fixture, "--input", fixtureInput, "--trace", traceFile]);
+    const code = await main([fixture, "--input", fixtureInput, "--trace-file", traceFile]);
 
     expect(code).toBe(0);
     const output = JSON.parse(logSpy.mock.calls[0]![0] as string);
@@ -166,6 +166,13 @@ describe("agentscript CLI", () => {
 
     expect(code).toBe(0);
     expect(logSpy.mock.calls[1]![0]).toContain("- generate");
+  });
+
+  it("keeps --trace separate from --trace-file", async () => {
+    const code = await main([fixture, "--input", fixtureInput, "--trace", "trace.json"]);
+
+    expect(code).toBe(1);
+    expect(errorSpy.mock.calls[0]![0]).toContain("Unexpected positional argument");
   });
 
   it("passes --concurrency to parallel for execution", async () => {

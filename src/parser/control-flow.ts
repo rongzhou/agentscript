@@ -1,9 +1,8 @@
 import type { ForInStmt, IfStmt, LoopUntilStmt, RepeatStmt } from "../ast/types.js";
-import type { BlockParserHost } from "./host.js";
+import { parseForTail } from "./for-tail.js";
+import type { ExpressionParserHost } from "./host.js";
 
-export interface ControlFlowParserHost extends BlockParserHost {}
-
-export function parseRepeat(parser: ControlFlowParserHost): RepeatStmt {
+export function parseRepeat(parser: ExpressionParserHost): RepeatStmt {
   const start = parser.consume("repeat").range.start;
   parser.consume("*");
   const maxAttempts = parser.parsePositiveInteger("Expected repeat count");
@@ -16,26 +15,17 @@ export function parseRepeat(parser: ControlFlowParserHost): RepeatStmt {
   };
 }
 
-export function parseForIn(parser: ControlFlowParserHost): ForInStmt {
+export function parseForIn(parser: ExpressionParserHost): ForInStmt {
   const start = parser.consume("for").range.start;
-  const item = parser.consumeIdentifier("Expected for item name");
-  parser.consume("in");
-  const iterable = parser.parseExpression();
-  parser.consume("max");
-  const maxIterations = parser.parsePositiveInteger("Expected for iteration count");
-  const body = parser.parseBlock();
+  const tail = parseForTail(parser, "for");
   return {
     kind: "ForInStmt",
-    itemName: item.value,
-    itemRange: item.range,
-    iterable,
-    maxIterations,
-    body,
+    ...tail,
     range: { start, end: parser.previous().range.end },
   };
 }
 
-export function parseLoop(parser: ControlFlowParserHost): LoopUntilStmt {
+export function parseLoop(parser: ExpressionParserHost): LoopUntilStmt {
   const start = parser.consume("loop").range.start;
   parser.consume("until");
   const condition = parser.parseExpression();
@@ -51,7 +41,7 @@ export function parseLoop(parser: ControlFlowParserHost): LoopUntilStmt {
   };
 }
 
-export function parseIf(parser: ControlFlowParserHost): IfStmt {
+export function parseIf(parser: ExpressionParserHost): IfStmt {
   const start = parser.consume("if").range.start;
   const condition = parser.parseExpression();
   const thenBody = parser.parseBlock();

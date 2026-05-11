@@ -1,16 +1,7 @@
 import type { ShapeObjectExpr, ShapeTypeExpr, SourceRange } from "../ast/types.js";
-import { shapeTypeDefaultValue } from "../language/shape.js";
 import { RuntimeError } from "./errors.js";
 import { isObject, isRuntimeResource } from "./guards.js";
-import type { JsonObject, JsonValue, RuntimeObject, RuntimeValue } from "./types.js";
-
-export function buildValueFromShape(shape: ShapeObjectExpr): JsonObject {
-  const result: JsonObject = {};
-  for (const field of shape.fields) {
-    result[field.name] = buildValueFromShapeType(field.type);
-  }
-  return result;
-}
+import type { RuntimeObject, RuntimeValue } from "./types.js";
 
 export function validateValueAgainstShape(
   value: RuntimeValue,
@@ -78,7 +69,7 @@ const SHAPE_TYPE_CONFIG: Record<string, ShapeTypeConfig> = {
     coerce: coerceStringToBoolean,
   },
   json: {
-    validate: (value, range, errorPrefix = "LLM result json field") => {
+    validate: (value, range, errorPrefix = "LLM result field") => {
       if (isRuntimeResource(value)) {
         throw new RuntimeError(`${errorPrefix} cannot contain runtime resource bindings`, range);
       }
@@ -149,11 +140,4 @@ export function validateValueAgainstShapeType(
   if (config) {
     config.validate(value, range, errorPrefix);
   }
-}
-
-function buildValueFromShapeType(type: ShapeTypeExpr): JsonValue {
-  if (type.kind === "ListShapeType") {
-    return [];
-  }
-  return shapeTypeDefaultValue(type.name) as JsonValue;
 }

@@ -4,7 +4,6 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { parse } from "../src/parser/parser.js";
 import { executeAgent } from "../src/runtime/interpreter.js";
-import { buildValueFromShape } from "../src/runtime/shape.js";
 import type { GenerateRequest } from "../src/runtime/types.js";
 
 describe("runtime context", () => {
@@ -42,10 +41,10 @@ describe("runtime context", () => {
         llmProvider: {
           async generate(request) {
             requests.push(request);
-            if (!request.returnShape) {
+            if (!request.builtContext.returnSchema) {
               throw new Error("unexpected missing return shape");
             }
-            return buildValueFromShape(request.returnShape);
+            return { ok: false };
           },
         },
       },
@@ -89,10 +88,10 @@ describe("runtime context", () => {
         llmProvider: {
           async generate(request) {
             requests.push(request);
-            if (!request.returnShape) {
+            if (!request.builtContext.returnSchema) {
               throw new Error("unexpected missing return shape");
             }
-            return buildValueFromShape(request.returnShape);
+            return { ok: false };
           },
         },
       },
@@ -151,10 +150,10 @@ describe("runtime context", () => {
         llmProvider: {
           async generate(request) {
             requests.push(request);
-            if (!request.returnShape) {
+            if (!request.builtContext.returnSchema) {
               throw new Error("unexpected missing return shape");
             }
-            return buildValueFromShape(request.returnShape);
+            return { ok: false };
           },
         },
       },

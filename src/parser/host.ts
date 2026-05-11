@@ -1,4 +1,4 @@
-import type { Budget, Expr, Stmt } from "../ast/types.js";
+import type { Budget, ConfigDecl, Expr, SourceLocation, SourceRange, Stmt, UseStmt } from "../ast/types.js";
 import type { ParseError } from "./errors.js";
 import type { Token } from "./tokenizer.js";
 
@@ -8,6 +8,8 @@ export interface TokenParserHost {
   consumeIdentifier(message: string): Token;
   consumeKind(kind: Token["kind"], message: string): Token;
   error(message: string): ParseError;
+  errorAt(message: string, location: SourceLocation): ParseError;
+  errorAtRange(message: string, range: SourceRange): ParseError;
   isAtEnd(): boolean;
   match(value: string): boolean;
   matchAny(values: readonly string[]): boolean;
@@ -27,4 +29,12 @@ export interface ExpressionParserHost extends TokenParserHost {
   parsePositiveInteger(message: string): number;
 }
 
-export interface BlockParserHost extends ExpressionParserHost {}
+export interface DeclarationParserHost extends ExpressionParserHost {
+  isConfigKey(value: string): boolean;
+  parseConfigDecl(): ConfigDecl;
+  parseUse(): UseStmt;
+}
+
+export interface ShapeParserHost extends TokenParserHost {
+  consumeShapeFieldSeparator(terminator: string): void;
+}

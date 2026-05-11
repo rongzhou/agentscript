@@ -291,6 +291,8 @@ use results max 4k as "search results"
 use docs.summary max 4k as evidence
 ```
 
+裁剪是确定性的、保留结构的，不是语义摘要。字符串保留开头字符；list 按原顺序保留前缀元素；object 按 JavaScript 插入序保留可枚举字段前缀。如果内容优先级有语义含义，应先构造一个更小的值再 `use`，不要依赖 budget 对内容排序。
+
 这不同于 `generate({ max_output: ... })` 的 output generation budget。详见 [`generate`](./generate.md)。
 
 ## Prompt 渲染

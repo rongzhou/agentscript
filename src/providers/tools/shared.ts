@@ -1,5 +1,3 @@
-import { existsSync, lstatSync, realpathSync, readdirSync, statSync, type Stats } from "node:fs";
-import { relative, resolve, sep } from "node:path";
 import { RuntimeError } from "../../runtime/errors.js";
 import { isObject } from "../../runtime/guards.js";
 import { sanitizeForJson } from "../../runtime/json.js";
@@ -9,58 +7,6 @@ import { type Disposable, isDisposable } from "../../runtime/disposable.js";
 import type { ToolProvider } from "../../runtime/types.js";
 
 export const DEFAULT_MAX_RESULTS = 100;
-
-export interface WorkspaceContext {
-  workspaceRoot: string;
-  resolveWorkspacePath(path: string): string;
-  workspaceRelativePath(path: string): string;
-  visitWorkspaceTree(root: string, visitor: WorkspaceTreeVisitor): void;
-}
-
-export type WorkspaceTreeVisitor = (path: string, relativePath: string, stat: Stats) => boolean;
-
-export class Workspace implements WorkspaceContext {
-  readonly workspaceRoot: string;
-
-  constructor(workspaceRoot = process.cwd()) {
-    this.workspaceRoot = realpathSync(resolve(workspaceRoot));
-  }
-
-  resolveWorkspacePath(path: string): string {
-    const resolved = resolve(this.workspaceRoot, path);
-    if (resolved !== this.workspaceRoot && !resolved.startsWith(`${this.workspaceRoot}${sep}`)) {
-      throw new RuntimeError(`Path escapes workspace: ${path}`);
-    }
-    if (existsSync(resolved)) {
-      const real = realpathSync(resolved);
-      if (real !== this.workspaceRoot && !real.startsWith(`${this.workspaceRoot}${sep}`)) {
-        throw new RuntimeError(`Path escapes workspace: ${path}`);
-      }
-    }
-    return resolved;
-  }
-
-  workspaceRelativePath(path: string): string {
-    return relative(this.workspaceRoot, path);
-  }
-
-  visitWorkspaceTree(root: string, visitor: WorkspaceTreeVisitor): void {
-    const visit = (path: string): boolean => {
-      const linkStat = lstatSync(path);
-      if (linkStat.isSymbolicLink()) return true;
-      const stat = statSync(path);
-      const relativePath = relative(this.workspaceRoot, path) || ".";
-      if (visitor(path, relativePath, stat) === false) return false;
-      if (stat.isDirectory()) {
-        for (const entry of readdirSync(path)) {
-          if (visit(resolve(path, entry)) === false) return false;
-        }
-      }
-      return true;
-    };
-    if (existsSync(root)) visit(root);
-  }
-}
 
 export function expectObject(value: RuntimeValue | undefined, call: string): Record<string, RuntimeValue> {
   if (!isObject(value ?? null)) {

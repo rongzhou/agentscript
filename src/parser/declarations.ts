@@ -1,25 +1,15 @@
 import type { AgentDecl, ConfigDecl, FuncDecl, FuncParam, ImportDecl, UseStmt } from "../ast/types.js";
+import { ANONYMOUS_MAIN_AGENT, ANONYMOUS_MAIN_FUNC } from "../language/anonymous.js";
 import { isImportResourceKind } from "../language/bindings.js";
-import { ParseError } from "./errors.js";
-import type { BlockParserHost } from "./host.js";
+import type { DeclarationParserHost } from "./host.js";
 import { parseShapeObject } from "./shape.js";
-
-export interface DeclarationParserHost extends BlockParserHost {
-  consumeShapeFieldSeparator(terminator: string): void;
-  isConfigKey(value: string): boolean;
-  parseConfigDecl(): ConfigDecl;
-  parseUse(): UseStmt;
-}
-
-const ANONYMOUS_MAIN_AGENT = "__main_agent";
-const ANONYMOUS_MAIN_FUNC = "__main";
 
 export function parseImportDecl(parser: DeclarationParserHost): ImportDecl {
   const start = parser.consume("import").range.start;
   const resourceToken = parser.consumeIdentifier("Expected import resource kind");
   const resourceKind = resourceToken.value;
   if (!isImportResourceKind(resourceKind)) {
-    throw new ParseError(
+    throw parser.errorAt(
       "Expected import resource kind 'tool', 'llm', 'file', 'agent', or 'memory'",
       resourceToken.range.start,
     );

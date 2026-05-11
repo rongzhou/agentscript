@@ -4,7 +4,8 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { parse } from "../src/parser/parser.js";
 import { executeAgent } from "../src/runtime/interpreter.js";
-import { HostToolProvider, SchemeToolProvider } from "../src/providers/tools/index.js";
+import { HostToolProvider } from "../src/providers/tools/host.js";
+import { SchemeToolProvider } from "../src/providers/tools/scheme.js";
 import { uriScheme } from "../src/language/uri.js";
 import type { RuntimeValue, ToolCallRequest, ToolProvider } from "../src/runtime/types.js";
 
@@ -61,7 +62,59 @@ describe("tool URI providers", () => {
       ok: true,
       matches: [{ path: "src/a.ts", line: 1, text: "const value = generate();" }],
     });
+    await expect(
+      provider.call({ ...request, uri: "sh://read-range", args: [{ path: "src/a.ts", start: 1, max: 1 }] }),
+    ).resolves.toEqual({
+      ok: true,
+      text: "const value = generate();",
+      start: 1,
+      end: 1,
+    });
+    await expect(provider.call({ ...request, uri: "sh://sed", args: [{}] })).rejects.toThrow(
+      /Unsupported shell tool 'sed'/,
+    );
     await expect(provider.call({ ...request, uri: "sh://sh", args: [{}] })).rejects.toThrow(/Forbidden shell tool/);
+  });
+
+  it("returns ok objects for read-only host tools", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "agentscript-"));
+    mkdirSync(join(dir, "src"));
+    writeFileSync(join(dir, "src", "a.txt"), "hello");
+    const provider = new HostToolProvider(dir);
+
+    await expect(
+      provider.call({
+        toolName: "File",
+        uri: "file://workspace",
+        method: "read",
+        args: [{ path: "src/a.txt" }],
+      }),
+    ).resolves.toEqual({
+      ok: true,
+      content: "hello",
+    });
+    await expect(
+      provider.call({
+        toolName: "File",
+        uri: "file://workspace",
+        method: "list",
+        args: [{ path: "src" }],
+      }),
+    ).resolves.toEqual({
+      ok: true,
+      entries: ["a.txt"],
+    });
+    await expect(
+      provider.call({
+        toolName: "Env",
+        uri: "env://process",
+        method: "get",
+        args: [{ name: "AGENTSCRIPT_TEST_MISSING_ENV" }],
+      }),
+    ).resolves.toEqual({
+      ok: true,
+      value: null,
+    });
   });
 
   it("supports workspace file write and undo effects", async () => {
@@ -129,6 +182,22 @@ describe("tool URI providers", () => {
     });
     await undoEffects(provider, result);
     expect(readFileSync(join(dir, "out.txt"), "utf8")).toBe("hello old world");
+  });
+
+  it("throws when a workspace file patch does not match", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "agentscript-"));
+    writeFileSync(join(dir, "out.txt"), "hello world");
+    const provider = new HostToolProvider(dir);
+
+    await expect(
+      provider.call({
+        toolName: "File",
+        uri: "file://workspace",
+        method: "patch",
+        args: [{ path: "out.txt", search: "missing", replace: "new" }],
+      }),
+    ).rejects.toThrow(/File\.patch search text not found/);
+    expect(readFileSync(join(dir, "out.txt"), "utf8")).toBe("hello world");
   });
 
   it("rejects HTTP tool requests to origins outside the imported URI", async () => {

@@ -291,6 +291,12 @@ use results max 4k as "search results"
 use docs.summary max 4k as evidence
 ```
 
+Clipping is deterministic and structure-preserving, not semantic summarization.
+Strings keep their leading characters. Lists keep a leading prefix of items in
+list order. Objects keep a leading prefix of enumerable fields in JavaScript
+insertion order. If semantic priority matters, construct a smaller value before
+`use` instead of relying on the budget to rank content.
+
 This is different from `generate({ max_output: ... })`, which is an output generation budget. See [`generate`](./generate.md).
 
 ## Prompt rendering

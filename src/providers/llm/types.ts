@@ -1,4 +1,10 @@
-export const SUPPORTED_LLM_PROTOCOLS = ["openai", "anthropic", "ollama"] as const;
+import type { GenerateRequest, RuntimeValue } from "../../runtime/types.js";
+
+export const OPENAI_PROTOCOL = "openai";
+export const ANTHROPIC_PROTOCOL = "anthropic";
+export const OLLAMA_PROTOCOL = "ollama";
+
+export const SUPPORTED_LLM_PROTOCOLS = [OPENAI_PROTOCOL, ANTHROPIC_PROTOCOL, OLLAMA_PROTOCOL] as const;
 
 export type LlmProtocol = (typeof SUPPORTED_LLM_PROTOCOLS)[number];
 
@@ -12,6 +18,18 @@ export interface ParsedLlmUri {
 
 export interface FetchLike {
   (input: string | URL, init?: RequestInit): Promise<Response>;
+}
+
+export interface LlmAdapter {
+  call(request: GenerateRequest, context: LlmAdapterContext): Promise<RuntimeValue>;
+}
+
+export interface LlmAdapterContext {
+  parsed: ParsedLlmUri;
+  fetchImpl: FetchLike;
+  options: ProtocolLlmProviderOptions;
+  timeoutMs: number;
+  baseUrl: string;
 }
 
 export interface ProtocolLlmProviderOptions {

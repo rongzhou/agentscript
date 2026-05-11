@@ -1,4 +1,4 @@
-import type { Budget, ShapeObjectExpr } from "../ast/types.js";
+import type { Budget } from "../ast/types.js";
 import type { BuiltContext } from "./context.js";
 
 export type JsonPrimitive = string | number | boolean | null;
@@ -56,8 +56,6 @@ export interface GenerateRequest {
   agentName: string;
   model?: LlmBinding;
   identity: JsonObject;
-  instruction: RuntimeValue;
-  returnShape?: ShapeObjectExpr;
   context: ContextUse[];
   builtContext: BuiltContext;
   maxOutput?: Budget;
@@ -89,19 +87,23 @@ export interface MemoryQueryRequest {
 
 export interface LlmProvider {
   generate(request: GenerateRequest): Promise<RuntimeValue>;
+  close?(): void | Promise<void>;
 }
 
 export interface ToolProvider {
   call(request: ToolCallRequest): Promise<RuntimeValue>;
+  close?(): void | Promise<void>;
 }
 
 export interface MemoryProvider {
   add(request: MemoryAddRequest): Promise<RuntimeValue>;
   query(request: MemoryQueryRequest): Promise<RuntimeValue>;
+  close?(): void | Promise<void>;
 }
 
 export interface InputProvider {
   read(request: InputRequest): Promise<RuntimeValue>;
+  close?(): void | Promise<void>;
 }
 
 export interface InputRequest {
@@ -110,7 +112,6 @@ export interface InputRequest {
 }
 
 export interface TraceEvent {
-  [key: string]: JsonValue;
   kind: "use" | "generate" | "tool" | "input" | "agent" | "for" | "parallel_for" | "memory";
   data: JsonObject;
 }

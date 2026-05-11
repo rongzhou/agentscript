@@ -146,16 +146,7 @@ doc = Yaml.parse(content)
 separator = Path.sep
 ```
 
-动态 method 名走 `call`：
-
-```agentscript
-parsed = Yaml.call({
-    method: "parse",
-    args: [content]
-})
-```
-
-四种形式集中展示：
+三种形式集中展示：
 
 ```agentscript
 // positional 调用
@@ -167,11 +158,6 @@ value = Tool.constant
 // async 调用（自动 await Promise）
 content = Fs.readFile("README.md", "utf8")
 
-// 动态 method 名
-result = Tool.call({
-    method: "stringSplit",
-    args: ["text", "."]
-})
 ```
 
 ## 调用语义
@@ -205,24 +191,6 @@ AgentScript 按如下方式执行：
 Promise 返回自动 await
 无参数的非函数成员按属性读取处理
 有参数的非函数成员会报错
-```
-
-### `call` 形式
-
-```agentscript
-result = Tool.call({
-    method: "someName",
-    args: [a, b, c]
-})
-```
-
-规则：
-
-```text
-method 必须是非空 string
-args 必须是 list
-args 是 positional，不是 keyword
-call 是保留 method；不会匹配名为 "call" 的模块 export
 ```
 
 ### 属性读取

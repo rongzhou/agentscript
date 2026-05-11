@@ -1,6 +1,7 @@
+import { NODE_SCHEME } from "../../language/schemes.js";
 import type { RuntimeValue, ToolCallRequest, ToolProvider } from "../../runtime/types.js";
-import { checkNodeImport, type NpmRegistry } from "./npm-registry.js";
 import { invokeModuleMember } from "./module-tool.js";
+import { checkNodeImport, type NpmRegistry } from "./npm-registry.js";
 
 export class NodeToolProvider implements ToolProvider {
   private readonly modules = new Map<string, unknown>();
@@ -10,7 +11,7 @@ export class NodeToolProvider implements ToolProvider {
   async call(request: ToolCallRequest): Promise<RuntimeValue> {
     const moduleName = checkNodeImport(request.uri, this.registry);
     const mod = await this.loadModule(moduleName);
-    return invokeModuleMember(mod, request, { schemeLabel: "node", toolLabel: request.toolName });
+    return invokeModuleMember(mod, request, { schemeLabel: NODE_SCHEME, toolLabel: request.toolName });
   }
 
   private async loadModule(moduleName: string): Promise<unknown> {

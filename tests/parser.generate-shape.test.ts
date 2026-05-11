@@ -23,6 +23,11 @@ describe("parser generate-shape", () => {
     expect(stmt.value.kind).toBe("GenerateExpr");
     if (stmt.value.kind !== "GenerateExpr") return;
     expect(stmt.value.options.maxOutput).toEqual({ amount: 2, unit: "k" });
+    expect(stmt.value.options.properties.map((property) => property.key)).toEqual(["input", "max_output", "debug"]);
+    expect(stmt.value.options.properties.find((p) => p.key === "max_output")?.value).toMatchObject({
+      kind: "NumberExpr",
+      raw: "2k",
+    });
     expect(stmt.value.options.properties.find((p) => p.key === "debug")?.value).toMatchObject({
       kind: "BooleanExpr",
       value: true,
@@ -103,7 +108,8 @@ describe("parser generate-shape", () => {
   });
 
   it("keeps same-line shape type typos as parse errors", () => {
-    expect(() =>
+    let error: unknown;
+    try {
       parse(`
         main agent A {
           main func act(input) {
@@ -112,8 +118,14 @@ describe("parser generate-shape", () => {
             }
           }
         }
-      `),
-    ).toThrow("Unsupported shape type 'nubmer'");
+      `);
+    } catch (caught) {
+      error = caught;
+    }
+
+    expect(error).toBeInstanceOf(ParseError);
+    expect((error as ParseError).message).toContain("Unsupported shape type 'nubmer'");
+    expect((error as ParseError).range.end.column).toBeGreaterThan((error as ParseError).range.start.column);
   });
 
   it("parses generate without a return shape", () => {

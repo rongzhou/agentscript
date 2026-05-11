@@ -148,12 +148,12 @@ main agent FileSummarizer {
     description "Read one local file and produce a useful structured summary."
 
     main func(input { path string }) {
-        content = File.read({
+        file = File.read({
             path: input.path
         })
 
         use input.path as "source path"
-        use content max 8k as "file content"
+        use file.content max 8k as "file content"
 
         generate({
             input: "Summarize the file for a busy teammate",
@@ -423,7 +423,7 @@ Currently implemented:
 - compound assignment
 - `parallel for`
 - runtime concurrency control for `parallel for`
-- CLI support for `--mock`, `--dry-run`, `--trace`, `--check`, and `--concurrency`
+- CLI support for `--mock`, `--dry-run`, `--trace`, `--trace-file`, `--check`, and `--concurrency`
 
 The implementation is usable for experimentation, examples, and local workflows,
 but the language is still pre-1.0 and may change.

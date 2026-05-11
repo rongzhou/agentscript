@@ -78,11 +78,15 @@ function parseEquality(parser: ExpressionParserHost): Expr {
 }
 
 function parseComparison(parser: ExpressionParserHost): Expr {
-  return parseBinaryExpression(parser, () => parseTerm(parser), "<", ">");
+  return parseBinaryExpression(parser, () => parseTerm(parser), "<", "<=", ">", ">=");
 }
 
 function parseTerm(parser: ExpressionParserHost): Expr {
-  return parseBinaryExpression(parser, () => parseUnary(parser), "+", "-");
+  return parseBinaryExpression(parser, () => parseFactor(parser), "+", "-");
+}
+
+function parseFactor(parser: ExpressionParserHost): Expr {
+  return parseBinaryExpression(parser, () => parseUnary(parser), "*", "/");
 }
 
 function parseBinaryExpression(
@@ -139,6 +143,9 @@ function parsePrimary(parser: ExpressionParserHost): Expr {
   }
 
   if (parser.matchKind("number")) {
+    if (!/^\d+(?:\.\d+)?$/.test(token.value)) {
+      throw parser.errorAt(`Invalid number literal '${token.value}'`, token.range.start);
+    }
     return {
       kind: "NumberExpr",
       value: Number.parseFloat(token.value),

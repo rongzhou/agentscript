@@ -299,6 +299,16 @@ generate({
 
 `think` is a provider/model capability hint. Not every model guarantees support. If unsupported, the adapter may ignore, warn, or fail according to capability policy.
 
+Current provider mappings:
+
+```text
+OpenAI:    true -> medium, low/medium/high -> reasoning_effort
+Anthropic: true/auto/low -> 1024 thinking tokens, medium -> 4096, high -> 10000
+Ollama:    passes the value through as the chat API think field
+```
+
+For Anthropic, `max_output` remains the requested final answer budget. The adapter adds the thinking budget to the Anthropic `max_tokens` request because Anthropic counts thinking tokens inside `max_tokens`. Anthropic extended thinking is rejected when `temperature` is also set.
+
 ## Capability policy for provider hints
 
 `temperature` and `think` are provider/model capability hints. Unsupported provider hints default to warn in debug mode and ignore otherwise.

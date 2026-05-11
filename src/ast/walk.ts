@@ -1,4 +1,9 @@
-import type { Expr, Stmt } from "./types.js";
+import type { Expr, SourceRange, Stmt } from "./types.js";
+
+export interface IdentifierUse {
+  name: string;
+  range: SourceRange;
+}
 
 export interface AstVisitor {
   enterExpr?: (expr: Expr) => void;
@@ -31,6 +36,32 @@ export function walkStatement(stmt: Stmt, visitor: AstVisitor): void {
   for (const child of childStatements(stmt)) {
     walkStatement(child, visitor);
   }
+}
+
+export function identifiersInExpression(expr: Expr, options: { shallow?: boolean } = {}): IdentifierUse[] {
+  const identifiers: IdentifierUse[] = [];
+  walkExpression(expr, {
+    enterExpr(value) {
+      if (value.kind === "IdentifierExpr") {
+        identifiers.push({ name: value.name, range: value.range });
+      }
+    },
+    enterNestedScope: options.shallow ? false : undefined,
+  });
+  return identifiers;
+}
+
+export function containsCallExpression(expr: Expr, options: { shallow?: boolean } = {}): boolean {
+  let containsCall = false;
+  walkExpression(expr, {
+    enterExpr(value) {
+      if (value.kind === "CallExpr" || value.kind === "GenerateExpr" || value.kind === "ParallelForExpr") {
+        containsCall = true;
+      }
+    },
+    enterNestedScope: options.shallow ? false : undefined,
+  });
+  return containsCall;
 }
 
 export function statementExpressions(stmt: Stmt): Expr[] {

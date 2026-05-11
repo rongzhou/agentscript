@@ -146,16 +146,7 @@ Property reads pick up JSON-safe named exports:
 separator = Path.sep
 ```
 
-Dynamic method names go through `call`:
-
-```agentscript
-parsed = Yaml.call({
-    method: "parse",
-    args: [content]
-})
-```
-
-The four forms in one place:
+The three forms in one place:
 
 ```agentscript
 // positional call
@@ -167,11 +158,6 @@ value = Tool.constant
 // async call (Promise auto-awaited)
 content = Fs.readFile("README.md", "utf8")
 
-// dynamic method name
-result = Tool.call({
-    method: "stringSplit",
-    args: ["text", "."]
-})
 ```
 
 ## Calling semantics
@@ -205,24 +191,6 @@ arguments must be JSON-safe
 Promise returns are automatically awaited
 non-function members with no arguments are treated as property reads
 non-function members with arguments raise an error
-```
-
-### `call` form
-
-```agentscript
-result = Tool.call({
-    method: "someName",
-    args: [a, b, c]
-})
-```
-
-Rules:
-
-```text
-method must be a non-empty string
-args must be a list
-args are positional, not keyword
-call is a reserved method; it never matches a module export named "call"
 ```
 
 ### Property reads

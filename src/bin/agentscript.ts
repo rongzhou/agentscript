@@ -7,18 +7,17 @@ import { createInterface } from "node:readline/promises";
 import type { Program } from "../ast/types.js";
 import { executeAgent } from "../runtime/interpreter.js";
 import { loadProgram } from "../runtime/loader.js";
-import { ProtocolLlmProvider } from "../providers/llm/index.js";
-import { MockLlmProvider } from "../providers/mock/index.js";
-import { loadNpmRegistry } from "../providers/tools/npm-registry.js";
+import { ProtocolLlmProvider } from "../providers/llm/protocol.js";
+import { MockLlmProvider } from "../providers/mock/provider.js";
 import { sanitizeForJson } from "../runtime/json.js";
 import { formatTrace } from "../runtime/trace.js";
 import type { InputProvider, JsonObject, LlmProvider } from "../runtime/types.js";
-import { analyze, assertSemanticallyValid } from "../semantic/analyzer.js";
 import { formatSemanticDiagnostics } from "../semantic/diagnostics.js";
+import { createDryRunToolProvider } from "../providers/dry-run/tool.js";
 import { parseArgs, printUsage, type CliOptions } from "./args.js";
-import { createDryRunToolProvider } from "./dry-run.js";
 import { createReadlineInputProvider, parseJsonObjectInput } from "./input.js";
 import { runRepl } from "./repl.js";
+import { analyzeCliProgram, assertCliProgramSemanticallyValid } from "./semantic.js";
 
 export async function main(argv = process.argv.slice(2)): Promise<number> {
   try {
@@ -64,7 +63,7 @@ function runParse(options: CliOptions): number {
 }
 
 function runCheck(options: CliOptions): number {
-  const result = analyze(loadCliProgram(options), { npmRegistry: loadNpmRegistry(process.cwd()) });
+  const result = analyzeCliProgram(loadCliProgram(options));
   if (result.diagnostics.length > 0) {
     console.error(formatSemanticDiagnostics(result.diagnostics));
   }
@@ -75,7 +74,7 @@ async function runAgent(options: CliOptions): Promise<number> {
   const input = readInput(options);
   const inputProvider = terminalInputProvider();
   const program = loadCliProgram(options);
-  assertSemanticallyValid(program, { npmRegistry: loadNpmRegistry(process.cwd()) });
+  assertCliProgramSemanticallyValid(program);
   const result = await executeAgent(program, input, {
     agentName: options.agentName,
     concurrency: options.concurrency,
@@ -83,7 +82,7 @@ async function runAgent(options: CliOptions): Promise<number> {
     inputProvider,
     llmProvider: createCliLlmProvider(options),
     sourcePath: options.file,
-    toolProvider: options.dryRun ? createDryRunToolProvider() : undefined,
+    toolProvider: options.dryRun ? createDryRunToolProvider(process.cwd()) : undefined,
   }).finally(() => inputProvider?.close?.());
 
   if (options.traceFile) {

@@ -5,16 +5,17 @@ import { Evaluator } from "./evaluator.js";
 import { RuntimeError } from "./errors.js";
 import { GenerateRuntime } from "./generate.js";
 import { isObject } from "./guards.js";
-import { budgetToJson, sanitizeForJson } from "./json.js";
+import { budgetToJson } from "./json.js";
 import { prepareEntryInput } from "./input.js";
 import { createRuntimeImportBindings, type RuntimeImportBinding } from "./imports.js";
 import { createRuntimePaths } from "./paths.js";
 import { RuntimeScope } from "./scope.js";
+import { buildTraceEvent } from "./trace-event.js";
 import { assertNever } from "../utils/assert.js";
 import { isTruthy } from "./truth.js";
-import { createDefaultMemoryProvider } from "../providers/memory/index.js";
-import { MockLlmProvider } from "../providers/mock/index.js";
-import { createDefaultToolProvider } from "../providers/tools/index.js";
+import { createDefaultMemoryProvider } from "../providers/memory/host.js";
+import { MockLlmProvider } from "../providers/mock/provider.js";
+import { createDefaultToolProvider } from "../providers/tools/host.js";
 import { isDisposable } from "./disposable.js";
 import type { InputProvider, LlmProvider, MemoryProvider, RuntimeValue, ToolProvider, TraceEvent } from "./types.js";
 
@@ -23,6 +24,7 @@ export interface ExecuteOptions {
   concurrency?: number;
   functionName?: string;
   llmProvider?: LlmProvider;
+  maxCallDepth?: number;
   inputProvider?: InputProvider;
   memoryProvider?: MemoryProvider;
   sourcePath?: string;
@@ -41,7 +43,7 @@ interface ReturnSignal {
 }
 
 type StatementResult = ReturnSignal | undefined;
-const MAX_CALL_DEPTH = 1000;
+const DEFAULT_MAX_CALL_DEPTH = 1000;
 
 export async function executeAgent(
   program: Program,
@@ -59,12 +61,11 @@ class Interpreter {
   private readonly inputProvider?: InputProvider;
   private readonly toolProvider: ToolProvider;
   private readonly memoryProvider: MemoryProvider;
-  private readonly evaluator: Evaluator;
   private readonly entryFunction: string;
   private readonly agent: AgentDecl;
-  private currentAgent: AgentDecl;
   private readonly agents: Map<string, AgentDecl>;
   private readonly imports: RuntimeImportBinding[];
+  private readonly maxCallDepth: number;
   private callDepth = 0;
 
   constructor(
@@ -81,24 +82,11 @@ class Interpreter {
         baseDir: paths.sourceDir,
         workspaceRoot: paths.workspaceRoot,
       });
-    const generateRuntime = new GenerateRuntime(this.llmProvider, this.trace, {
-      currentAgent: () => this.currentAgent,
-      evaluate: (expr, scope) => this.evaluator.evaluate(expr, scope),
-      resolveContextUses: (scope) => this.evaluator.resolveContextUses(scope),
-    });
-    this.evaluator = new Evaluator(this.toolProvider, this.memoryProvider, this.trace, generateRuntime, {
-      callAgent: (agentName, functionName, args, range) => this.callAgent(agentName, functionName, args, range),
-      callFunction: (agent, name, args, range) => this.callFunction(agent, name, args, range),
-      concurrency: () => this.options.concurrency ?? 4,
-      evaluateBlockFinalValue: (statements, scope) => this.evaluateBlockFinalValue(statements, scope),
-      requireAgent: (name, range) => this.requireAgent(name, range),
-      resolveMainFunction,
-    });
     this.agents = createAgentMap(program);
     this.agent = resolveEntryAgent(program, options.agentName);
-    this.currentAgent = this.agent;
     this.entryFunction = options.functionName ?? resolveMainFunction(this.agent).name;
     this.imports = createRuntimeImportBindings(program, paths.sourceDir);
+    this.maxCallDepth = readMaxCallDepth(options.maxCallDepth);
   }
 
   async execute(input: RuntimeValue): Promise<RuntimeValue> {
@@ -109,7 +97,7 @@ class Interpreter {
       }
       const args =
         entry.params.length === 0 ? [] : [await prepareEntryInput(input, entry, this.inputProvider, this.trace)];
-      return await this.callFunction(this.agent, entry.name, args, entry.range);
+      return await this.callFunction(this.agent, entry.name, args, entry.range, this.trace);
     } finally {
       await Promise.all([
         closeIfDisposable(this.toolProvider),
@@ -125,6 +113,7 @@ class Interpreter {
     name: string,
     args: RuntimeValue[],
     range?: CallExpr["range"],
+    trace: TraceEvent[] = this.trace,
   ): Promise<RuntimeValue> {
     const fn = findFunction(agent, name);
     if (!fn) {
@@ -136,25 +125,51 @@ class Interpreter {
         fn.range,
       );
     }
-    if (this.callDepth >= MAX_CALL_DEPTH) {
-      throw new RuntimeError(`Maximum call depth of ${MAX_CALL_DEPTH} exceeded`, range ?? fn.range);
+    if (this.callDepth >= this.maxCallDepth) {
+      throw new RuntimeError(`Maximum call depth of ${this.maxCallDepth} exceeded`, range ?? fn.range);
     }
 
-    const previousAgent = this.currentAgent;
-    this.currentAgent = agent;
     this.callDepth += 1;
-    const scope = await this.buildFunctionScope(agent, fn, args);
+    const evaluator = this.createEvaluator(trace, agent);
+    const scope = await this.buildFunctionScope(agent, fn, args, evaluator, trace);
 
     try {
-      const signal = await this.executeBlock(fn.body, scope, true);
+      const signal = await this.executeBlock(fn.body, scope, evaluator, trace, true);
       return signal?.value ?? null;
     } finally {
       this.callDepth -= 1;
-      this.currentAgent = previousAgent;
     }
   }
 
-  private async buildFunctionScope(agent: AgentDecl, fn: FuncDecl, args: RuntimeValue[]): Promise<RuntimeScope> {
+  private createEvaluator(trace: TraceEvent[], activeAgent: AgentDecl): Evaluator {
+    let evaluator: Evaluator;
+    const generateRuntime = new GenerateRuntime(this.llmProvider, trace, {
+      currentAgent: () => activeAgent,
+      evaluate: (expr, scope) => evaluator.evaluate(expr, scope),
+      resolveContextUses: (scope) => evaluator.resolveContextUses(scope),
+    });
+    evaluator = new Evaluator(this.toolProvider, this.memoryProvider, trace, generateRuntime, {
+      callAgent: (agentName, functionName, args, range) => this.callAgent(agentName, functionName, args, range, trace),
+      callFunction: (agent, name, args, range) => this.callFunction(agent, name, args, range, trace),
+      concurrency: () => this.options.concurrency ?? 4,
+      evaluateBlockFinalValue: (statements, scope, blockOptions = {}) => {
+        const blockTrace = blockOptions.trace ?? trace;
+        const blockEvaluator = blockOptions.trace ? this.createEvaluator(blockTrace, activeAgent) : evaluator;
+        return this.evaluateBlockFinalValue(statements, scope, blockEvaluator, blockTrace);
+      },
+      requireAgent: (name, range) => this.requireAgent(name, range),
+      resolveMainFunction,
+    });
+    return evaluator;
+  }
+
+  private async buildFunctionScope(
+    agent: AgentDecl,
+    fn: FuncDecl,
+    args: RuntimeValue[],
+    evaluator: Evaluator,
+    trace: TraceEvent[],
+  ): Promise<RuntimeScope> {
     const agentScope = new RuntimeScope();
 
     for (const agentName of this.agents.keys()) {
@@ -171,11 +186,11 @@ class Interpreter {
       );
     }
     for (const config of agent.config) {
-      const configValue = await this.evaluator.evaluateConfig(config, agentScope);
+      const configValue = await evaluator.evaluateConfig(config, agentScope);
       agentScope.setConfig(config.key, configValue);
     }
     for (const use of agent.uses) {
-      this.declareUse(use, agentScope);
+      this.declareUse(use, agentScope, trace);
     }
 
     const scope = agentScope.child();
@@ -189,45 +204,57 @@ class Interpreter {
   private async executeBlock(
     statements: Stmt[],
     scope: RuntimeScope,
+    evaluator: Evaluator,
+    trace: TraceEvent[],
     allowFinalExpressionReturn = false,
   ): Promise<StatementResult> {
     for (const [index, stmt] of statements.entries()) {
       if (allowFinalExpressionReturn && index === statements.length - 1 && stmt.kind === "ExprStmt") {
-        return { kind: "return", value: await this.evaluator.evaluate(stmt.expr, scope) };
+        return { kind: "return", value: await evaluator.evaluate(stmt.expr, scope) };
       }
-      const result = await this.executeStatement(stmt, scope);
+      const result = await this.executeStatement(stmt, scope, evaluator, trace);
       if (result) return result;
     }
     return undefined;
   }
 
-  private async evaluateBlockFinalValue(statements: Stmt[], scope: RuntimeScope): Promise<RuntimeValue> {
-    const signal = await this.executeBlock(statements, scope, true);
+  private async evaluateBlockFinalValue(
+    statements: Stmt[],
+    scope: RuntimeScope,
+    evaluator: Evaluator,
+    trace: TraceEvent[],
+  ): Promise<RuntimeValue> {
+    const signal = await this.executeBlock(statements, scope, evaluator, trace, true);
     if (!signal) {
       throw new RuntimeError("parallel for body must end with a value expression");
     }
     return signal.value;
   }
 
-  private async executeStatement(stmt: Stmt, scope: RuntimeScope): Promise<StatementResult> {
+  private async executeStatement(
+    stmt: Stmt,
+    scope: RuntimeScope,
+    evaluator: Evaluator,
+    trace: TraceEvent[],
+  ): Promise<StatementResult> {
     switch (stmt.kind) {
       case "ConfigDecl":
-        scope.setConfig(stmt.key, await this.evaluator.evaluateConfig(stmt, scope));
+        scope.setConfig(stmt.key, await evaluator.evaluateConfig(stmt, scope));
         return undefined;
 
       case "UseStmt": {
-        this.declareUse(stmt, scope);
+        this.declareUse(stmt, scope, trace);
         return undefined;
       }
 
       case "AssignStmt": {
-        const value = await this.evaluator.evaluateAssignmentValue(stmt, scope);
+        const value = await evaluator.evaluateAssignmentValue(stmt, scope);
         if (stmt.target.kind === "IdentifierExpr") {
           scope.set(stmt.target.name, value, stmt.target.range);
           return undefined;
         }
         if (stmt.target.kind === "MemberExpr") {
-          const object = await this.evaluator.evaluate(stmt.target.object, scope);
+          const object = await evaluator.evaluate(stmt.target.object, scope);
           if (Array.isArray(object)) {
             throw new RuntimeError("Cannot assign a property on a list value", stmt.target.range);
           }
@@ -241,21 +268,21 @@ class Interpreter {
       }
 
       case "ExprStmt":
-        await this.evaluator.evaluate(stmt.expr, scope);
+        await evaluator.evaluate(stmt.expr, scope);
         return undefined;
 
       case "IfStmt": {
-        if (isTruthy(await this.evaluator.evaluate(stmt.condition, scope))) {
-          return this.executeBlock(stmt.thenBody, scope.child());
+        if (isTruthy(await evaluator.evaluate(stmt.condition, scope))) {
+          return this.executeBlock(stmt.thenBody, scope.child(), evaluator, trace);
         }
         if (stmt.elseBody) {
-          return this.executeBlock(stmt.elseBody, scope.child());
+          return this.executeBlock(stmt.elseBody, scope.child(), evaluator, trace);
         }
         return undefined;
       }
 
       case "ForInStmt": {
-        const iterable = await this.evaluator.evaluate(stmt.iterable, scope);
+        const iterable = await evaluator.evaluate(stmt.iterable, scope);
         if (!Array.isArray(iterable)) {
           throw new RuntimeError("for loop requires a list value", stmt.iterable.range);
         }
@@ -263,13 +290,19 @@ class Interpreter {
         const iterations = Math.min(stmt.maxIterations, iterable.length);
         for (let index = 0; index < iterations; index += 1) {
           const item = iterable[index]!;
-          this.trace.push({
-            kind: "for",
-            data: { item: stmt.itemName, index, value: sanitizeForJson(item) },
-          });
+          trace.push(
+            buildTraceEvent("for", {
+              item: stmt.item.name,
+              index,
+              value: item,
+              max_items: stmt.maxIterations,
+              total_items: iterable.length,
+              truncated: iterable.length > stmt.maxIterations,
+            }),
+          );
           const child = scope.child();
-          child.define(stmt.itemName, item);
-          const result = await this.executeBlock(stmt.body, child);
+          child.define(stmt.item.name, item);
+          const result = await this.executeBlock(stmt.body, child, evaluator, trace);
           if (result) return result;
         }
         return undefined;
@@ -277,10 +310,10 @@ class Interpreter {
 
       case "LoopUntilStmt": {
         for (let index = 0; index < stmt.maxIterations; index += 1) {
-          if (isTruthy(await this.evaluator.evaluate(stmt.condition, scope))) {
+          if (isTruthy(await evaluator.evaluate(stmt.condition, scope))) {
             return undefined;
           }
-          const result = await this.executeBlock(stmt.body, scope.child());
+          const result = await this.executeBlock(stmt.body, scope.child(), evaluator, trace);
           if (result) return result;
         }
         return undefined;
@@ -288,14 +321,14 @@ class Interpreter {
 
       case "RepeatStmt": {
         for (let index = 0; index < stmt.maxAttempts; index += 1) {
-          const result = await this.executeBlock(stmt.body, scope.child());
+          const result = await this.executeBlock(stmt.body, scope.child(), evaluator, trace);
           if (result) return result;
         }
         return undefined;
       }
 
       case "ReturnStmt":
-        return { kind: "return", value: await this.evaluator.evaluate(stmt.value, scope) };
+        return { kind: "return", value: await evaluator.evaluate(stmt.value, scope) };
       default:
         assertNever(stmt);
     }
@@ -306,20 +339,19 @@ class Interpreter {
     functionName: string,
     args: RuntimeValue[],
     range: CallExpr["range"],
+    trace: TraceEvent[],
   ): Promise<RuntimeValue> {
-    const traceStart = this.trace.length;
-    const result = await this.callFunction(this.requireAgent(agentName, range), functionName, args, range);
-    const childTrace = this.trace.splice(traceStart) as TraceEvent[];
-    this.trace.push({
-      kind: "agent",
-      data: {
+    const childTrace: TraceEvent[] = [];
+    const result = await this.callFunction(this.requireAgent(agentName, range), functionName, args, range, childTrace);
+    trace.push(
+      buildTraceEvent("agent", {
         agent: agentName,
         function: functionName,
-        args: sanitizeForJson(args),
-        result: sanitizeForJson(result),
-        trace: childTrace.map((event) => sanitizeForJson(event)),
-      },
-    });
+        args,
+        result,
+        trace: childTrace,
+      }),
+    );
     return result;
   }
 
@@ -327,14 +359,21 @@ class Interpreter {
     return requireAgent(this.agents, name, range);
   }
 
-  private declareUse(stmt: UseStmt, scope: RuntimeScope): void {
+  private declareUse(stmt: UseStmt, scope: RuntimeScope, trace: TraceEvent[]): void {
     const source = formatExpressionSource(stmt.value);
     scope.addUse(stmt.value, source, stmt.budget, stmt.label);
-    this.trace.push({
-      kind: "use",
-      data: { source, label: stmt.label ?? null, budget: budgetToJson(stmt.budget) },
-    });
+    trace.push(buildTraceEvent("use", { source, label: stmt.label ?? null, budget: budgetToJson(stmt.budget) }));
   }
+}
+
+function readMaxCallDepth(value: number | undefined): number {
+  if (value === undefined) {
+    return DEFAULT_MAX_CALL_DEPTH;
+  }
+  if (!Number.isInteger(value) || value <= 0) {
+    throw new RuntimeError("maxCallDepth must be a positive integer");
+  }
+  return value;
 }
 
 async function closeIfDisposable(value: unknown): Promise<void> {

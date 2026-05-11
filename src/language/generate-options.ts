@@ -1,12 +1,4 @@
-import type {
-  BooleanExpr,
-  Budget,
-  Expr,
-  GenerateOptionsExpr,
-  NumberExpr,
-  ObjectProperty,
-  StringExpr,
-} from "../ast/types.js";
+import type { BooleanExpr, Expr, GenerateOptionsExpr, NumberExpr, ObjectProperty, StringExpr } from "../ast/types.js";
 
 export type GenerateOptionKey = "input" | "attempts" | "max_output" | "temperature" | "think" | "strict" | "debug";
 
@@ -18,7 +10,7 @@ export interface GenerateOptionSpec {
   defaultValue?: unknown;
   invalidCode?: string;
   invalidMessage?: string;
-  isValid?: (value: Expr, maxOutput?: Budget) => boolean;
+  isValid?: (value: Expr) => boolean;
 }
 
 export const GENERATE_OPTION_SPECS: Record<GenerateOptionKey, GenerateOptionSpec> = {
@@ -32,7 +24,6 @@ export const GENERATE_OPTION_SPECS: Record<GenerateOptionKey, GenerateOptionSpec
   max_output: {
     invalidCode: "INVALID_GENERATE_MAX_OUTPUT",
     invalidMessage: "generate max_output must be a positive budget",
-    isValid: (_value, maxOutput) => maxOutput !== undefined && maxOutput.amount > 0,
   },
   temperature: {
     invalidCode: "INVALID_GENERATE_TEMPERATURE",
@@ -42,7 +33,7 @@ export const GENERATE_OPTION_SPECS: Record<GenerateOptionKey, GenerateOptionSpec
   think: {
     invalidCode: "INVALID_GENERATE_THINK",
     invalidMessage: "generate think must be a boolean or one of auto, low, medium, high",
-    isValid: (value) => value.kind === "BooleanExpr" || isGenerateThinkExpression(value),
+    isValid: isGenerateThinkExpression,
   },
   strict: {
     defaultValue: DEFAULT_GENERATE_STRICT,
@@ -90,29 +81,23 @@ export function findGenerateProperty(options: GenerateOptionsExpr, key: Generate
   return options.properties.find((property) => property.key === key);
 }
 
-export function readNumberGenerateProperty(
+export function readGenerateProperty<T extends Expr>(
   options: GenerateOptionsExpr,
   key: GenerateOptionKey,
-): NumberExpr | undefined {
+  predicate: (value: Expr) => value is T,
+): T | undefined {
   const property = findGenerateProperty(options, key);
-  return property?.value.kind === "NumberExpr" ? property.value : undefined;
+  return property && predicate(property.value) ? property.value : undefined;
 }
 
-export function readBooleanGenerateProperty(
-  options: GenerateOptionsExpr,
-  key: GenerateOptionKey,
-): BooleanExpr | undefined {
-  const property = findGenerateProperty(options, key);
-  return property?.value.kind === "BooleanExpr" ? property.value : undefined;
+export function isNumberExpression(value: Expr): value is NumberExpr {
+  return value.kind === "NumberExpr";
 }
 
-export function readThinkGenerateProperty(options: GenerateOptionsExpr): BooleanExpr | StringExpr | undefined {
-  const property = findGenerateProperty(options, "think");
-  if (!property) return undefined;
-  if (property.value.kind === "BooleanExpr") return property.value;
-  return isGenerateThinkExpression(property.value) ? property.value : undefined;
+export function isBooleanExpression(value: Expr): value is BooleanExpr {
+  return value.kind === "BooleanExpr";
 }
 
-function isGenerateThinkExpression(value: Expr): value is StringExpr {
-  return value.kind === "StringExpr" && isGenerateThinkValue(value.value);
+export function isGenerateThinkExpression(value: Expr): value is BooleanExpr | StringExpr {
+  return isBooleanExpression(value) || (value.kind === "StringExpr" && isGenerateThinkValue(value.value));
 }

@@ -299,6 +299,16 @@ generate({
 
 `think` 是 provider/model capability hint，不是所有模型都保证支持。如果不支持，adapter 可以按照 capability policy 选择 ignore、warn 或 fail。
 
+当前 provider 映射：
+
+```text
+OpenAI:    true -> medium, low/medium/high -> reasoning_effort
+Anthropic: true/auto/low -> 1024 thinking tokens, medium -> 4096, high -> 10000
+Ollama:    将该值透传为 chat API 的 think 字段
+```
+
+对 Anthropic，`max_output` 仍表示最终答案预算。由于 Anthropic 将 thinking tokens 计入 `max_tokens`，adapter 会把 thinking budget 加到 Anthropic 请求的 `max_tokens` 上。Anthropic extended thinking 与 `temperature` 同时设置时会被拒绝。
+
 ## Provider hint 的 capability policy
 
 `temperature` 和 `think` 都是 provider/model capability hint。不支持的 provider hint 默认在 debug mode 下 warn，否则 ignore。

@@ -3,6 +3,7 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { parse } from "../src/parser/parser.js";
+import { HostMemoryProvider } from "../src/providers/memory/index.js";
 import { executeAgent } from "../src/runtime/interpreter.js";
 
 describe("memory", () => {
@@ -160,5 +161,66 @@ describe("memory", () => {
       },
     ]);
     expect(result.trace.filter((event) => event.kind === "memory")).toHaveLength(3);
+  });
+
+  it("can close and reopen sqlite memory connections", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "agentscript-sqlite-memory-close-"));
+    const uri = "sqlite://./.agentscript/memory.db#lessons";
+    const first = new HostMemoryProvider({ baseDir: dir, workspaceRoot: dir });
+
+    await first.add({
+      memoryName: "Lessons",
+      uri,
+      record: {
+        kind: "lesson",
+        text: "sqlite close persists records",
+      },
+    });
+    await first.close();
+
+    const second = new HostMemoryProvider({ baseDir: dir, workspaceRoot: dir });
+    const result = await second.query({
+      memoryName: "Lessons",
+      uri,
+      query: {
+        text: "persists",
+        limit: 5,
+      },
+    });
+    await second.close();
+
+    expect(result).toMatchObject([
+      {
+        record: {
+          text: "sqlite close persists records",
+        },
+      },
+    ]);
+  });
+
+  it("matches file and sqlite memory text queries consistently", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "agentscript-memory-query-"));
+    const provider = new HostMemoryProvider({ baseDir: dir, workspaceRoot: dir });
+    const fileUri = "file://./.agentscript/lessons.jsonl";
+    const sqliteUri = "sqlite://./.agentscript/memory.db#lessons";
+    const record = {
+      kind: "lesson",
+      text: "unrelated",
+      note: "CaseFold Target",
+    };
+
+    await provider.add({ memoryName: "FileLessons", uri: fileUri, record });
+    await provider.add({ memoryName: "SqliteLessons", uri: sqliteUri, record });
+
+    const query = {
+      text: "casefold target",
+      limit: 5,
+    };
+    const fileResult = await provider.query({ memoryName: "FileLessons", uri: fileUri, query });
+    const sqliteResult = await provider.query({ memoryName: "SqliteLessons", uri: sqliteUri, query });
+    await provider.close();
+
+    expect(fileResult).toMatchObject([{ record }]);
+    expect(sqliteResult).toMatchObject([{ record }]);
   });
 });

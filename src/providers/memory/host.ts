@@ -2,6 +2,7 @@ import { isAbsolute, relative, resolve } from "node:path";
 import { RuntimeError } from "../../runtime/errors.js";
 import { isObject } from "../../runtime/guards.js";
 import { splitSqliteUri, uriScheme } from "../../language/uri.js";
+import type { Disposable } from "../../runtime/disposable.js";
 import type { MemoryAddRequest, MemoryProvider, MemoryQueryRequest, RuntimeValue } from "../../runtime/types.js";
 import { FileMemoryBackend } from "./file.js";
 import { SqliteMemoryBackend, type SqliteMemoryTarget } from "./sqlite.js";
@@ -11,7 +12,7 @@ export interface HostMemoryProviderOptions {
   workspaceRoot?: string;
 }
 
-export class HostMemoryProvider implements MemoryProvider {
+export class HostMemoryProvider implements MemoryProvider, Disposable {
   private readonly file = new FileMemoryBackend();
   private readonly sqlite = new SqliteMemoryBackend();
   private readonly baseDir: string;
@@ -38,6 +39,10 @@ export class HostMemoryProvider implements MemoryProvider {
     return this.backend(request.uri) === "file"
       ? this.file.query(request, this.resolveFileMemoryPath(request.uri))
       : this.sqlite.query(request, this.resolveSqliteMemory(request.uri));
+  }
+
+  async close(): Promise<void> {
+    await this.sqlite.close();
   }
 
   private backend(uri: string): "file" | "sqlite" {

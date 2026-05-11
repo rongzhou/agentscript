@@ -19,27 +19,25 @@ export interface SqliteMemoryTarget {
 }
 
 export class SqliteMemoryBackend {
+  private readonly databases = new Map<string, DatabaseSync>();
+
   add(request: MemoryAddRequest, target: SqliteMemoryTarget): RuntimeValue {
     mkdirSync(dirname(target.path), { recursive: true });
-    const db = openSqlite(target.path);
-    try {
-      const envelope = createMemoryEnvelope(request.record as RuntimeObject);
-      db.prepare(`
+    const db = this.database(target.path);
+    const envelope = createMemoryEnvelope(request.record as RuntimeObject);
+    db.prepare(`
         INSERT INTO memory_records (namespace, id, created_at, updated_at, kind, text, record_json)
         VALUES (?, ?, ?, ?, ?, ?, ?)
       `).run(
-        target.namespace,
-        envelope.id,
-        envelope.created_at,
-        envelope.updated_at,
-        typeof envelope.record.kind === "string" ? envelope.record.kind : null,
-        typeof envelope.record.text === "string" ? envelope.record.text : null,
-        JSON.stringify(envelope.record),
-      );
-      return envelope;
-    } finally {
-      db.close();
-    }
+      target.namespace,
+      envelope.id,
+      envelope.created_at,
+      envelope.updated_at,
+      typeof envelope.record.kind === "string" ? envelope.record.kind : null,
+      typeof envelope.record.text === "string" ? envelope.record.text : null,
+      JSON.stringify(envelope.record),
+    );
+    return envelope;
   }
 
   query(request: MemoryQueryRequest, target: SqliteMemoryTarget): RuntimeValue {
@@ -47,38 +45,45 @@ export class SqliteMemoryBackend {
     const limit = readLimit(query.limit);
     if (!existsSync(target.path)) return [];
 
-    const db = openSqlite(target.path);
-    try {
-      const conditions = ["namespace = ?"];
-      const params: (string | number)[] = [target.namespace];
+    const db = this.database(target.path);
+    const conditions = ["namespace = ?"];
+    const params: (string | number)[] = [target.namespace];
 
-      if (typeof query.kind === "string") {
-        conditions.push("kind = ?");
-        params.push(query.kind);
-      }
-      if (typeof query.text === "string") {
-        conditions.push("(text LIKE ? ESCAPE '\\' OR record_json LIKE ? ESCAPE '\\')");
-        const pattern = `%${escapeLike(query.text)}%`;
-        params.push(pattern, pattern);
-      }
+    if (typeof query.kind === "string") {
+      conditions.push("kind = ?");
+      params.push(query.kind);
+    }
 
-      const needPostFilter = query.where !== undefined;
-      const sql = `
+    const needPostFilter = query.text !== undefined || query.where !== undefined;
+    const sql = `
         SELECT id, created_at, updated_at, record_json
         FROM memory_records
         WHERE ${conditions.join(" AND ")}
         ORDER BY created_at DESC
         ${needPostFilter ? "" : "LIMIT ?"}
       `;
-      const sqlParams = needPostFilter ? params : [...params, limit];
-      const rows = db.prepare(sql).all(...sqlParams) as unknown as SqliteMemoryRow[];
+    const sqlParams = needPostFilter ? params : [...params, limit];
+    const rows = db.prepare(sql).all(...sqlParams) as unknown as SqliteMemoryRow[];
 
-      const records = rows.map((row) => rowToEnvelope(row)).filter((item) => matchesQuery(item.record, query));
+    const records = rows.map((row) => rowToEnvelope(row)).filter((item) => matchesQuery(item.record, query));
 
-      return records.slice(0, limit);
-    } finally {
+    return records.slice(0, limit);
+  }
+
+  async close(): Promise<void> {
+    for (const db of this.databases.values()) {
       db.close();
     }
+    this.databases.clear();
+  }
+
+  private database(path: string): DatabaseSync {
+    let db = this.databases.get(path);
+    if (!db) {
+      db = openSqlite(path);
+      this.databases.set(path, db);
+    }
+    return db;
   }
 }
 
@@ -116,8 +121,4 @@ function rowToEnvelope(row: SqliteMemoryRow): MemoryEnvelope {
     updated_at: row.updated_at,
     record,
   };
-}
-
-function escapeLike(value: string): string {
-  return value.replace(/[\\%_]/g, (char) => `\\${char}`);
 }

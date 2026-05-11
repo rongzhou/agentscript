@@ -6,77 +6,107 @@ export interface IdentifierUse {
 }
 
 export function identifiersInExpression(expr: Expr): IdentifierUse[] {
-  switch (expr.kind) {
-    case "IdentifierExpr":
-      return [{ name: expr.name, range: expr.range }];
-    case "ParallelForExpr":
-      return [...identifiersInExpression(expr.iterable), ...expr.body.flatMap((stmt) => identifiersInStatement(stmt))];
-    case "MemberExpr":
-    case "IndexExpr":
-    case "ListExpr":
-    case "ObjectExpr":
-    case "UnaryExpr":
-    case "BinaryExpr":
-    case "CallExpr":
-    case "GenerateExpr":
-      return childExpressions(expr).flatMap((child) => identifiersInExpression(child));
-    case "StringExpr":
-    case "NumberExpr":
-    case "BooleanExpr":
-    case "NullExpr":
-    case "ShapeObjectExpr":
-      return [];
-  }
+  const identifiers: IdentifierUse[] = [];
+  walkExpression(expr, {
+    enterExpr(value) {
+      if (value.kind === "IdentifierExpr") {
+        identifiers.push({ name: value.name, range: value.range });
+      }
+    },
+  });
+  return identifiers;
 }
 
 export function identifiersInStatement(stmt: Stmt): IdentifierUse[] {
-  switch (stmt.kind) {
-    case "ConfigDecl":
-      return identifiersInExpression(stmt.value);
-    case "UseStmt":
-      return identifiersInExpression(stmt.value);
-    case "AssignStmt":
-      return [...identifiersInExpression(stmt.target), ...identifiersInExpression(stmt.value)];
-    case "ExprStmt":
-      return identifiersInExpression(stmt.expr);
-    case "IfStmt":
-      return [
-        ...identifiersInExpression(stmt.condition),
-        ...stmt.thenBody.flatMap((item) => identifiersInStatement(item)),
-        ...(stmt.elseBody ?? []).flatMap((item) => identifiersInStatement(item)),
-      ];
-    case "ForInStmt":
-      return [...identifiersInExpression(stmt.iterable), ...stmt.body.flatMap((item) => identifiersInStatement(item))];
-    case "LoopUntilStmt":
-      return [...identifiersInExpression(stmt.condition), ...stmt.body.flatMap((item) => identifiersInStatement(item))];
-    case "RepeatStmt":
-      return stmt.body.flatMap((item) => identifiersInStatement(item));
-    case "ReturnStmt":
-      return identifiersInExpression(stmt.value);
-  }
+  const identifiers: IdentifierUse[] = [];
+  walkStatement(stmt, {
+    enterExpr(value) {
+      if (value.kind === "IdentifierExpr") {
+        identifiers.push({ name: value.name, range: value.range });
+      }
+    },
+  });
+  return identifiers;
 }
 
 export function containsCallExpression(expr: Expr): boolean {
-  switch (expr.kind) {
-    case "CallExpr":
-      return true;
-    case "GenerateExpr":
-    case "ParallelForExpr":
-      return true;
-    case "MemberExpr":
-    case "IndexExpr":
-    case "ListExpr":
-    case "ObjectExpr":
-    case "UnaryExpr":
-    case "BinaryExpr":
-      return childExpressions(expr).some((child) => containsCallExpression(child));
-    case "IdentifierExpr":
-    case "StringExpr":
-    case "NumberExpr":
-    case "BooleanExpr":
-    case "NullExpr":
-    case "ShapeObjectExpr":
-      return false;
+  let containsCall = false;
+  walkExpression(expr, {
+    enterExpr(value) {
+      if (value.kind === "CallExpr" || value.kind === "GenerateExpr" || value.kind === "ParallelForExpr") {
+        containsCall = true;
+      }
+    },
+  });
+  return containsCall;
+}
+
+export interface AstVisitor {
+  enterExpr?: (expr: Expr) => void;
+  enterStmt?: (stmt: Stmt) => void;
+}
+
+export function walkExpression(expr: Expr, visitor: AstVisitor): void {
+  visitor.enterExpr?.(expr);
+  if (expr.kind === "ParallelForExpr") {
+    walkExpression(expr.iterable, visitor);
+    for (const stmt of expr.body) {
+      walkStatement(stmt, visitor);
+    }
+    return;
+  }
+  for (const child of childExpressions(expr)) {
+    walkExpression(child, visitor);
+  }
+}
+
+export function walkStatement(stmt: Stmt, visitor: AstVisitor): void {
+  visitor.enterStmt?.(stmt);
+  for (const expr of statementExpressions(stmt)) {
+    walkExpression(expr, visitor);
+  }
+  for (const child of childStatements(stmt)) {
+    walkStatement(child, visitor);
+  }
+}
+
+export function statementExpressions(stmt: Stmt): Expr[] {
+  switch (stmt.kind) {
+    case "ConfigDecl":
+      return [stmt.value];
+    case "UseStmt":
+      return [stmt.value];
+    case "AssignStmt":
+      return [stmt.target, stmt.value];
+    case "ExprStmt":
+      return [stmt.expr];
+    case "IfStmt":
+      return [stmt.condition];
+    case "ForInStmt":
+      return [stmt.iterable];
+    case "LoopUntilStmt":
+      return [stmt.condition];
+    case "RepeatStmt":
+      return [];
+    case "ReturnStmt":
+      return [stmt.value];
+  }
+}
+
+export function childStatements(stmt: Stmt): Stmt[] {
+  switch (stmt.kind) {
+    case "IfStmt":
+      return [...stmt.thenBody, ...(stmt.elseBody ?? [])];
+    case "ForInStmt":
+    case "LoopUntilStmt":
+    case "RepeatStmt":
+      return stmt.body;
+    case "ConfigDecl":
+    case "UseStmt":
+    case "AssignStmt":
+    case "ExprStmt":
+    case "ReturnStmt":
+      return [];
   }
 }
 

@@ -8,45 +8,17 @@ import { executeAgent } from "../runtime/interpreter.js";
 import { loadProgram } from "../runtime/loader.js";
 import { ProtocolLlmProvider } from "../providers/llm/index.js";
 import { MockLlmProvider } from "../providers/mock/index.js";
-import { createDefaultToolProvider } from "../providers/tools/index.js";
-import { checkNodeImport, checkNpmImport, loadNpmRegistry } from "../providers/tools/npm-registry.js";
-import { buildValueFromShape } from "../runtime/shape.js";
+import { loadNpmRegistry } from "../providers/tools/npm-registry.js";
 import { sanitizeForJson } from "../runtime/json.js";
 import { formatTrace } from "../runtime/trace.js";
-import { uriScheme } from "../language/uri.js";
-import type {
-  GenerateRequest,
-  InputProvider,
-  JsonObject,
-  LlmProvider,
-  RuntimeValue,
-  ToolCallRequest,
-  ToolProvider,
-} from "../runtime/types.js";
+import type { InputProvider, JsonObject, LlmProvider } from "../runtime/types.js";
 import { analyze } from "../semantic/analyzer.js";
 import { formatSemanticDiagnostics, SemanticError } from "../semantic/diagnostics.js";
+import { parseArgs, printUsage, type CliOptions } from "./args.js";
+import { createDryRunToolProvider, DryRunLlmProvider } from "./dry-run.js";
 import { createReadlineInputProvider, parseJsonObjectInput } from "./input.js";
 import { runRepl } from "./repl.js";
 import type { Program } from "../ast/types.js";
-
-interface CliOptions {
-  agentName?: string;
-  check: boolean;
-  concurrency?: number;
-  dryRun: boolean;
-  file?: string;
-  functionName?: string;
-  help: boolean;
-  input?: string;
-  inputFile?: string;
-  mock: boolean;
-  parse: boolean;
-  quiet: boolean;
-  traceFile?: string;
-  tracePretty: boolean;
-  verbose: boolean;
-  version: boolean;
-}
 
 export async function main(argv = process.argv.slice(2)): Promise<number> {
   try {
@@ -84,118 +56,6 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
     console.error(error instanceof Error ? error.message : String(error));
     return 1;
   }
-}
-
-function parseArgs(argv: string[]): CliOptions {
-  const options: CliOptions = {
-    check: false,
-    dryRun: false,
-    help: false,
-    mock: false,
-    parse: false,
-    quiet: false,
-    tracePretty: false,
-    verbose: false,
-    version: false,
-  };
-
-  const positional: string[] = [];
-  for (let index = 0; index < argv.length; index += 1) {
-    const arg = argv[index]!;
-    switch (arg) {
-      case "--agent":
-        options.agentName = readOptionValue(argv, ++index, arg);
-        break;
-      case "--function":
-        options.functionName = readOptionValue(argv, ++index, arg);
-        break;
-      case "--input":
-        options.input = readOptionValue(argv, ++index, arg);
-        break;
-      case "--input-file":
-        options.inputFile = readOptionValue(argv, ++index, arg);
-        break;
-      case "--concurrency":
-        options.concurrency = readPositiveIntegerOption(argv, ++index, arg);
-        break;
-      case "--dry-run":
-        options.dryRun = true;
-        break;
-      case "--check":
-        options.check = true;
-        break;
-      case "--help":
-      case "-h":
-        options.help = true;
-        break;
-      case "--parse":
-        options.parse = true;
-        break;
-      case "--quiet":
-        options.quiet = true;
-        break;
-      case "--mock":
-        options.mock = true;
-        break;
-      case "--version":
-      case "-v":
-        options.version = true;
-        break;
-      case "--trace":
-        {
-          const value = readOptionalOptionValue(argv, index + 1);
-          if (!value) {
-            options.tracePretty = true;
-          } else {
-            index += 1;
-            options.traceFile = value;
-          }
-        }
-        break;
-      case "--verbose":
-        options.verbose = true;
-        break;
-      default:
-        if (arg.startsWith("--")) {
-          throw new Error(`Unknown option '${arg}'`);
-        }
-        positional.push(arg);
-    }
-  }
-
-  options.file = positional[0];
-  if (positional.length > 1) {
-    throw new Error("Unexpected positional argument. Use --input to pass input JSON.");
-  }
-  if (options.quiet && (options.verbose || options.tracePretty)) {
-    throw new Error("Use either --quiet or verbose trace output, not both");
-  }
-  return options;
-}
-
-function readOptionValue(args: string[], index: number, option: string): string {
-  const value = args[index];
-  if (!value) {
-    throw new Error(`Expected value after ${option}`);
-  }
-  return value;
-}
-
-function readPositiveIntegerOption(args: string[], index: number, option: string): number {
-  const raw = readOptionValue(args, index, option);
-  const value = Number.parseInt(raw, 10);
-  if (!Number.isInteger(value) || value <= 0 || String(value) !== raw) {
-    throw new Error(`${option} must be a positive integer`);
-  }
-  return value;
-}
-
-function readOptionalOptionValue(args: string[], index: number): string | undefined {
-  const value = args[index];
-  if (!value || value.startsWith("--")) {
-    return undefined;
-  }
-  return value;
 }
 
 function runParse(options: CliOptions): number {
@@ -260,35 +120,6 @@ function assertCliProgramSemanticallyValid(program: Program): void {
   }
 }
 
-class DryRunLlmProvider implements LlmProvider {
-  async generate(request: GenerateRequest): Promise<RuntimeValue> {
-    return request.returnShape ? buildValueFromShape(request.returnShape) : null;
-  }
-}
-
-class DryRunToolProvider implements ToolProvider {
-  private readonly registry = loadNpmRegistry(process.cwd());
-
-  constructor(private readonly fallback: ToolProvider) {}
-
-  async call(request: ToolCallRequest): Promise<RuntimeValue> {
-    const scheme = uriScheme(request.uri);
-    if (scheme === "npm") {
-      checkNpmImport(request.uri, this.registry);
-      return null;
-    }
-    if (scheme === "node") {
-      checkNodeImport(request.uri, this.registry);
-      return null;
-    }
-    return this.fallback.call(request);
-  }
-}
-
-function createDryRunToolProvider(): ToolProvider {
-  return new DryRunToolProvider(createDefaultToolProvider(process.cwd()));
-}
-
 function loadCliProgram(options: CliOptions): Program {
   if (!options.file) {
     throw new Error("Missing AgentScript file");
@@ -318,25 +149,6 @@ function terminalInputProvider(): (InputProvider & { close(): void }) | undefine
     ...createReadlineInputProvider(reader),
     close: () => reader.close(),
   };
-}
-
-function printUsage(write: (message: string) => void): void {
-  write(
-    [
-      "Usage:",
-      '  agentscript <file.as> --input \'{"question":"..."}\'',
-      "  agentscript <file.as>",
-      "  agentscript <file.as> --mock",
-      "  agentscript <file.as> --dry-run",
-      "  agentscript <file.as> --trace",
-      "  agentscript <file.as> --concurrency 4",
-      "  agentscript <file.as> --input-file input.json --agent AgentName",
-      "  agentscript <file.as> --input '{}' --quiet",
-      "  agentscript <file.as> --check",
-      "  agentscript <file.as> --parse",
-      "  agentscript",
-    ].join("\n"),
-  );
 }
 
 function readPackageVersion(): string {

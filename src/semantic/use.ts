@@ -1,9 +1,9 @@
 import type { UseStmt } from "../ast/types.js";
 import { NON_CONTEXT_BINDING_KINDS } from "../language/bindings.js";
 import { checkBudget } from "./budget.js";
-import { containsCallExpressionShallowScopes, identifiersInExpressionShallowScopes } from "./traverse.js";
 import { errorDiagnostic as error, type SemanticDiagnostic } from "./diagnostics.js";
 import type { Binding } from "./scope.js";
+import { containsCallExpression, identifiersInExpression } from "./traverse.js";
 
 interface UseScope {
   resolve(name: string): Binding | undefined;
@@ -11,11 +11,19 @@ interface UseScope {
 
 const RESERVED_CONTEXT_LABELS = new Set(["system", "assistant", "tool", "developer"]);
 
-export function checkUseRules(stmt: UseStmt, scope: UseScope, agentLevel: boolean): SemanticDiagnostic[] {
+export function checkAgentUse(stmt: UseStmt, scope: UseScope): SemanticDiagnostic[] {
+  return checkUseRules(stmt, scope, { agentLevel: true });
+}
+
+export function checkFunctionUse(stmt: UseStmt, scope: UseScope): SemanticDiagnostic[] {
+  return checkUseRules(stmt, scope, { agentLevel: false });
+}
+
+function checkUseRules(stmt: UseStmt, scope: UseScope, options: { agentLevel: boolean }): SemanticDiagnostic[] {
   const diagnostics: SemanticDiagnostic[] = [];
 
   diagnostics.push(...checkUseValue(stmt, scope));
-  if (containsCallExpressionShallowScopes(stmt.value)) {
+  if (containsCallExpression(stmt.value, { shallow: true })) {
     diagnostics.push(
       error(
         "INVALID_USE_CALL",
@@ -24,7 +32,7 @@ export function checkUseRules(stmt: UseStmt, scope: UseScope, agentLevel: boolea
       ),
     );
   }
-  if (agentLevel) {
+  if (options.agentLevel) {
     diagnostics.push(...checkAgentLevelUseValue(stmt, scope));
   }
   diagnostics.push(...checkBudget(stmt.budget, stmt.range));
@@ -37,7 +45,7 @@ export function checkUseRules(stmt: UseStmt, scope: UseScope, agentLevel: boolea
 
 function checkUseValue(stmt: UseStmt, scope: UseScope): SemanticDiagnostic[] {
   const diagnostics: SemanticDiagnostic[] = [];
-  for (const identifier of identifiersInExpressionShallowScopes(stmt.value)) {
+  for (const identifier of identifiersInExpression(stmt.value, { shallow: true })) {
     const binding = scope.resolve(identifier.name);
     if (binding && NON_CONTEXT_BINDING_KINDS.has(binding.kind)) {
       diagnostics.push(
@@ -54,7 +62,7 @@ function checkUseValue(stmt: UseStmt, scope: UseScope): SemanticDiagnostic[] {
 
 function checkAgentLevelUseValue(stmt: UseStmt, scope: UseScope): SemanticDiagnostic[] {
   const diagnostics: SemanticDiagnostic[] = [];
-  for (const identifier of identifiersInExpressionShallowScopes(stmt.value)) {
+  for (const identifier of identifiersInExpression(stmt.value, { shallow: true })) {
     const binding = scope.resolve(identifier.name);
     if (binding && binding.kind !== "file") {
       diagnostics.push(

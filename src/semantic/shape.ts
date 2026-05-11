@@ -8,7 +8,7 @@ export function checkShapeObject(shape: ShapeObjectExpr): SemanticDiagnostic[] {
 
   for (const field of shape.fields) {
     if (fields.has(field.name)) {
-      diagnostics.push(error("DUPLICATE_SHAPE_FIELD", `Duplicate generate return field '${field.name}'`, field.range));
+      diagnostics.push(error("DUPLICATE_SHAPE_FIELD", `Duplicate shape field '${field.name}'`, field.range));
     }
     fields.add(field.name);
     diagnostics.push(...checkShapeType(field.type));

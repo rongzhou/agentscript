@@ -102,3 +102,11 @@ export function childExpressions(expr: Expr): Expr[] {
       return [];
   }
 }
+
+export function memberRootName(expr: Extract<Expr, { kind: "MemberExpr" }>): string | undefined {
+  let current: Expr = expr.object;
+  while (current.kind === "MemberExpr") {
+    current = current.object;
+  }
+  return current.kind === "IdentifierExpr" ? current.name : undefined;
+}

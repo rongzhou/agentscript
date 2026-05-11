@@ -1,10 +1,9 @@
 import type { Expr, Stmt } from "../ast/types.js";
-import { childExpressions } from "../ast/walk.js";
+import { childExpressions, memberRootName } from "../ast/walk.js";
 import { isEffectfulMemoryMethod } from "../language/memory.js";
 import { isEffectfulToolCall } from "../language/tools.js";
 import { errorDiagnostic as error, type SemanticDiagnostic } from "./diagnostics.js";
 import type { SemanticScope } from "./scope.js";
-import { memberRootName } from "./traverse.js";
 
 export function blockEndsWithExpression(statements: Stmt[]): boolean {
   return statements.length > 0 && statements[statements.length - 1]?.kind === "ExprStmt";
@@ -144,7 +143,8 @@ function checkCallRules(callee: Expr, scope: SemanticScope): SemanticDiagnostic[
   const binding = scope.resolve(root);
   const diagnostics: SemanticDiagnostic[] = [];
 
-  if (binding?.kind === "memory" && isEffectfulMemoryMethod(callee.property)) {
+  const isEffectfulMemoryCall = binding?.kind === "memory" && isEffectfulMemoryMethod(callee.property);
+  if (isEffectfulMemoryCall) {
     diagnostics.push(
       error(
         "PARALLEL_FOR_EFFECTFUL_CALL",
@@ -162,7 +162,12 @@ function checkCallRules(callee: Expr, scope: SemanticScope): SemanticDiagnostic[
       ),
     );
   }
-  if (binding && !scope.isLocalToThisScope(root) && isEffectfulMemoryMethod(callee.property)) {
+  if (
+    binding &&
+    !scope.isLocalToThisScope(root) &&
+    isEffectfulMemoryMethod(callee.property) &&
+    !isEffectfulMemoryCall
+  ) {
     diagnostics.push(
       error("PARALLEL_FOR_OUTER_MUTATION", `parallel for body cannot mutate outer variable '${root}'`, callee.range),
     );

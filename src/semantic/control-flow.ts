@@ -11,12 +11,13 @@ export function checkIfStatement(
   stmt: Extract<Stmt, { kind: "IfStmt" }>,
   scope: SemanticScope,
   host: ControlFlowCheckHost,
-): void {
+): SemanticDiagnostic[] {
   host.checkExpression(stmt.condition, scope);
   host.checkBlock(stmt.thenBody, scope.child());
   if (stmt.elseBody) {
     host.checkBlock(stmt.elseBody, scope.child());
   }
+  return [];
 }
 
 export function checkForInStatement(
@@ -39,15 +40,17 @@ export function checkLoopUntilStatement(
   stmt: Extract<Stmt, { kind: "LoopUntilStmt" }>,
   scope: SemanticScope,
   host: ControlFlowCheckHost,
-): void {
+): SemanticDiagnostic[] {
   host.checkExpression(stmt.condition, scope);
   host.checkBlock(stmt.body, scope.child());
+  return [];
 }
 
 export function checkRepeatStatement(
   stmt: Extract<Stmt, { kind: "RepeatStmt" }>,
   scope: SemanticScope,
   host: ControlFlowCheckHost,
-): void {
+): SemanticDiagnostic[] {
   host.checkBlock(stmt.body, scope.child());
+  return [];
 }

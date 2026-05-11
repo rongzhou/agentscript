@@ -18,7 +18,7 @@ import { blockEndsWithExpression, checkParallelForBodyRules } from "./parallel-f
 import { collectProgramDeclarations, type ImportBindingDecl } from "./program.js";
 import { checkShapeObject } from "./shape.js";
 import { SemanticScope } from "./scope.js";
-import { checkUseRules } from "./use.js";
+import { checkAgentUse, checkFunctionUse } from "./use.js";
 
 export interface AnalyzeOptions {
   npmRegistry?: NpmRegistry;
@@ -105,10 +105,12 @@ class Analyzer {
         this.checkExpression(stmt.expr, scope);
         break;
       case "IfStmt":
-        checkIfStatement(stmt, scope, {
-          checkBlock: (statements, currentScope) => this.checkBlock(statements, currentScope),
-          checkExpression: (expr, currentScope) => this.checkExpression(expr, currentScope),
-        });
+        this.diagnostics.push(
+          ...checkIfStatement(stmt, scope, {
+            checkBlock: (statements, currentScope) => this.checkBlock(statements, currentScope),
+            checkExpression: (expr, currentScope) => this.checkExpression(expr, currentScope),
+          }),
+        );
         break;
       case "ForInStmt":
         this.diagnostics.push(
@@ -119,16 +121,20 @@ class Analyzer {
         );
         break;
       case "LoopUntilStmt":
-        checkLoopUntilStatement(stmt, scope, {
-          checkBlock: (statements, currentScope) => this.checkBlock(statements, currentScope),
-          checkExpression: (expr, currentScope) => this.checkExpression(expr, currentScope),
-        });
+        this.diagnostics.push(
+          ...checkLoopUntilStatement(stmt, scope, {
+            checkBlock: (statements, currentScope) => this.checkBlock(statements, currentScope),
+            checkExpression: (expr, currentScope) => this.checkExpression(expr, currentScope),
+          }),
+        );
         break;
       case "RepeatStmt":
-        checkRepeatStatement(stmt, scope, {
-          checkBlock: (statements, currentScope) => this.checkBlock(statements, currentScope),
-          checkExpression: (expr, currentScope) => this.checkExpression(expr, currentScope),
-        });
+        this.diagnostics.push(
+          ...checkRepeatStatement(stmt, scope, {
+            checkBlock: (statements, currentScope) => this.checkBlock(statements, currentScope),
+            checkExpression: (expr, currentScope) => this.checkExpression(expr, currentScope),
+          }),
+        );
         break;
       case "ReturnStmt":
         this.checkExpression(stmt.value, scope);
@@ -142,7 +148,7 @@ class Analyzer {
 
   private checkUse(stmt: Extract<Stmt, { kind: "UseStmt" }>, scope: SemanticScope, agentLevel: boolean): void {
     this.checkExpression(stmt.value, scope);
-    this.diagnostics.push(...checkUseRules(stmt, scope, agentLevel));
+    this.diagnostics.push(...(agentLevel ? checkAgentUse(stmt, scope) : checkFunctionUse(stmt, scope)));
   }
 
   private checkBlock(statements: Stmt[], scope: SemanticScope): void {
@@ -175,10 +181,11 @@ class Analyzer {
         this.diagnostics.push(...checkShapeObject(expr));
         break;
       case "CallExpr":
-        checkCallExpression(expr, scope, this.agentDecls, {
-          checkExpression: (nestedExpr, nestedScope) => this.checkExpression(nestedExpr, nestedScope),
-          error: (code, message, range) => this.error(code, message, range),
-        });
+        this.diagnostics.push(
+          ...checkCallExpression(expr, scope, this.agentDecls, {
+            checkExpression: (nestedExpr, nestedScope) => this.checkExpression(nestedExpr, nestedScope),
+          }),
+        );
         break;
       case "GenerateExpr":
         this.checkGenerate(expr, scope);

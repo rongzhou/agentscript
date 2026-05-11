@@ -40,7 +40,7 @@ describe("semantic config-generate-shape", () => {
     expect(wrongKind.diagnostics).toContainEqual(
       expect.objectContaining({
         severity: "error",
-        code: "INVALID_MODEL",
+        code: "INVALID_MODEL_BINDING",
       }),
     );
 
@@ -61,7 +61,7 @@ describe("semantic config-generate-shape", () => {
     expect(invalidRole.diagnostics).toContainEqual(
       expect.objectContaining({
         severity: "error",
-        code: "INVALID_CONFIG",
+        code: "INVALID_CONFIG_VALUE_TYPE",
       }),
     );
   });

@@ -10,21 +10,23 @@ export function checkConfigDeclaration(config: ConfigDecl, scope: SemanticScope)
   switch (config.key) {
     case MODEL_CONFIG_KEY: {
       if (config.value.kind !== "IdentifierExpr") {
-        diagnostics.push(error("INVALID_CONFIG", "model must reference an imported llm name", config.value.range));
+        diagnostics.push(
+          error("INVALID_MODEL_REFERENCE", "model must reference an imported llm name", config.value.range),
+        );
         return diagnostics;
       }
       const binding = scope.resolve(config.value.name);
       if (!binding) {
         diagnostics.push(error("UNKNOWN_MODEL", `Unknown model import '${config.value.name}'`, config.value.range));
       } else if (binding.kind !== "llm") {
-        diagnostics.push(error("INVALID_MODEL", `model must reference an imported llm`, config.value.range));
+        diagnostics.push(error("INVALID_MODEL_BINDING", `model must reference an imported llm`, config.value.range));
       }
       return diagnostics;
     }
   }
 
   if (isStringConfigKey(config.key) && config.value.kind !== "StringExpr") {
-    diagnostics.push(error("INVALID_CONFIG", `${config.key} must be a string`, config.value.range));
+    diagnostics.push(error("INVALID_CONFIG_VALUE_TYPE", `${config.key} must be a string`, config.value.range));
   }
   return diagnostics;
 }

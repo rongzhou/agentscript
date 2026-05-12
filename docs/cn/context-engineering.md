@@ -1,14 +1,15 @@
 # AgentScript Context Engineering
 
-本文档是 AgentScript context engineering 的总纲。它说明 AgentScript 为什么存在、必须维护哪些边界，以及 `use ... as ...` 和 `generate` 两篇细化文档如何配合。
+本文档是 AgentScript context engineering 的总纲。它说明 AgentScript 为什么存在、必须维护哪些边界，以及 `use ... as ...`、`use one of` 和 `generate` 几篇细化文档如何配合。
 
 AgentScript 有变量、函数、循环、工具、memory 和 Agent 调用，但它的目标不是成为通用编程语言，而是让 prompt context 显式、作用域化、类型化、可追踪、可审计。
 
 ## 文档结构
 
-Context engineering 的细化语义拆成两篇：
+Context engineering 的细化语义拆成三篇：
 
 - **[`use ... as ...`](./use-as.md)**：说明如何选择数据作为 prompt context，label 如何工作，budget 如何应用，以及 scope 如何影响可见性。
+- **[`use one of ...`](./use-one-of.md)**：说明一个 context slot 如何声明多个候选 source，`selected` 和 `empty` 如何工作，以及优化器如何把 context choice 视为结构化搜索空间。
 - **[`generate`](./generate.md)**：说明 generation site、prompt 构造、agent identity、输出契约、预算、重试和 trace。
 
 本文总览核心模型和不变量。语言参考仍然是紧凑语法说明。
@@ -23,6 +24,7 @@ AgentScript 的核心对象是：
 
 - **Data**：普通值，例如 input、JSON、list、文件内容、工具 observation、memory 查询结果和 Agent 返回值。
 - **Context source**：通过 `use expr` 选择进入 prompt context 的数据，可带 budget 和 label。
+- **Context choice point**：通过 `use one of { ... }` 声明的单个 context slot。一次可见 `generate` 构建 prompt 前，它会确定性地选择一个候选 source。
 - **Generation site**：一次由 `generate({ input, max_output, attempts, temperature, think, strict, debug }) -> shape` 表示的 LLM 调用。
 - **Boundary**：由 Agent、function 或 block scope 形成的可见性边界。
 - **Trace**：解释哪些 source 被选择、prompt context 如何构建、每次 generation 返回了什么的审计记录。
@@ -35,6 +37,7 @@ AgentScript 应维护这些不变量：
 - **作用域可见性**：context 可见性遵循 scope。子作用域可继承父作用域 context；function 和 Agent 调用创建独立 context boundary。
 - **能力隔离**：imported tool、model、agent、memory handle、function、provider URI 和 runtime 配置是能力，不是 prompt data。
 - **延迟解析 context**：`use expr` 声明 source，值在可见的 `generate` 构建 prompt 时解析。
+- **确定性 context choice**：`use one of` 在 prompt 构造前根据 trial hint、源码中的 `selected` 或源码顺序解析为一个候选。模型只看到被选中的 source，不看到候选列表。
 - **确定性裁剪**：context budget 按前缀裁剪渲染值，不排序、不摘要、不做语义压缩。
 - **prompt 分层**：prompt 区分 agent identity、selected context、instruction 和 output contract。
 - **trace 可审计**：trace 必须解释 LLM 调用实际看到了什么，包括 source expression、label、budget、clipping 和结果。
@@ -46,7 +49,7 @@ AgentScript 刻意混合两种语法模式。这是它相对通用编程语言�
 - **声明式** 描述 agent 或 scope "是什么"：用哪个模型（`model`）、身份是谁（`role`、`description`）、默认携带什么 context（agent-level `use`）。这些是关于身份的陈述，只能出现在声明位置（agent body 顶部，或作用域级的 `use`），由 prompt builder 读取，而不是由通用解释器执行。
 - **执行式** 描述 agent "做什么"：调用 tool、查询 memory、按输入分支、构造中间数据，最后通过 `generate` 发起 LLM 调用。这是出现在 function body 内的普通语句代码。
 
-语法上，两种模式互不越界：`model` / `role` / `description` 只出现在 agent body；表达式语句只出现在 function body；`use` 在两处都允许，但语义一致——"让这个 source 进入该作用域内每一次可见 `generate` 的 prompt"。
+语法上，两种模式互不越界：`model` / `role` / `description` 只出现在 agent body；表达式语句只出现在 function body；`use` 在两处都允许，但语义一致——"让这个 source 进入该作用域内每一次可见 `generate` 的 prompt"。`use one of` 保持同一条边界，只是让 source 位置可选择：一个 label，多个候选 source，一个确定性选择。
 
 两条规则把边界卡紧：
 
@@ -128,7 +131,7 @@ func helper(input) {
 一次 `generate` 的 prompt 由四个概念层组成：
 
 1. **Agent identity**：当前 Agent 的 `role`、`description` 和稳定身份。
-2. **Selected context**：可见的 `use` 声明，渲染时带 source、label、value 和 budget 信息。
+2. **Selected context**：可见的 `use` 声明，包括已经解析的 `use one of` choice，渲染时带 source、label、value 和 budget 信息。
 3. **Instruction**：来自 `generate({ input: ... })` 的本次任务。
 4. **Output contract**：可选的 `-> { ... }` shape。
 
@@ -144,6 +147,7 @@ func helper(input) {
 - 是否保留 source、label、budget 和 clipping 信息用于审计？
 - 是否保留字符串、list 和 object 已文档化的裁剪顺序？
 - 是否把 `use` 退化成快照赋值，而不是延迟 context source？
+- 是否仍让 `use one of` 表现为普通 `use` 候选之间的确定性选择，而不是隐藏的 runtime learning state？
 - 是否混淆 context budget 和 generation budget？
 - 是否混淆 AgentScript context label 和 provider message role？
 - agent-level `use` 是否仍保持声明式（不依赖 function-local 状态，不包含 call expression）？

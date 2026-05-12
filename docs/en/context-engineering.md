@@ -1,14 +1,15 @@
 # AgentScript Context Engineering
 
-This document is the top-level design map for AgentScript context engineering. It explains why AgentScript exists, what boundaries it enforces, and how the detailed `use ... as ...` and `generate` documents fit together.
+This document is the top-level design map for AgentScript context engineering. It explains why AgentScript exists, what boundaries it enforces, and how the detailed `use ... as ...`, `use one of`, and `generate` documents fit together.
 
 AgentScript has variables, functions, loops, tools, memory, and agent calls, but its purpose is not to be a general-purpose programming language. Its purpose is to make prompt context explicit, scoped, typed, traceable, and auditable.
 
 ## Document structure
 
-Detailed context-engineering semantics are split into two documents:
+Detailed context-engineering semantics are split into three documents:
 
 - **[`use ... as ...`](./use-as.md)**: explains how data is selected as prompt context, how labels work, how budgets are applied, and how scope affects visibility.
+- **[`use one of ...`](./use-one-of.md)**: explains how one context slot can declare multiple candidate sources, how `selected` and `empty` work, and how optimizers can treat context choice as a structured search space.
 - **[`generate`](./generate.md)**: explains generation sites, prompt construction, agent identity, output contracts, budgets, retries, and trace output.
 
 This overview explains the mental model and invariants. The language reference remains the compact syntax reference.
@@ -23,6 +24,7 @@ The core objects are:
 
 - **Data**: ordinary values such as input, JSON, lists, file contents, tool observations, memory query results, and agent return values.
 - **Context source**: data selected for prompt context by `use expr`, optionally with a budget and label.
+- **Context choice point**: a single context slot declared with `use one of { ... }`, where exactly one candidate source is selected before a visible `generate` builds its prompt.
 - **Generation site**: one LLM call expressed by `generate({ input, max_output, attempts, temperature, think, strict, debug }) -> shape`.
 - **Boundary**: a visibility boundary formed by an agent, function, or block scope.
 - **Trace**: the audit record explaining which sources were selected, how prompt context was built, and what each generation returned.
@@ -35,6 +37,7 @@ AgentScript should preserve these invariants:
 - **Scoped visibility**: context visibility follows scope. Child scopes can inherit parent context; function and agent calls create independent context boundaries.
 - **Capability isolation**: imported tools, models, agents, memory handles, functions, provider URIs, and runtime configuration are capabilities, not prompt data.
 - **Deferred context resolution**: `use expr` declares a source. The value is resolved when a visible `generate` builds its prompt.
+- **Deterministic context choice**: `use one of` resolves to one candidate by runtime trial hint, source `selected`, or source order before prompt construction. The model sees only the selected source, not the candidate list.
 - **Deterministic clipping**: context budgets clip rendered values by prefix. They do not rank, summarize, or semantically compress content.
 - **Layered prompts**: prompts distinguish agent identity, selected context, instruction, and output contract.
 - **Auditable traces**: trace output must explain what the LLM call actually saw, including source expressions, labels, budgets, clipping, and generated results.
@@ -46,7 +49,7 @@ AgentScript mixes two syntactic modes on purpose. This is the main departure fro
 - **Declarative mode** describes what an agent or a scope *is*: which model it uses (`model`), who it is (`role`, `description`), and what context it default-carries (`use` at agent level). These are statements of identity. They are legal only in declaration positions (agent body top, or at scope level as `use`) and they are read by the prompt builder, not by a general-purpose interpreter.
 - **Execution mode** describes what the agent *does*: call tools, query memory, branch on input, build intermediate data, and finally call `generate`. This is ordinary statement code inside function bodies.
 
-The boundary is enforced by syntax: `model` / `role` / `description` appear only in agent bodies; expression statements appear only in function bodies; `use` appears in both but means the same thing — "this source enters the prompt of every `generate` visible to this scope".
+The boundary is enforced by syntax: `model` / `role` / `description` appear only in agent bodies; expression statements appear only in function bodies; `use` appears in both but means the same thing — "this source enters the prompt of every `generate` visible to this scope". `use one of` keeps the same boundary, but makes the source position selectable: one label, multiple candidate sources, one deterministic selection.
 
 Two rules keep the boundary sharp:
 
@@ -128,7 +131,7 @@ The `generate` inside `helper` sees `helper`'s own `input.detail` (plus the encl
 A `generate` call is built from four conceptual layers:
 
 1. **Agent identity**: current agent `role`, `description`, and stable behavioral identity.
-2. **Selected context**: visible `use` declarations, rendered with source, label, value, and budget information.
+2. **Selected context**: visible `use` declarations, including resolved `use one of` choices, rendered with source, label, value, and budget information.
 3. **Instruction**: the per-call task from `generate({ input: ... })`.
 4. **Output contract**: the optional `-> { ... }` shape.
 
@@ -144,6 +147,7 @@ Before changing `use`, scope, context builder, trace, or LLM provider behavior, 
 - Does this preserve source, label, budget, and clipping information for audit?
 - Does this preserve the documented clipping order for strings, lists, and objects?
 - Does this reduce `use` to a snapshot assignment instead of a deferred context source?
+- Does this keep `use one of` as a deterministic choice over ordinary `use` candidates, rather than hidden runtime learning state?
 - Does this confuse context budget with generation budget?
 - Does this confuse AgentScript context labels with provider message roles?
 - Does agent-level `use` remain declarative (no function-local state, no call expressions)?

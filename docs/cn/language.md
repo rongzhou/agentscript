@@ -210,6 +210,23 @@ use input.question as user
 
 完整设计语义见 [`use ... as ...`](./use-as.md)。
 
+### 可选择 context 设计：`use one of`
+
+`use one of` 是让单个 context slot 变成可选择位点的设计扩展，同时不把优化结果藏进 runtime state。它保持 `use` 的语义，但允许在一个共享 label 下声明多个候选 source：
+
+```agentscript
+use one of {
+    none:     empty
+    compact:  scratch.digest max 500
+    verbose:  scratch.summary max 4k
+    grounded: docs.top5 max 4k selected
+} as "evidence"
+```
+
+一次可见的 `generate` 构建 prompt 前，会有且只有一个候选被选中。`selected` 标记源码层面的默认候选；未标记时默认选择第一个候选。`empty` 表示这段 context slot 被有意省略。模型只看到被选中的 source，不会看到候选列表。
+
+该语法目前作为 context optimization 的设计面记录。候选约束、trace 要求和优化器契约见 [`use one of ...`](./use-one-of.md)。
+
 ## Generate
 
 `generate` 调用当前模型，需要 `input` 指令。返回 shape 是可选的。

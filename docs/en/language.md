@@ -210,6 +210,30 @@ use input.question as user
 
 For the full design semantics, see [`use ... as ...`](./use-as.md).
 
+### Selectable context design: `use one of`
+
+`use one of` is the design extension for making a single context slot selectable
+without turning optimization into hidden runtime state. It keeps the semantics
+of `use`, but declares multiple candidate sources under one shared label:
+
+```agentscript
+use one of {
+    none:     empty
+    compact:  scratch.digest max 500
+    verbose:  scratch.summary max 4k
+    grounded: docs.top5 max 4k selected
+} as "evidence"
+```
+
+Exactly one candidate is selected before a visible `generate` builds its prompt.
+`selected` marks the source-level default; if no candidate is marked, the first
+candidate is the default. `empty` means this context slot is deliberately absent.
+The model sees only the selected source, not the candidate list.
+
+This syntax is documented as a design surface for context optimization. See
+[`use one of ...`](./use-one-of.md) for constraints, trace requirements, and the
+optimizer contract.
+
 ## Generate
 
 `generate` calls the current model and requires an `input` instruction. A return shape is optional.

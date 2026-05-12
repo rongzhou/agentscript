@@ -8,7 +8,7 @@ For the base model of context selection see [`use ... as ...`](./use-as.md). For
 
 `use one of` is not a separate prompt mechanism. It is a focused extension of `use`: a single `use` declaration may bind **multiple candidate sources**, and named variants give authors and optimizers a shared contract for how the choice is made.
 
-```agentscript
+```text
 use one of {
     compact:  scratch.digest max 500
     verbose:  scratch.summary max 4k
@@ -28,7 +28,7 @@ It addresses a specific problem: **agent quality is dominated by context organiz
 
 ## Recommended syntax
 
-```agentscript
+```text
 use one of {
     name1: expr1
     name2: expr2 max budget2
@@ -43,19 +43,19 @@ Each variant has a fixed form:
 identifier ":" (use-expression | "empty") [ "selected" ]
 ```
 
-Where `use-expression` is the same shape as the portion of an ordinary `use` before `as label` (`expr` or `expr max budget`). Variants are separated by newlines or `,`, consistent with AgentScript shape / object literal conventions.
+Where `use-expression` follows the same form as the portion of an ordinary `use` before `as label` (`expr` or `expr max budget`). Variants are separated by newlines, matching contract block conventions.
 
 The trailing `selected` is an optional single-word modifier placed after the candidate value. It explicitly marks the default-picked candidate. A `use one of` may contain at most one `selected`.
 
 Full example:
 
-```agentscript
+```text
 main agent Researcher {
     model Qwen
     role "Senior Researcher"
     description "Answer with selected evidence."
 
-    main func(input { question string }) {
+    main func(input { question: string }) {
         lessons = Lessons.query({ kind: "how-to" })
         docs = Search.search(input.question)
 
@@ -69,14 +69,14 @@ main agent Researcher {
         } as "evidence"
 
         generate({ input: "Answer from evidence" }) -> {
-            ok boolean
+            ok: boolean
             answer
         }
     }
 }
 ```
 
-Here `evidence` has four possible shapes: nothing, lessons only, search docs only, or a combination. The author marks `combined` as `selected`, meaning "without further signal, default to combined". An optimizer may later move `selected` to a different candidate, or inject new candidates and relabel.
+Here `evidence` has four possible variants: nothing, lessons only, search docs only, or a combination. The author marks `combined` as `selected`, meaning "without further signal, default to combined". An optimizer may later move `selected` to a different candidate, or inject new candidates and relabel.
 
 ## Relation to plain `use`
 
@@ -99,7 +99,7 @@ All candidates within a single `use one of { ... }` **must satisfy the following
 
 The label is written after `}` and is shared by every candidate:
 
-```agentscript
+```text
 use one of {
     compact: scratch.digest max 500
     verbose: scratch.summary max 4k
@@ -108,7 +108,7 @@ use one of {
 
 Candidates **cannot** carry their own `as ...`:
 
-```agentscript
+```text
 // Illegal
 use one of {
     compact: scratch.digest max 500 as "short-evidence"    // NO
@@ -122,7 +122,7 @@ Reason: `use one of` reinforces the mental model "one context slot, multiple sou
 
 Each candidate may declare its own `max budget`:
 
-```agentscript
+```text
 use one of {
     compact: scratch.digest max 500
     verbose: scratch.summary max 4k
@@ -135,7 +135,7 @@ The budget is part of the candidate—different candidates typically imply diffe
 
 A candidate slot may be written as the reserved word `empty`, meaning **when this variant is picked, no context is declared at this site**:
 
-```agentscript
+```text
 use one of {
     none: empty
     verbose: scratch.summary max 4k
@@ -153,7 +153,7 @@ Semantics:
 
 A candidate may be followed by the keyword `selected` to mark it as the default pick:
 
-```agentscript
+```text
 use one of {
     compact:  scratch.digest max 500
     verbose:  scratch.summary max 4k selected
@@ -182,7 +182,7 @@ The variant name (left of `:`) is a user-chosen identifier. Recommended conventi
 - **`none`** as the name for an `empty` variant (visually matches AgentScript's `none` null literal).
 - `skip` / `off` / `omit` are also acceptable; the language does not enforce.
 
-```agentscript
+```text
 // Recommended
 use one of {
     none: empty
@@ -206,7 +206,7 @@ Candidate expressions are **not required to share a type**. One candidate may re
 
 At least 2 candidates are required. `empty` counts as a candidate, so `{ none: empty, long: X }` is the legal minimum.
 
-```agentscript
+```text
 // Illegal: only one candidate
 use one of {
     only: scratch.summary max 4k
@@ -245,7 +245,7 @@ The optimizer's output is a **concrete `.as` file**. Two equivalent forms exist:
 
 The optimizer keeps the full `use one of` structure and only moves `selected` to the winning candidate:
 
-```agentscript
+```text
 // Before
 use one of {
     none:     empty
@@ -265,7 +265,7 @@ use one of {
 
 The diff is one `selected` move plus optional evaluation comments:
 
-```agentscript
+```text
 use one of {
     none:     empty
     compact:  scratch.digest max 500
@@ -281,14 +281,14 @@ This form keeps the site marked as a choice point, preserving every candidate, s
 
 The optimizer collapses `use one of` into a plain `use`:
 
-```agentscript
+```text
 // Flattened
 use scratch.summary max 2k as "evidence"  // optimizer: grounded variant (F1 0.82)
 ```
 
 If the optimizer picks the `empty` variant, the flattened form **removes the `use` entirely**:
 
-```agentscript
+```text
 // Before
 use one of {
     none: empty selected
@@ -313,7 +313,7 @@ Both forms are legal `.as` source. The optimizer toolchain may choose; structure
 
 Agent-level `use one of` follows the same constraints as agent-level `use`—candidates may reference only names resolvable at the agent top level (typically `import file`), cannot depend on function parameters or locals, and cannot contain call expressions. The following is valid:
 
-```agentscript
+```text
 import file ShortPlaybook from "./playbook.short.md"
 import file LongPlaybook  from "./playbook.long.md"
 
@@ -340,7 +340,7 @@ Agent-level `use one of` is a **declarative** choice point that participates in 
 
 Runtime capabilities still cannot appear as the root of any candidate expression:
 
-```agentscript
+```text
 // Illegal: tool / memory / llm / agent / function binding is not prompt context
 use one of {
     cached: lessons max 2k
@@ -353,7 +353,7 @@ The reasons are the same as for plain `use`:
 - Candidates may reference *data*, not capabilities or direct capability calls.
 - For dynamic data, use the "call then use" pattern: store the call result in a local, then reference the local as a candidate.
 
-```agentscript
+```text
 // Legal
 live_docs = Search.search(input.question)
 

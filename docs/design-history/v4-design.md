@@ -53,7 +53,7 @@ import tool Yaml from "npm:yaml"
 import tool Marked from "npm:marked"
 
 main agent Summarizer {
-    main func(input { path string }) {
+    main func(input { path: string }) {
         content = Fs.readFile(input.path, "utf8")
         front = Yaml.parse(Marked.lexer(content)[0].text)
 
@@ -63,7 +63,7 @@ main agent Summarizer {
         generate({ input: "Summarize with metadata" }) -> {
             title
             summary
-            tags list[string]
+            tags: list[string]
         }
     }
 }

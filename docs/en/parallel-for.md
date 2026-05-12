@@ -573,7 +573,7 @@ generate({
     strict: true
 }) -> {
     summary
-    failures list[string]
+    failures: list[string]
     next_action
 }
 ```
@@ -593,7 +593,7 @@ main agent Controller {
     description "Plan work, execute independent steps, and summarize the outcome."
 
     main func(input {
-        goal string
+        goal: string
     }) {
         plan = Planner({
             goal: input.goal
@@ -618,8 +618,8 @@ main agent Controller {
             think: "medium"
         }) -> {
             summary
-            completed list[string]
-            failed list[string]
+            completed: list[string]
+            failed: list[string]
             next_action
         }
     }
@@ -640,7 +640,7 @@ main agent RepoReviewer {
     role "Repository Reviewer"
 
     main func(input {
-        files list[json]
+        files: list[json]
     }) {
         reviews = parallel for file in input.files max 20 {
             FileReviewer({
@@ -656,9 +656,9 @@ main agent RepoReviewer {
             strict: true
         }) -> {
             summary
-            blockers list[string]
-            risks list[string]
-            quick_wins list[string]
+            blockers: list[string]
+            risks: list[string]
+            quick_wins: list[string]
         }
     }
 }
@@ -672,7 +672,7 @@ main agent Summarizer {
     role "Summarizer"
 
     main func(input {
-        chunks list[string]
+        chunks: list[string]
     }) {
         summaries = parallel for chunk in input.chunks max 30 {
             use chunk max 4k as chunk
@@ -683,7 +683,7 @@ main agent Summarizer {
                 strict: true
             }) -> {
                 summary
-                key_points list[string]
+                key_points: list[string]
             }
         }
 
@@ -695,7 +695,7 @@ main agent Summarizer {
             strict: true
         }) -> {
             summary
-            key_points list[string]
+            key_points: list[string]
         }
     }
 }

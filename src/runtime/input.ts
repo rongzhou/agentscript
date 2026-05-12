@@ -1,7 +1,7 @@
-import type { FuncDecl, ShapeField, ShapeObjectExpr } from "../ast/types.js";
+import type { FuncDecl, ContractField, ContractObjectExpr } from "../ast/types.js";
 import { RuntimeError } from "./errors.js";
 import { isObject } from "./guards.js";
-import { validateValueAgainstShapeType } from "./shape.js";
+import { validateValueAgainstContractType } from "./contract.js";
 import { buildTraceEvent } from "./trace-event.js";
 import type { InputProvider, RuntimeValue, TraceEvent } from "./types.js";
 
@@ -12,24 +12,24 @@ export async function prepareEntryInput(
   trace: TraceEvent[],
 ): Promise<RuntimeValue> {
   const inputParam = entry.params[0];
-  if (!inputParam?.shape) {
+  if (!inputParam?.contract) {
     return input;
   }
   if (!isObject(input)) {
     throw new RuntimeError("Entry input must be a JSON object", inputParam.range);
   }
-  await fillShape(input, inputParam.shape, ["input"], inputProvider, trace);
+  await fillContract(input, inputParam.contract, ["input"], inputProvider, trace);
   return input;
 }
 
-async function fillShape(
+async function fillContract(
   target: Record<string, RuntimeValue>,
-  shape: ShapeObjectExpr,
+  contract: ContractObjectExpr,
   path: string[],
   inputProvider: InputProvider | undefined,
   trace: TraceEvent[],
 ): Promise<void> {
-  for (const field of shape.fields) {
+  for (const field of contract.fields) {
     const fieldPath = [...path, field.name];
     const value = target[field.name];
     if (value === undefined || value === null) {
@@ -49,6 +49,6 @@ async function fillShape(
   }
 }
 
-function validateInputField(value: RuntimeValue, field: ShapeField): void {
-  validateValueAgainstShapeType(value, field.type, field.range, "Input field");
+function validateInputField(value: RuntimeValue, field: ContractField): void {
+  validateValueAgainstContractType(value, field.type, field.range, "Input field");
 }

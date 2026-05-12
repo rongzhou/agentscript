@@ -139,16 +139,16 @@ describe("parser expressions", () => {
     ).toThrow(ParseError);
   });
 
-  it("rejects same-line shape fields with missing separators", () => {
+  it("rejects same-line contract fields with missing separators", () => {
     expect(() =>
       parse(`
       agent A {
         func act(input) {
-          return generate({ input: "x" }) -> { ok boolean facts string }
+          return generate({ input: "x" }) -> { ok: boolean facts: string }
         }
       }
     `),
-    ).toThrow("Expected ',' or newline between shape fields");
+    ).toThrow("Expected newline between contract fields");
   });
 
   it("parses list index access as a postfix expression", () => {

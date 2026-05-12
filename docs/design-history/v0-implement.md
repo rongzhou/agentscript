@@ -36,7 +36,7 @@ V0 阶段的核心源码模块：
 - `src/runtime/guards.ts`：运行时值类型守卫。
 - `src/runtime/json.ts`：JSON 解析和序列化工具。
 - `src/runtime/truth.ts`：条件表达式 truthiness。
-- `src/runtime/shape.ts`：shape 构建、校验和 `generate` 输出容错转换。
+- `src/runtime/contract.ts`：contract 构建、校验和 `generate` 输出容错转换。
 - `src/providers/mock/index.ts`：mock LLM/tool provider。
 - `src/runtime/trace.ts`：trace 格式化。
 - `src/bin/agentscript.ts`：CLI。
@@ -49,7 +49,7 @@ V0 阶段的核心源码模块：
 - `src/parser/errors.ts`：解析错误类型。
 - `src/semantic/diagnostics.ts`：语义诊断格式化。
 - `src/runtime/errors.ts`：运行时错误类型。
-- `src/runtime/input.ts`：入口输入 shape 处理。
+- `src/runtime/input.ts`：入口输入 contract 处理。
 - `src/runtime/loader.ts`：跨文件 import 加载器。
 - `src/providers/memory/`：File JSONL 和 SQLite memory provider。
 - `src/providers/tools/`：host tool provider 实现。
@@ -80,7 +80,7 @@ V0 AST 节点：
 - `NullExpr`
 - `ListExpr`
 - `ObjectExpr`
-- `ShapeObjectExpr`
+- `ContractObjectExpr`
 - `MemberExpr`
 - `CallExpr`
 - `UnaryExpr`
@@ -107,7 +107,7 @@ V0 AST 节点：
 - 入口 Agent 必须有 main func；单 Agent 程序省略 `main agent` 时，该 Agent 仍必须有 main func。
 - 同一 Agent 内函数名不能重复。
 - 参数名不能重复。
-- 只有 `main func` 的第一个 `input` 参数可以声明 shape。
+- 只有 `main func` 的第一个 `input` 参数可以声明 contract。
 - `model` 必须引用 `import llm`。
 - `role`、`description` 必须是字符串。
 - 标识符必须在当前词法作用域中可见。
@@ -117,7 +117,7 @@ V0 AST 节点：
 - `AgentName(input)` 要求目标 Agent 有 `main func`。
 - `Worker.run(input)` 要求目标 Agent 有对应函数。
 - `generate` 参数必须是对象字面量，包含 `input` 字段；`limit`、`attempts`、`debug` 可选，其中 `attempts` 必须是正整数，`debug` 必须是 boolean。
-- shape 字段不能重复，类型只能是 `string`、`number`、`boolean`、`json`、`list` 或 `list[...]`。
+- contract 字段不能重复，类型只能是 `string`、`number`、`boolean`、`json`、`list` 或 `list[...]`。
 - `< n` budget 在 `use` 中必须大于 0。
 
 ## 运行时语义
@@ -133,7 +133,7 @@ V0 AST 节点：
 - `if`、`loop`、每次 `repeat` attempt 都创建子作用域。
 - `repeat` 外层变量可以跨 attempt 保留；attempt 内新建变量不会跨 attempt 保留。
 - `use` 声明随作用域继承。
-- 入口 shape 缺失字段由 `InputProvider` 补齐；非交互环境没有 provider 时抛错。
+- 入口 contract 缺失字段由 `InputProvider` 补齐；非交互环境没有 provider 时抛错。
 
 ## Context Builder
 
@@ -145,7 +145,7 @@ V0 AST 节点：
 - 当前作用域 `model`、`role`、`description`。
 - 当前可见 `use` 列表。
 - `generate({ input, limit, attempts, debug })` 中的 `input` instruction。
-- `generate` 返回 shape。
+- `generate` 返回 contract。
 - 可选 `limit` 预算。
 
 输出：
@@ -185,11 +185,11 @@ V0 的预算裁剪按字符数实现：`2k` 约等于 2000 字符。这是当前
 
 - provider HTTP 响应必须是 JSON。
 - 模型内容必须能解析为 JSON，允许从 fenced JSON 或文本中的 `{...}` 提取。
-- 解析后的值会先按 `generate` shape 做有限容错转换。
+- 解析后的值会先按 `generate` contract 做有限容错转换。
 - `limit` 是可选 provider token limit。
 - `attempts` 缺省值为 `1`。
 - `debug` 缺省值为 `false`；为 `true` 时完整 prompt 打印到 stderr。
-- JSON 解析失败或 shape 不匹配时，如果还有剩余 attempts，会把上一次错误和可用的上一次输出附加到下一次 `generate` 的 instruction。
+- JSON 解析失败或 contract 不匹配时，如果还有剩余 attempts，会把上一次错误和可用的上一次输出附加到下一次 `generate` 的 instruction。
 - provider 网络、认证、超时、模型不存在等基础设施错误直接抛出，不做 repair 重试。
 
 ## Tool Provider

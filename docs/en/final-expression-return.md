@@ -11,7 +11,7 @@ func answer(input) {
     use input.question
 
     generate({ input: "Answer the question" }) -> {
-        ok boolean
+        ok: boolean
         answer
     }
 }
@@ -24,7 +24,7 @@ func answer(input) {
     use input.question
 
     return generate({ input: "Answer the question" }) -> {
-        ok boolean
+        ok: boolean
         answer
     }
 }
@@ -41,7 +41,7 @@ final expression return
 The final line can implicitly return these expression forms:
 
 ```text
-generate(...) -> shape
+generate(...) -> contract
 regular function call
 agent call
 variable reference
@@ -65,7 +65,7 @@ This rule applies to all expression forms, including calls. It does not matter w
 agent Planner {
     main func(input) {
         generate({ input: "Create a plan" }) -> {
-            steps list[string]
+            steps: list[string]
         }
     }
 }
@@ -147,7 +147,7 @@ func answer(input) {
     }
 
     generate({ input: "Answer" }) -> {
-        ok boolean
+        ok: boolean
         answer
     }
 }
@@ -183,7 +183,7 @@ func summarize(content) {
     }) -> {
         title
         summary
-        key_points list[string]
+        key_points: list[string]
     }
 }
 ```
@@ -202,7 +202,7 @@ func answer(input) {
     use input.question
 
     generate({ input: "Answer the question" }) -> {
-        ok boolean
+        ok: boolean
         answer
     }
 }

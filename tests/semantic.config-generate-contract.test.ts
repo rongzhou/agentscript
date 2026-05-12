@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { parse } from "../src/parser/parser.js";
 import { analyze } from "../src/semantic/analyzer.js";
 
-describe("semantic config-generate-shape", () => {
+describe("semantic config-generate-contract", () => {
   it("checks scoped configuration declarations", () => {
     const unknown = analyze(
       parse(`
@@ -74,7 +74,7 @@ describe("semantic config-generate-shape", () => {
         main agent A {
           main func act(input) {
             return generate({ input: "x" }) -> {
-                ok boolean
+                ok: boolean
             }
           }
         }
@@ -93,7 +93,7 @@ describe("semantic config-generate-shape", () => {
             role "Assistant"
             description "Answer."
             return generate({ input: "x" }) -> {
-                ok boolean
+                ok: boolean
             }
           }
         }
@@ -115,7 +115,7 @@ describe("semantic config-generate-shape", () => {
 
           main func act(input) {
             return generate({ input: "x", max_output: 0, debug: "yes" }) -> {
-                ok boolean
+                ok: boolean
             }
           }
         }
@@ -148,7 +148,7 @@ describe("semantic config-generate-shape", () => {
 
           main func act(input) {
             return generate({ input: "x", max_output: 2K }) -> {
-                ok boolean
+                ok: boolean
             }
           }
         }
@@ -175,7 +175,7 @@ describe("semantic config-generate-shape", () => {
 
           main func act(input) {
             return generate({ input: input.question, temperature: missing.temperature }) -> {
-                ok boolean
+                ok: boolean
             }
           }
         }
@@ -207,7 +207,7 @@ describe("semantic config-generate-shape", () => {
               think: "extreme",
               strict: "yes"
             }) -> {
-                ok boolean
+                ok: boolean
             }
           }
         }
@@ -223,13 +223,13 @@ describe("semantic config-generate-shape", () => {
     );
   });
 
-  it("checks input parameter shapes", () => {
+  it("checks input parameter contracts", () => {
     const duplicate = analyze(
       parse(`
         agent A {
           main func(input {
-            question string
-            question json
+            question: string
+            question: json
           }) {
             return input.question
           }
@@ -239,7 +239,7 @@ describe("semantic config-generate-shape", () => {
     expect(duplicate.diagnostics).toContainEqual(
       expect.objectContaining({
         severity: "error",
-        code: "DUPLICATE_SHAPE_FIELD",
+        code: "DUPLICATE_CONTRACT_FIELD",
       }),
     );
 
@@ -247,7 +247,7 @@ describe("semantic config-generate-shape", () => {
       parse(`
         agent A {
           main func(input {
-            question string
+            question: string
           }) {
             return input.question
           }
@@ -256,11 +256,11 @@ describe("semantic config-generate-shape", () => {
     );
     expect(invalidType.diagnostics.filter((diagnostic) => diagnostic.severity === "error")).toEqual([]);
 
-    const nonEntryShape = analyze(
+    const nonEntryContract = analyze(
       parse(`
         agent A {
           func helper(value {
-            question string
+            question: string
           }) {
             return value
           }
@@ -271,10 +271,10 @@ describe("semantic config-generate-shape", () => {
         }
       `),
     );
-    expect(nonEntryShape.diagnostics).toContainEqual(
+    expect(nonEntryContract.diagnostics).toContainEqual(
       expect.objectContaining({
         severity: "error",
-        code: "INVALID_PARAM_SHAPE",
+        code: "INVALID_PARAM_CONTRACT",
       }),
     );
   });

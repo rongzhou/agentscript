@@ -178,11 +178,13 @@ class Parser {
     this.consume(",");
   }
 
-  consumeShapeFieldSeparator(terminator: string): void {
+  consumeContractFieldSeparator(terminator: string): void {
     if (this.check(terminator)) return;
-    if (this.match(",")) return;
+    if (this.match(",")) {
+      throw this.error("Commas are not allowed between contract fields; use newlines");
+    }
     if (isNewLineBetween(this.previous(), this.peek())) return;
-    throw this.error("Expected ',' or newline between shape fields");
+    throw this.error("Expected newline between contract fields");
   }
 
   private parseBudget(): Budget {

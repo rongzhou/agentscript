@@ -2,7 +2,7 @@ import type { AgentDecl, ConfigDecl, FuncDecl, FuncParam, ImportDecl, UseStmt } 
 import { ANONYMOUS_MAIN_AGENT, ANONYMOUS_MAIN_FUNC } from "../language/anonymous.js";
 import { isImportResourceKind } from "../language/bindings.js";
 import type { DeclarationParserHost } from "./host.js";
-import { parseShapeObject } from "./shape.js";
+import { parseContractObject } from "./contract.js";
 
 export function parseImportDecl(parser: DeclarationParserHost): ImportDecl {
   const start = parser.consume("import").range.start;
@@ -100,11 +100,11 @@ function parseFuncDecl(parser: DeclarationParserHost): FuncDecl {
 
 function parseFuncParam(parser: DeclarationParserHost): FuncParam {
   const token = parser.consumeIdentifier("Expected parameter name");
-  const shape = parser.check("{") ? parseShapeObject(parser, { mode: "strict" }) : undefined;
+  const contract = parser.check("{") ? parseContractObject(parser) : undefined;
   return {
     kind: "FuncParam",
     name: token.value,
-    shape,
-    range: { start: token.range.start, end: (shape ?? token).range.end },
+    contract,
+    range: { start: token.range.start, end: (contract ?? token).range.end },
   };
 }

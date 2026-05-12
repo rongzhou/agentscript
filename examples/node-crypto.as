@@ -5,7 +5,7 @@ main agent NodeCryptoExample {
     description "Demonstrate importing a Node built-in module as an AgentScript tool."
 
     main func(input {
-        label string
+        label: string
     }) {
         run_id = Crypto.randomUUID()
         digest = Crypto.hash("sha256", input.label, "hex")

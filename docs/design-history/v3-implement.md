@@ -437,7 +437,7 @@ examples/mcp-echo.as
 import tool Echo from "mcp://echo"
 
 main agent McpEcho {
-    main func(input { text string }) {
+    main func(input { text: string }) {
         result = Echo.call({
             tool: "echo",
             args: {

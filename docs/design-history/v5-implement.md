@@ -244,7 +244,7 @@ export class HostLlmProvider implements LlmProvider {
 说明：
 
 - 如果宿主同时传入 `hostLlms` 和 `llmProvider`：interpreter 构造一个 composite provider，该 provider 先判断 request.model URI 是否是 `host://`：是则走 `HostLlmProvider`，否则走 fallback。见阶段 6。
-- host handler 返回值仍然走现有 `generate.ts` 中的 shape 校验 / coercion 逻辑，因为 `LlmProvider.generate` 的返回值是在 interpreter 下游再验证的。
+- host handler 返回值仍然走现有 `generate.ts` 中的 contract 校验 / coercion 逻辑，因为 `LlmProvider.generate` 的返回值是在 interpreter 下游再验证的。
 
 验收：
 
@@ -419,7 +419,7 @@ tests/host-marshal.test.ts
   - AbortSignal 被正确传递（触发一个 handler 等待 signal 触发）。
   - parallel-for body 内拒绝 host tool call（semantic check 报错）。
 - host llm：
-  - `model Fast` + `host://fast` 注册后 generate 返回 handler 的输出，且输出经过 shape 校验。
+  - `model Fast` + `host://fast` 注册后 generate 返回 handler 的输出，且输出经过 contract 校验。
   - 未注册 host llm 报错。
   - fallback 行为：非 host model 继续走 `MockLlmProvider`。
   - handler 返回非 JSON 被拒绝（会触发 fromHostValue 错误）。
@@ -491,7 +491,7 @@ examples/host/embed.ts
 
 原因：
 
-- 类型定义先行，让所有后续代码用上相同 shape。
+- 类型定义先行，让所有后续代码用上相同 contract。
 - marshal 是 tool/llm/memory 三者共享的基础模块。
 - tool 最先落地，因为它是宿主接入最高频用例。
 - llm 和 memory 依赖相同模式。

@@ -7,8 +7,8 @@ main agent ResearchBriefWriter {
     description "Fetch a prepared search endpoint and turn the result into a concise research brief."
 
     main func(input {
-        question string
-        search_url string
+        question: string
+        search_url: string
     }) {
         search = Search.get({
             url: input.search_url,
@@ -21,9 +21,9 @@ main agent ResearchBriefWriter {
 
         generate({ input: "Write a concise research brief with citations and open questions", max_output: 1200 }) -> {
             answer
-            key_points list[string]
-            citations list[string]
-            open_questions list[string]
+            key_points: list[string]
+            citations: list[string]
+            open_questions: list[string]
         }
     }
 }

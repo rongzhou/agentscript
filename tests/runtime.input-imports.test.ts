@@ -6,11 +6,11 @@ import { parse } from "../src/parser/parser.js";
 import { executeAgent } from "../src/runtime/interpreter.js";
 
 describe("runtime input-imports", () => {
-  it("fills missing shaped entry input through the input provider", async () => {
+  it("fills missing contracted entry input through the input provider", async () => {
     const ast = parse(`
       agent A {
         main func(input {
-          question string
+          question: string
         }) {
           return {
             question: input.question,
@@ -46,11 +46,11 @@ describe("runtime input-imports", () => {
     );
   });
 
-  it("uses existing shaped entry input without asking the provider", async () => {
+  it("uses existing contracted entry input without asking the provider", async () => {
     const ast = parse(`
       agent A {
         main func(input {
-          question string
+          question: string
         }) {
           return input.question
         }
@@ -72,11 +72,11 @@ describe("runtime input-imports", () => {
     expect(result.value).toBe("provided");
   });
 
-  it("rejects missing shaped entry input without an input provider", async () => {
+  it("rejects missing contracted entry input without an input provider", async () => {
     const ast = parse(`
       agent A {
         main func(input {
-          question string
+          question: string
         }) {
           return input.question
         }
@@ -86,11 +86,11 @@ describe("runtime input-imports", () => {
     await expect(executeAgent(ast, {})).rejects.toThrow(/no interactive input provider/);
   });
 
-  it("validates shaped entry input values", async () => {
+  it("validates contracted entry input values", async () => {
     const ast = parse(`
       agent A {
         main func(input {
-          question string
+          question: string
         }) {
           return input.question
         }

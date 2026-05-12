@@ -25,7 +25,7 @@ The core objects are:
 - **Data**: ordinary values such as input, JSON, lists, file contents, tool observations, memory query results, and agent return values.
 - **Context source**: data selected for prompt context by `use expr`, optionally with a budget and label.
 - **Context choice point**: a single context slot declared with `use one of { ... }`, where exactly one candidate source is selected before a visible `generate` builds its prompt.
-- **Generation site**: one LLM call expressed by `generate({ input, max_output, attempts, temperature, think, strict, debug }) -> shape`.
+- **Generation site**: one LLM call expressed by `generate({ input, max_output, attempts, temperature, think, strict, debug }) -> contract`.
 - **Boundary**: a visibility boundary formed by an agent, function, or block scope.
 - **Trace**: the audit record explaining which sources were selected, how prompt context was built, and what each generation returned.
 
@@ -115,7 +115,7 @@ func caller(input) {
 func helper(input) {
     use input.detail as detail
     generate({ input: "Work on detail" }) -> {
-        ok boolean
+        ok: boolean
     }
 }
 ```
@@ -133,7 +133,7 @@ A `generate` call is built from four conceptual layers:
 1. **Agent identity**: current agent `role`, `description`, and stable behavioral identity.
 2. **Selected context**: visible `use` declarations, including resolved `use one of` choices, rendered with source, label, value, and budget information.
 3. **Instruction**: the per-call task from `generate({ input: ... })`.
-4. **Output contract**: the optional `-> { ... }` shape.
+4. **Output contract**: the optional `-> { ... }` contract.
 
 See [`generate`](./generate.md) for the detailed construction rules.
 
@@ -153,4 +153,4 @@ Before changing `use`, scope, context builder, trace, or LLM provider behavior, 
 - Does agent-level `use` remain declarative (no function-local state, no call expressions)?
 - Does this allow call expressions inside `use`, breaking the `call then use` separation?
 
-AgentScript's core value is not another control-flow syntax. Its value is making prompt context source, scope, budget, identity, and final prompt shape explicit and stable.
+AgentScript's core value is not another control-flow syntax. Its value is making prompt context source, scope, budget, identity, and final prompt contract explicit and stable.

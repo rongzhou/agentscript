@@ -7,7 +7,7 @@ main agent ResearchAgent {
     description "Answer questions with a small reason-act-observe loop."
 
     main func(input {
-        question string
+        question: string
     }) {
         use input.question
 
@@ -33,8 +33,8 @@ main agent ResearchAgent {
         use scratch.summary max 1k
 
         generate({ input: "Choose the next search focus", max_output: 300 }) -> {
-            focus string
-            why string
+            focus: string
+            why: string
         }
     }
 
@@ -61,8 +61,8 @@ main agent ResearchAgent {
         use raw
 
         generate({ input: "Summarize the useful observation", max_output: 400 }) -> {
-            facts list[string]
-            source string
+            facts: list[string]
+            source: string
         }
     }
 
@@ -71,7 +71,7 @@ main agent ResearchAgent {
         use scratch.summary max 1k
 
         verdict = generate({ input: "Decide whether the observations are enough", max_output: 200 }) -> {
-            done boolean
+            done: boolean
         }
 
         verdict.done
@@ -82,9 +82,9 @@ main agent ResearchAgent {
         use scratch.summary max 2k
 
         generate({ input: "Answer using only the observations", max_output: 800 }) -> {
-            ok boolean
-            text string
-            error string
+            ok: boolean
+            text: string
+            error: string
         }
     }
 }

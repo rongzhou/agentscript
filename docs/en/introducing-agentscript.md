@@ -12,7 +12,7 @@ because the boundaries were visible.
 
 LLM agents stretch that model.
 
-The input is no longer just a file, a request, or a record with a known shape. It
+The input is no longer just a file, a request, or a record with a known schema. It
 is prompt context: user intent, tool observations, retrieved documents, memory
 records, intermediate state, retry messages, and outputs from other agents.
 
@@ -69,13 +69,13 @@ generate({
 }) -> {
     title
     summary
-    key_points list[string]
-    action_items list[string]
+    key_points: list[string]
+    action_items: list[string]
 }
 ```
 
 `use` declares what the model is allowed to see. `generate` declares where the
-model is called and, when needed, what shape its output must satisfy. In the old
+model is called and, when needed, what contract its output must satisfy. In the old
 input/process/output framing, AgentScript puts language-level attention on the
 two unstable edges of LLM programs: prompt input and generated output.
 
@@ -123,7 +123,7 @@ generate({
     strict: true
 }) -> {
     answer
-    citations list[string]
+    citations: list[string]
 }
 ```
 
@@ -135,7 +135,7 @@ Trace events do not enter prompts automatically.
 
 If data should be visible to the model, it must be selected with `use`.
 
-That one rule changes the shape of agent development. The prompt is no longer a
+That one rule changes the contract of agent development. The prompt is no longer a
 side effect of arbitrary string assembly. It is a scoped contract.
 
 ## A Minimal Example
@@ -151,7 +151,7 @@ main agent FileSummarizer {
     role "Technical Writer"
     description "Read one local file and produce a useful structured summary."
 
-    main func(input { path string }) {
+    main func(input { path: string }) {
         file = File.read({
             path: input.path
         })
@@ -165,8 +165,8 @@ main agent FileSummarizer {
         }) -> {
             title
             summary
-            key_points list[string]
-            action_items list[string]
+            key_points: list[string]
+            action_items: list[string]
         }
     }
 }
@@ -209,7 +209,7 @@ agentscript recipes/summarize-file.as --input '{"path":"README.md"}' --trace
 ```
 
 The trace can show which context sources were selected, which budgets were
-applied, what was clipped, which instruction was used, what output shape was
+applied, what was clipped, which instruction was used, what output contract was
 requested, and whether validation passed. That trace is for debugging and audit.
 It is not itself prompt context.
 
@@ -224,11 +224,11 @@ Selected context:
   [file content] content, budget=8k, clipped=false
 Instruction:
   Summarize the file for a busy teammate
-Output shape:
-  title string
-  summary string
-  key_points list[string]
-  action_items list[string]
+Output contract:
+  title: string
+  summary: string
+  key_points: list[string]
+  action_items: list[string]
 Validation: ok
 ```
 
@@ -245,16 +245,16 @@ answer = generate({
     attempts: 3,
     strict: true
 }) -> {
-    ok boolean
+    ok: boolean
     answer
-    citations list[string]
+    citations: list[string]
 }
 ```
 
-The shape after `->` is an output contract. AgentScript can ask providers for
+The contract after `->` is an output contract. AgentScript can ask providers for
 structured output when possible, validate the returned value, and retry when the
-model returns invalid JSON or a mismatched shape. Downstream code can then depend
-on the returned shape instead of parsing prose.
+model returns invalid JSON or a mismatched contract. Downstream code can then depend
+on the returned contract instead of parsing prose.
 
 This gives each model call a visible boundary:
 
@@ -293,7 +293,7 @@ func helper(input) {
     use input.detail as detail
 
     generate({ input: "Work on the detail" }) -> {
-        ok boolean
+        ok: boolean
     }
 }
 ```

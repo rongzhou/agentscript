@@ -24,7 +24,7 @@ V0 支持：
 - `if` / `else`，`==`、`!=`、`and`、`or`、`not`。
 - `loop until condition < n` 有上限循环。
 - `repeat * n` 有上限重复执行。
-- 入口 input shape 和交互式补齐。
+- 入口 input contract 和交互式补齐。
 - 跨 Agent 调用：`Worker.run(input)`；`Worker(input)` 调用 `Worker` 的 `main func`。
 
 V0 不支持：
@@ -47,7 +47,7 @@ main agent ResearchAgent {
     description "Research with search observations."
 
     main func(input {
-        question string
+        question: string
     }) {
         use input.question
         answer(input.question)
@@ -57,8 +57,8 @@ main agent ResearchAgent {
         use question
 
         generate({ input: "Answer the question" }) -> {
-            ok boolean
-            text string
+            ok: boolean
+            text: string
         }
     }
 }
@@ -72,7 +72,7 @@ main agent ResearchAgent {
 - `main agent { ... }` 可以省略 Agent 名，内部名为 `__main_agent`。
 - `main func(input) { ... }` 可以省略函数名，内部名为 `__main`。
 - `input` 不是关键词，只是入口参数的常用约定。
-- 只有 `main func` 的第一个 `input` 参数可以声明 shape。
+- 只有 `main func` 的第一个 `input` 参数可以声明 contract。
 
 ## 资源
 
@@ -104,7 +104,7 @@ agent A {
         description "Use a stronger model for this function."
 
         generate({ input: "Answer carefully" }) -> {
-            text string
+            text: string
         }
     }
 }
@@ -117,7 +117,7 @@ agent A {
 - 执行 `generate` 时，当前作用域必须能解析到 `model`、`role`、`description`。
 - 不调用 `generate` 的纯工具或纯计算函数不需要这些配置。
 
-## 数据和 Shape
+## 数据和 Contract
 
 V0 运行时数据以 JSON 为核心：
 
@@ -127,18 +127,18 @@ V0 运行时数据以 JSON 为核心：
 - `json`
 - `list`
 
-`generate` 返回 shape 使用轻量标注：
+`generate` 返回 contract 使用轻量标注：
 
 ```agentscript
 generate({ input: "Extract facts" }) -> {
-    facts list[string]
-    source string
-    meta json
-    ok boolean
+    facts: list[string]
+    source: string
+    meta: json
+    ok: boolean
 }
 ```
 
-Shape 只用于入口 input 校验和 `generate` 输出校验，不是完整类型系统。
+Contract 只用于入口 input 校验和 `generate` 输出校验，不是完整类型系统。
 
 ## 上下文
 
@@ -150,8 +150,8 @@ func compose(question, scratch) {
     use scratch.summary < 2k
 
     generate({ input: "Answer using only the context" }) -> {
-        ok boolean
-        text string
+        ok: boolean
+        text: string
     }
 }
 ```
@@ -175,9 +175,9 @@ answer = generate({
     limit: 800
     attempts: 3
 }) -> {
-    ok boolean
-    text string
-    error string
+    ok: boolean
+    text: string
+    error: string
 }
 ```
 
@@ -188,9 +188,9 @@ answer = generate({
 - `limit` 是本次 LLM call 的预算，支持 `800` 或 `2k` 这类 budget 字面量。
 - `attempts` 表示最多生成次数；它不是额外重试次数。
 - `debug` 是 boolean，缺省值为 `false`；为 `true` 时 runtime 将完整 prompt 打印到 stderr。
-- `-> { ... }` 描述 LLM 输出 JSON shape，不会从外层函数返回。
-- LLM 输出会先按 shape 做有限容错转换。
-- 当输出不是 JSON 或转换后仍不符合 shape，且 `attempts > 1` 时，下一次调用会把上一次输出和错误信息附加到 `input` 后，请模型 repair。
+- `-> { ... }` 描述 LLM 输出 JSON contract，不会从外层函数返回。
+- LLM 输出会先按 contract 做有限容错转换。
+- 当输出不是 JSON 或转换后仍不符合 contract，且 `attempts > 1` 时，下一次调用会把上一次输出和错误信息附加到 `input` 后，请模型 repair。
 - provider 网络、认证、超时、模型不存在等基础设施错误不会被 repair 重试。
 
 ## 控制流

@@ -52,7 +52,7 @@ import agent Verifier from "./verifier.as"
 
 main agent PlanAndExecute {
     main func(input {
-        goal string
+        goal: string
     }) {
         plan = Planner(input)
         results = []
@@ -114,7 +114,7 @@ V1 不需要专门的 `plan` 类型。推荐结构：
 
 ```agentscript
 generate({ input: "Create a short executable plan" }) -> {
-    steps list[json]
+    steps: list[json]
 }
 ```
 
@@ -279,8 +279,8 @@ func answer(input) {
     use input.question
 
     generate({ input: "Answer from the referenced file" }) -> {
-        ok boolean
-        text string
+        ok: boolean
+        text: string
     }
 }
 ```

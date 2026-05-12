@@ -2,15 +2,15 @@ import { describe, expect, it } from "vitest";
 import { ParseError } from "../src/parser/errors.js";
 import { parse } from "../src/parser/parser.js";
 
-describe("parser generate-shape", () => {
-  it("parses generate return shapes", () => {
+describe("parser generate-contract", () => {
+  it("parses generate return contracts", () => {
     const ast = parse(`
       main agent A {
         main func act(input) {
           return generate({ input: "x", max_output: 2k, debug: true }) -> {
-              ok boolean
-              facts list[string]
-              data json
+              ok: boolean
+              facts: list[string]
+              data: json
           }
         }
       }
@@ -28,18 +28,18 @@ describe("parser generate-shape", () => {
       kind: "BooleanExpr",
       value: true,
     });
-    expect(stmt.value.returnShape).toBeDefined();
+    expect(stmt.value.returnContract).toBeDefined();
   });
 
-  it("defaults untyped generate return shape fields to string", () => {
+  it("defaults untyped generate return contract fields to string", () => {
     const ast = parse(`
       main agent A {
         main func act(input) {
           return generate({ input: "x" }) -> {
               title
               summary
-              confidence number
-              tags list[string]
+              confidence: number
+              tags: list[string]
           }
         }
       }
@@ -52,21 +52,22 @@ describe("parser generate-shape", () => {
     expect(stmt.value.kind).toBe("GenerateExpr");
     if (stmt.value.kind !== "GenerateExpr") return;
     expect(
-      stmt.value.returnShape?.fields.map((field) => ({
+      stmt.value.returnContract?.fields.map((field) => ({
         name: field.name,
         kind: field.type.kind,
-        typeName: field.type.kind === "NamedShapeType" ? field.type.name : undefined,
+        typeName: field.type.kind === "NamedContractType" ? field.type.name : undefined,
       })),
     ).toEqual([
-      { name: "title", kind: "NamedShapeType", typeName: "string" },
-      { name: "summary", kind: "NamedShapeType", typeName: "string" },
-      { name: "confidence", kind: "NamedShapeType", typeName: "number" },
-      { name: "tags", kind: "ListShapeType", typeName: undefined },
+      { name: "title", kind: "NamedContractType", typeName: "string" },
+      { name: "summary", kind: "NamedContractType", typeName: "string" },
+      { name: "confidence", kind: "NamedContractType", typeName: "number" },
+      { name: "tags", kind: "ListContractType", typeName: undefined },
     ]);
   });
 
-  it("allows comma-terminated default string fields in generate return shapes", () => {
-    const ast = parse(`
+  it("rejects comma-separated contract fields", () => {
+    expect(() =>
+      parse(`
       main agent A {
         main func act(input) {
           return generate({ input: "x" }) -> {
@@ -75,21 +76,11 @@ describe("parser generate-shape", () => {
           }
         }
       }
-    `);
-
-    const func = ast.agents[0]!.functions[0]!;
-    const stmt = func.body[0]!;
-    expect(stmt.kind).toBe("ReturnStmt");
-    if (stmt.kind !== "ReturnStmt") return;
-    expect(stmt.value.kind).toBe("GenerateExpr");
-    if (stmt.value.kind !== "GenerateExpr") return;
-    expect(stmt.value.returnShape?.fields.map((field) => field.type)).toEqual([
-      expect.objectContaining({ kind: "NamedShapeType", name: "string" }),
-      expect.objectContaining({ kind: "NamedShapeType", name: "string" }),
-    ]);
+    `),
+    ).toThrow("Commas are not allowed between contract fields");
   });
 
-  it("requires explicit types outside generate return shapes", () => {
+  it("rejects label-only input contract fields", () => {
     expect(() =>
       parse(`
         main agent A {
@@ -100,7 +91,7 @@ describe("parser generate-shape", () => {
           }
         }
       `),
-    ).toThrow(ParseError);
+    ).toThrow("Label-only contract fields are not allowed in this contract");
   });
 
   it("rejects duplicate max_output generate options", () => {
@@ -109,7 +100,7 @@ describe("parser generate-shape", () => {
         main agent A {
           main func act(input) {
             return generate({ input: "x", max_output: 100, max_output: 200 }) -> {
-                ok boolean
+                ok: boolean
             }
           }
         }
@@ -117,14 +108,14 @@ describe("parser generate-shape", () => {
     ).toThrow(ParseError);
   });
 
-  it("keeps same-line shape type typos as parse errors", () => {
+  it("keeps same-line contract type typos as parse errors", () => {
     let error: unknown;
     try {
       parse(`
         main agent A {
           main func act(input) {
             return generate({ input: "x" }) -> {
-                confidence nubmer
+                confidence: nubmer
             }
           }
         }
@@ -134,11 +125,11 @@ describe("parser generate-shape", () => {
     }
 
     expect(error).toBeInstanceOf(ParseError);
-    expect((error as ParseError).message).toContain("Unsupported shape type 'nubmer'");
+    expect((error as ParseError).message).toContain("Unsupported contract type 'nubmer'");
     expect((error as ParseError).range.end.column).toBeGreaterThan((error as ParseError).range.start.column);
   });
 
-  it("parses generate without a return shape", () => {
+  it("parses generate without a return contract", () => {
     const ast = parse(`
       main agent A {
         main func act(input) {
@@ -153,15 +144,15 @@ describe("parser generate-shape", () => {
     if (stmt.kind !== "ReturnStmt") return;
     expect(stmt.value.kind).toBe("GenerateExpr");
     if (stmt.value.kind !== "GenerateExpr") return;
-    expect(stmt.value.returnShape).toBeUndefined();
+    expect(stmt.value.returnContract).toBeUndefined();
   });
 
-  it("parses input shape on function parameters", () => {
+  it("parses input contract on function parameters", () => {
     const ast = parse(`
       agent A {
         main func(input {
-          question string
-          options json
+          question: string
+          options: json
         }) {
           return input.question
         }
@@ -170,6 +161,6 @@ describe("parser generate-shape", () => {
 
     const param = ast.agents[0]!.functions[0]!.params[0]!;
     expect(param.name).toBe("input");
-    expect(param.shape?.fields.map((field) => field.name)).toEqual(["question", "options"]);
+    expect(param.contract?.fields.map((field) => field.name)).toEqual(["question", "options"]);
   });
 });

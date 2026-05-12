@@ -95,8 +95,8 @@ export class Evaluator {
         }
         return result;
       }
-      case "ShapeObjectExpr":
-        throw new RuntimeError("Shape object cannot be evaluated as a runtime value", expr.range);
+      case "ContractObjectExpr":
+        throw new RuntimeError("Contract object cannot be evaluated as a runtime value", expr.range);
       case "MemberExpr":
         return this.evaluateMember(expr, scope);
       case "IndexExpr":

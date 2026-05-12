@@ -36,10 +36,10 @@ describe("parser core", () => {
     const act = agent.functions[0]!;
     expect(act.isMain).toBe(true);
     expect(act.params.map((param) => param.name)).toEqual(["input"]);
-    expect(act.params[0]!.shape?.fields[0]).toMatchObject({
+    expect(act.params[0]!.contract?.fields[0]).toMatchObject({
       name: "question",
       type: {
-        kind: "NamedShapeType",
+        kind: "NamedContractType",
         name: "string",
       },
     });
@@ -52,7 +52,7 @@ describe("parser core", () => {
         main func act(input) {
           use input.question
           generate({ input: "x" }) -> {
-              ok boolean
+              ok: boolean
           }
         }
       }

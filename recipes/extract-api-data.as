@@ -7,7 +7,7 @@ main agent ApiExtractor {
     description "Call an API endpoint and extract normalized structured data from the response."
 
     main func(input {
-        url string
+        url: string
     }) {
         response = Api.get({
             url: input.url,
@@ -18,9 +18,9 @@ main agent ApiExtractor {
         use response max 8k as "api response"
 
         generate({ input: "Extract normalized data from the API response", max_output: 1200 }) -> {
-            records list[json]
-            fields list[string]
-            warnings list[string]
+            records: list[json]
+            fields: list[string]
+            warnings: list[string]
             summary
         }
     }

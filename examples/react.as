@@ -7,7 +7,7 @@ main agent ReActExample {
     description "Demonstrate a small Reason-Act-Observe loop."
 
     main func(input {
-        question string
+        question: string
     }) {
         use input.question as "user question"
         scratch = []
@@ -35,7 +35,7 @@ main agent ReActExample {
         use question
         use scratch.summary max 1k as observations
         verdict = generate({ input: "Decide whether the observations are enough", max_output: 200 }) -> {
-            done boolean
+            done: boolean
         }
         verdict.done
     }

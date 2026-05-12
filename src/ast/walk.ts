@@ -25,7 +25,7 @@ export function childExpressions(expr: Expr): Expr[] {
     case "NumberExpr":
     case "BooleanExpr":
     case "NullExpr":
-    case "ShapeObjectExpr":
+    case "ContractObjectExpr":
       return [];
   }
 }

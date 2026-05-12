@@ -6,7 +6,7 @@ main agent PlanExecuteExample {
     description "Demonstrate planning and bounded step execution."
 
     main func(input {
-        goal string
+        goal: string
     }) {
         plan = [
             { step: "collect context" },
@@ -21,7 +21,7 @@ main agent PlanExecuteExample {
         use results.summary max 2k as "step results"
         generate({ input: "Write the final answer from the executed steps", max_output: 600 }) -> {
             answer
-            completed_steps list[string]
+            completed_steps: list[string]
         }
     }
 

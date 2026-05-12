@@ -3,7 +3,7 @@ import agent Worker from "./v1-worker.as"
 
 main agent V1Regression {
     main func(input {
-        goal string
+        goal: string
     }) {
         results = []
 

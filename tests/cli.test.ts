@@ -76,7 +76,7 @@ describe("agentscript CLI", () => {
 
         main func(input) {
           return generate({ input: "answer" }) -> {
-              ok boolean
+              ok: boolean
           }
         }
       }
@@ -111,8 +111,8 @@ describe("agentscript CLI", () => {
 
         main func(input) {
           return generate({ input: "inspect" }) -> {
-              title string
-              items list[string]
+              title: string
+              items: list[string]
           }
         }
       }

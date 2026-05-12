@@ -6,15 +6,15 @@ main agent UseContextExample {
     description "Answer using only explicitly selected context."
 
     main func(input {
-        question string
-        docs json
+        question: string
+        docs: json
     }) {
         use input.question as "user question"
         use input.docs.summary max 2k as evidence
 
         generate({ input: "Answer from the selected evidence", max_output: 500 }) -> {
             answer
-            citations list[string]
+            citations: list[string]
         }
     }
 }

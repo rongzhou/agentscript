@@ -50,7 +50,7 @@ main agent Researcher {
     role "Researcher"
     description "Answer with host search."
 
-    main func(input { question string }) {
+    main func(input { question: string }) {
         past = Lessons.query({
             kind: "lesson",
             limit: 3
@@ -68,7 +68,7 @@ main agent Researcher {
             input: "Answer from selected context"
         }) -> {
             answer
-            citations list[string]
+            citations: list[string]
         }
     }
 }
@@ -222,8 +222,8 @@ interface HostLlmRegistry {
 }
 ```
 
-- `GenerateRequest` 已导出，包括 `instruction`、`context`、`builtContext`、`returnShape`、`maxOutput`、`temperature`、`think`、`strict`、`debug` 等。
-- handler 返回值作为 `generate` 的结果，经过现有 shape 校验与 coercion 流程；即 host handler 不需要手动做 shape validation。
+- `GenerateRequest` 已导出，包括 `instruction`、`context`、`builtContext`、`returnContract`、`maxOutput`、`temperature`、`think`、`strict`、`debug` 等。
+- handler 返回值作为 `generate` 的结果，经过现有 contract 校验与 coercion 流程；即 host handler 不需要手动做 contract validation。
 - host handler 只在 `import llm X from "host://X"` + `model X` 同时满足时被选中。
 - 若该 model 没有注册，runtime 报 `Unknown host llm '<name>'`。
 - 若 AgentScript 用 `--dry-run`，host LLM 不会被调用，这与现有 dry-run 语义一致。

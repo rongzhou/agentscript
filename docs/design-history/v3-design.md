@@ -40,7 +40,7 @@ AgentScript 语法不变：
 import tool Search from "mcp://search"
 
 main agent Researcher {
-    main func(input { query string }) {
+    main func(input { query: string }) {
         result = Search.web_search({
             query: input.query
         })
@@ -51,7 +51,7 @@ main agent Researcher {
             input: "Answer from selected search results"
         }) -> {
             answer
-            citations list[string]
+            citations: list[string]
         }
     }
 }

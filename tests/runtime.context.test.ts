@@ -28,7 +28,7 @@ describe("runtime context", () => {
           description "Specialized function description."
 
           return generate({ input: "x" }) -> {
-              ok boolean
+              ok: boolean
           }
         }
       }
@@ -42,7 +42,7 @@ describe("runtime context", () => {
           async generate(request) {
             requests.push(request);
             if (!request.builtContext.returnSchema) {
-              throw new Error("unexpected missing return shape");
+              throw new Error("unexpected missing return contract");
             }
             return { ok: false };
           },
@@ -72,7 +72,7 @@ describe("runtime context", () => {
           use input.docs max 2k as "retrieved evidence"
 
           generate({ input: "answer" }) -> {
-              ok boolean
+              ok: boolean
           }
         }
       }
@@ -89,7 +89,7 @@ describe("runtime context", () => {
           async generate(request) {
             requests.push(request);
             if (!request.builtContext.returnSchema) {
-              throw new Error("unexpected missing return shape");
+              throw new Error("unexpected missing return contract");
             }
             return { ok: false };
           },
@@ -136,7 +136,7 @@ describe("runtime context", () => {
 
         func helper(input) {
           return generate({ input: "answer" }) -> {
-              ok boolean
+              ok: boolean
           }
         }
       }
@@ -151,7 +151,7 @@ describe("runtime context", () => {
           async generate(request) {
             requests.push(request);
             if (!request.builtContext.returnSchema) {
-              throw new Error("unexpected missing return shape");
+              throw new Error("unexpected missing return contract");
             }
             return { ok: false };
           },

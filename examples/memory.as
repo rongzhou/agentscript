@@ -7,7 +7,7 @@ main agent MemoryExample {
     description "Demonstrate querying and writing explicit memory."
 
     main func(input {
-        topic string
+        topic: string
     }) {
         past = Lessons.query({
             text: input.topic,

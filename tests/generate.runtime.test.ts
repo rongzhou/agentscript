@@ -24,7 +24,7 @@ describe("generate runtime", () => {
         main func act(input) {
           use input.question max 2k
           return generate({ input: "answer", max_output: 300 }) -> {
-              ok boolean
+              ok: boolean
           }
         }
       }
@@ -37,7 +37,7 @@ describe("generate runtime", () => {
         llmProvider: {
           async generate(request) {
             requests.push(request);
-            return buildValueFromRequestShape(request);
+            return buildValueFromRequestContract(request);
           },
         },
       },
@@ -80,7 +80,7 @@ describe("generate runtime", () => {
             strict: true,
             debug: false
           }) -> {
-              ok boolean
+              ok: boolean
           }
         }
       }
@@ -120,7 +120,7 @@ describe("generate runtime", () => {
 
         main func act(input) {
           return generate({ input: "answer", debug: true }) -> {
-              ok boolean
+              ok: boolean
           }
         }
       }
@@ -133,7 +133,7 @@ describe("generate runtime", () => {
         {
           llmProvider: {
             async generate(request) {
-              return buildValueFromRequestShape(request);
+              return buildValueFromRequestContract(request);
             },
           },
         },
@@ -157,7 +157,7 @@ describe("generate runtime", () => {
 
         main func act(input) {
           return generate({ input: "answer", attempts: 2 }) -> {
-              ok boolean
+              ok: boolean
           }
         }
       }
@@ -197,7 +197,7 @@ describe("generate runtime", () => {
 
         main func act(input) {
           return generate({ input: "answer", attempts: 2 }) -> {
-              ok boolean
+              ok: boolean
           }
         }
       }
@@ -256,7 +256,7 @@ describe("generate runtime", () => {
 
         main func act(input) {
           return generate({ input: "answer", attempts: 2 }) -> {
-              ok boolean
+              ok: boolean
           }
         }
       }
@@ -316,7 +316,7 @@ describe("generate runtime", () => {
           scratch.add({ fact: "B" })
 
           return generate({ input: "answer" }) -> {
-              ok boolean
+              ok: boolean
           }
         }
       }
@@ -329,7 +329,7 @@ describe("generate runtime", () => {
         llmProvider: {
           async generate(request) {
             requests.push(request);
-            return buildValueFromRequestShape(request);
+            return buildValueFromRequestContract(request);
           },
         },
       },
@@ -377,7 +377,7 @@ describe("generate runtime", () => {
         main func(input) {
           use Requirements max 100
           return generate({ input: "summarize" }) -> {
-              ok boolean
+              ok: boolean
           }
         }
       }
@@ -392,7 +392,7 @@ describe("generate runtime", () => {
         llmProvider: {
           async generate(request) {
             requests.push(request);
-            return buildValueFromRequestShape(request);
+            return buildValueFromRequestContract(request);
           },
         },
       },
@@ -405,7 +405,7 @@ describe("generate runtime", () => {
   });
 });
 
-function buildValueFromRequestShape(request: GenerateRequest): RuntimeValue {
+function buildValueFromRequestContract(request: GenerateRequest): RuntimeValue {
   return request.builtContext.returnSchema ? { ok: false } : null;
 }
 

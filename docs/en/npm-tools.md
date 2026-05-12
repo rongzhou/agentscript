@@ -43,7 +43,7 @@ browser-only, Deno-only, or Bun-only packages
 TypeScript source that is not compiled to JavaScript
 ```
 
-Expect a package to "just work" when its public API is JSON-shaped. For other packages, write a small wrapper npm package that re-exports a JSON-friendly API, and import that wrapper from AgentScript.
+Expect a package to "just work" when its public API is JSON-compatible. For other packages, write a small wrapper npm package that exposes a JSON-friendly API, and import that wrapper from AgentScript.
 
 ## URI forms
 
@@ -209,7 +209,7 @@ use Tool.method(...) for callable members
 
 ## Argument and return value marshalling
 
-Arguments and return values must be JSON-shaped:
+Arguments and return values must be JSON-compatible:
 
 ```text
 allowed: null, string, number, boolean, arrays, plain objects
@@ -230,7 +230,7 @@ Npm tool 'Yaml.parse' argument at position 0 expects JSON-safe value at argument
 Node tool 'Path.join' argument at position 1 expects JSON-safe value at argument, got memory binding
 ```
 
-When a package's natural return shape is not JSON-safe, wrap it:
+When a package's natural return value is not JSON-safe, wrap it:
 
 ```agentscript
 // Instead of using a Date directly:
@@ -240,7 +240,7 @@ When a package's natural return shape is not JSON-safe, wrap it:
 createdAtIso = Pkg.nowIso()
 ```
 
-Or introduce a thin npm wrapper in the host project that re-exports a JSON-shaped API.
+Or introduce a thin npm wrapper in the host project that exposes a JSON-compatible API.
 
 ## Async and awaiting
 
@@ -362,7 +362,7 @@ main agent FrontMatterSummarizer {
     role "Technical Writer"
     description "Summarize a Markdown file with YAML front matter."
 
-    main func(input { path string }) {
+    main func(input { path: string }) {
         content = Fs.readFile(input.path, "utf8")
 
         parts = Yaml.parseAllDocuments(content)
@@ -377,7 +377,7 @@ main agent FrontMatterSummarizer {
         }) -> {
             title
             summary
-            tags list[string]
+            tags: list[string]
         }
     }
 }
@@ -409,8 +409,8 @@ main agent SectionSummarizer {
     description "Summarize one section of a Markdown file."
 
     main func(input {
-        path string
-        heading string
+        path: string
+        heading: string
     }) {
         content = Fs.readFile(input.path, "utf8")
         tokens = Marked.lexer(content)
@@ -423,7 +423,7 @@ main agent SectionSummarizer {
             input: "Summarize the target section."
         }) -> {
             summary
-            key_points list[string]
+            key_points: list[string]
         }
     }
 
@@ -447,7 +447,7 @@ main agent RunRecorder {
     role "Run Recorder"
     description "Produce a stable run identifier for downstream storage."
 
-    main func(input { label string }) {
+    main func(input { label: string }) {
         run_id = Crypto.randomUUID()
 
         use input.label as "label"
@@ -545,7 +545,7 @@ import tool Fs from "node:fs/promises"
 import tool Yaml from "npm:yaml"
 
 main agent Example {
-    main func(input { path string }) {
+    main func(input { path: string }) {
         content = Fs.readFile(input.path, "utf8")
         meta = Yaml.parse(content)
 

@@ -2,7 +2,7 @@ import memory Notes from "file://./.agentscript/tutorial-memory.jsonl"
 
 main agent MemoryDemo {
     main func(input {
-        topic string
+        topic: string
     }) {
         Notes.add({
             kind: "note",

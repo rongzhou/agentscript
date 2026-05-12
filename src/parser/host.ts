@@ -21,7 +21,7 @@ export interface TokenParserHost {
 export interface ExpressionParserHost extends TokenParserHost {
   consumeObjectKey(): string;
   consumePropertySeparator(terminator: string): void;
-  consumeShapeFieldSeparator(terminator: string): void;
+  consumeContractFieldSeparator(terminator: string): void;
   parseBlock(): Stmt[];
   parseBudgetToken(token: Token): Budget;
   parseCommaSeparatedUntil<T>(terminator: string, parseItem: () => T): T[];
@@ -35,6 +35,6 @@ export interface DeclarationParserHost extends ExpressionParserHost {
   parseUse(): UseStmt;
 }
 
-export interface ShapeParserHost extends TokenParserHost {
-  consumeShapeFieldSeparator(terminator: string): void;
+export interface ContractParserHost extends TokenParserHost {
+  consumeContractFieldSeparator(terminator: string): void;
 }

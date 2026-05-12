@@ -1,19 +1,19 @@
-import type { ShapeObjectExpr, ShapeTypeExpr, SourceRange } from "../ast/types.js";
+import type { ContractObjectExpr, ContractTypeExpr, SourceRange } from "../ast/types.js";
 import { RuntimeError } from "./errors.js";
 import { isObject, isRuntimeResource } from "./guards.js";
 import type { RuntimeObject, RuntimeValue } from "./types.js";
 
-export function validateValueAgainstShape(
+export function validateValueAgainstContract(
   value: RuntimeValue,
-  shape: ShapeObjectExpr,
+  contract: ContractObjectExpr,
   range?: SourceRange,
   options: { rejectExtraFields?: boolean } = {},
 ): void {
   if (!isObject(value)) {
-    throw new RuntimeError("LLM result must be an object matching the generate return shape", range);
+    throw new RuntimeError("LLM result must be an object matching the generate return contract", range);
   }
 
-  const allowedFields = new Set(shape.fields.map((field) => field.name));
+  const allowedFields = new Set(contract.fields.map((field) => field.name));
   if (options.rejectExtraFields) {
     for (const key of Object.keys(value)) {
       if (!allowedFields.has(key)) {
@@ -22,35 +22,35 @@ export function validateValueAgainstShape(
     }
   }
 
-  for (const field of shape.fields) {
+  for (const field of contract.fields) {
     if (!(field.name in value)) {
       throw new RuntimeError(`LLM result is missing required field '${field.name}'`, field.range);
     }
-    validateValueAgainstShapeType(value[field.name]!, field.type, field.range);
+    validateValueAgainstContractType(value[field.name]!, field.type, field.range);
   }
 }
 
-export function coerceValueToShape(value: RuntimeValue, shape: ShapeObjectExpr): RuntimeValue {
+export function coerceValueToContract(value: RuntimeValue, contract: ContractObjectExpr): RuntimeValue {
   if (!isObject(value)) {
     return value;
   }
 
   const result: RuntimeObject = {};
   for (const [key, item] of Object.entries(value)) {
-    const field = shape.fields.find((candidate) => candidate.name === key);
-    result[key] = field ? coerceValueToShapeType(item, field.type) : item;
+    const field = contract.fields.find((candidate) => candidate.name === key);
+    result[key] = field ? coerceValueToContractType(item, field.type) : item;
   }
   return result;
 }
 
-type ShapeValidator = (value: RuntimeValue, range?: SourceRange, errorPrefix?: string) => void;
+type ContractValidator = (value: RuntimeValue, range?: SourceRange, errorPrefix?: string) => void;
 
-interface ShapeTypeConfig {
-  validate: ShapeValidator;
+interface ContractTypeConfig {
+  validate: ContractValidator;
   coerce?: (value: RuntimeValue) => RuntimeValue;
 }
 
-const SHAPE_TYPE_CONFIG: Record<string, ShapeTypeConfig> = {
+const CONTRACT_TYPE_CONFIG: Record<string, ContractTypeConfig> = {
   string: {
     validate: (value, range, errorPrefix = "LLM result field") => {
       if (typeof value !== "string") throw new RuntimeError(`${errorPrefix} must be a string`, range);
@@ -82,15 +82,15 @@ const SHAPE_TYPE_CONFIG: Record<string, ShapeTypeConfig> = {
   },
 };
 
-function coerceValueToShapeType(value: RuntimeValue, type: ShapeTypeExpr): RuntimeValue {
-  if (type.kind === "ListShapeType") {
+function coerceValueToContractType(value: RuntimeValue, type: ContractTypeExpr): RuntimeValue {
+  if (type.kind === "ListContractType") {
     if (!Array.isArray(value)) {
       return value;
     }
-    return value.map((item) => coerceValueToShapeType(item, type.itemType));
+    return value.map((item) => coerceValueToContractType(item, type.itemType));
   }
 
-  const config = SHAPE_TYPE_CONFIG[type.name];
+  const config = CONTRACT_TYPE_CONFIG[type.name];
   return config?.coerce ? config.coerce(value) : value;
 }
 
@@ -120,23 +120,23 @@ function coerceStringToBoolean(value: RuntimeValue): RuntimeValue {
   return value;
 }
 
-export function validateValueAgainstShapeType(
+export function validateValueAgainstContractType(
   value: RuntimeValue,
-  type: ShapeTypeExpr,
+  type: ContractTypeExpr,
   range?: SourceRange,
   errorPrefix = "LLM result field",
 ): void {
-  if (type.kind === "ListShapeType") {
+  if (type.kind === "ListContractType") {
     if (!Array.isArray(value)) {
       throw new RuntimeError(`${errorPrefix} must be a list`, range);
     }
     for (const item of value) {
-      validateValueAgainstShapeType(item, type.itemType, range, errorPrefix);
+      validateValueAgainstContractType(item, type.itemType, range, errorPrefix);
     }
     return;
   }
 
-  const config = SHAPE_TYPE_CONFIG[type.name];
+  const config = CONTRACT_TYPE_CONFIG[type.name];
   if (config) {
     config.validate(value, range, errorPrefix);
   }

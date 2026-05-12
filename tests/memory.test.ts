@@ -103,7 +103,7 @@ describe("memory", () => {
     const memoryFile = join(dir, ".agentscript", "lessons.jsonl");
     mkdirSync(dirname(memoryFile), { recursive: true });
     writeFileSync(join(dir, "main.as"), "");
-    writeFileSync(memoryFile, "{bad json}\n", { flag: "w" });
+    writeFileSync(memoryFile, "{bad: json}\n", { flag: "w" });
     const ast = parse(`
       import memory Lessons from "file://./.agentscript/lessons.jsonl"
 

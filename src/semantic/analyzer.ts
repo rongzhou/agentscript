@@ -9,7 +9,7 @@ import { SemanticError, errorDiagnostic, type SemanticDiagnostic, type SemanticR
 import { collectGenerateOptionDiagnostics } from "./generate.js";
 import { collectParallelForDiagnostics } from "./parallel-for.js";
 import { collectProgramDeclarations, type ImportBindingDecl } from "./program.js";
-import { collectShapeDiagnostics } from "./shape.js";
+import { collectContractDiagnostics } from "./contract.js";
 import { SemanticScope } from "./scope.js";
 import { collectAgentUseDiagnostics, collectFunctionUseDiagnostics } from "./use.js";
 import { walkExpressionInScope, walkStatementsInScope } from "./walker.js";
@@ -138,8 +138,8 @@ class Analyzer {
       case "IdentifierExpr":
         this.checkIdentifier(expr.name, expr.range, scope);
         return;
-      case "ShapeObjectExpr":
-        this.diagnostics.push(...collectShapeDiagnostics(expr));
+      case "ContractObjectExpr":
+        this.diagnostics.push(...collectContractDiagnostics(expr));
         return;
       case "CallExpr":
         this.diagnostics.push(...collectCallDiagnostics(expr, scope, this.agentDecls));
@@ -172,8 +172,8 @@ class Analyzer {
 
   private checkGenerate(expr: GenerateExpr, scope: SemanticScope): void {
     this.diagnostics.push(...collectGenerateOptionDiagnostics(expr));
-    if (expr.returnShape) {
-      this.diagnostics.push(...collectShapeDiagnostics(expr.returnShape));
+    if (expr.returnContract) {
+      this.diagnostics.push(...collectContractDiagnostics(expr.returnContract));
     }
     for (const key of REQUIRED_GENERATE_CONFIG_KEYS) {
       this.diagnostics.push(...collectGenerateRequiredConfigDiagnostics(key, expr, scope));

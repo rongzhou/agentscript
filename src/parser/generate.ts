@@ -1,18 +1,18 @@
 import type { Budget, GenerateExpr, GenerateOptionsExpr, ObjectProperty, SourceRange } from "../ast/types.js";
 import type { ExpressionParserHost } from "./host.js";
-import { parseShapeObject } from "./shape.js";
+import { parseContractObject } from "./contract.js";
 
 export function parseGenerate(parser: ExpressionParserHost): GenerateExpr {
   const start = parser.consume("generate").range.start;
   parser.consume("(");
   const options = parseGenerateOptions(parser);
   parser.consume(")");
-  const returnShape = parser.match("->") ? parseShapeObject(parser, { mode: "shorthand" }) : undefined;
+  const returnContract = parser.match("->") ? parseContractObject(parser, { defaultType: "string" }) : undefined;
 
   return {
     kind: "GenerateExpr",
     options,
-    returnShape,
+    returnContract,
     range: { start, end: parser.previous().range.end },
   };
 }

@@ -2,7 +2,7 @@
 
 本文档定义 AgentScript 中 `generate` 的语义：generation site、prompt 层次、agent identity、selected context、输出契约、生成配置、重试、校验、debug output 和 trace output。
 
-Context 选择和 label 见 [`use ... as ...`](./use-as.md)。整体设计总纲见 [Context Engineering](./context-engineering.md)。`generate` 输出 shape 中默认 string 字段的简写规则见 [`generate` 输出 Shape 中的默认 String 字段](./generate-default-string-fields.md)。
+Context 选择和 label 见 [`use ... as ...`](./use-as.md)。整体设计总纲见 [Context Engineering](./context-engineering.md)。输出 contract 中 label-only 字段的 default value 规则见 [`generate` Contract Block 中的 Label-only 字段](./generate-default-string-fields.md)。
 
 ## 目的
 
@@ -10,7 +10,7 @@ Context 选择和 label 见 [`use ... as ...`](./use-as.md)。整体设计总纲
 
 ```agentscript
 generate({ input: "Answer using the selected context." }) -> {
-    ok boolean
+    ok: boolean
     answer
 }
 ```
@@ -30,28 +30,30 @@ generate({
     debug: false
 }) -> {
     category
-    confidence number
+    confidence: number
 }
 ```
 
-`->` 后面的输出 shape 是可选的：
+`->` 后面的输出 contract 是可选的：
 
 ```agentscript
 generate({ input: "Draft a response." })
 ```
 
-没有声明 shape 时，runtime 不应注入 schema，也不应要求 provider 返回结构化 JSON。自由形式的 `generate` 是允许的，但不推荐用于 agent workflow；优先声明明确的输出 shape，便于 retry、validation、trace 和下游 agent 调用保持可审计。
+没有声明 contract 时，runtime 不应注入 schema，也不应要求 provider 返回结构化 JSON。自由形式的 `generate` 是允许的，但不推荐用于 agent workflow；优先声明明确的输出 contract，便于 retry、validation、trace 和下游 agent 调用保持可审计。
 
 ## 配置字段
+
+`generate(...)` 的参数是 JSON-like options object，不是 contract block。可选的 contract 是 `->` 后面的块。
 
 | 字段 | 必需 | 类型 | 语义 |
 |---|---:|---|---|
 | `input` | 是 | `string` | 本次 `generate` 的任务指令。 |
 | `max_output` | 否 | `number` / budget literal | 请求的输出生成预算。 |
-| `attempts` | 否 | `number` | JSON parse 失败或 shape validation 失败时的重试次数。 |
+| `attempts` | 否 | `number` | JSON parse 失败或 contract validation 失败时的重试次数。 |
 | `temperature` | 否 | `number` | 采样温度，传递给支持该参数的 provider。 |
 | `think` | 否 | `boolean` / `string` | 请求模型启用 reasoning / thinking 模式。 |
-| `strict` | 否 | `boolean` | 控制 shape validation 是否严格。 |
+| `strict` | 否 | `boolean` | 控制 contract validation 是否严格。 |
 | `debug` | 否 | `boolean` | 是否输出 prompt / trace 调试信息。 |
 
 推荐默认值：
@@ -144,17 +146,17 @@ Instruction 是本次 LLM 调用的局部任务，区别于长期 context。
 
 ### Output contract
 
-Output contract 来自 `->` 后可选的 shape：
+Output contract 来自 `->` 后可选的 contract：
 
 ```agentscript
 generate({ input: "Answer" }) -> {
-    ok boolean
+    ok: boolean
     answer
-    citations list[string]
+    citations: list[string]
 }
 ```
 
-Runtime 会在可能时请求 provider 返回结构化输出，并校验返回值满足该 shape。
+Runtime 会在可能时请求 provider 返回结构化输出，并校验返回值满足该 contract。
 
 ## `max_output`
 
@@ -206,7 +208,7 @@ generate({
     attempts: 3
 }) -> {
     title
-    tags list[string]
+    tags: list[string]
 }
 ```
 
@@ -214,7 +216,7 @@ generate({
 
 ```text
 JSON parse failed
-shape validation failed
+contract validation failed
 required field missing
 type mismatch
 strict mode violation
@@ -246,7 +248,7 @@ generate({
     max_output: 1000,
     temperature: 0.7
 }) -> {
-    ideas list[string]
+    ideas: list[string]
 }
 ```
 
@@ -292,8 +294,8 @@ generate({
     think: "high"
 }) -> {
     decision
-    tradeoffs list[string]
-    risks list[string]
+    tradeoffs: list[string]
+    risks: list[string]
 }
 ```
 
@@ -321,7 +323,7 @@ Adapter 可以按照 runtime capability policy 对不支持的 hint 选择 ignor
 
 ## `strict`
 
-`strict` 控制输出 shape validation。
+`strict` 控制输出 contract validation。
 
 ```agentscript
 generate({
@@ -330,7 +332,7 @@ generate({
     strict: true
 }) -> {
     category
-    confidence number
+    confidence: number
 }
 ```
 
@@ -368,7 +370,7 @@ strict: false
 必需字段必须存在
 字段类型必须精确匹配
 extra fields rejected
-shape mismatch triggers retry if attempts > 1
+contract mismatch triggers retry if attempts > 1
 ```
 
 一句话：
@@ -400,7 +402,7 @@ selected context entries
 context labels
 budgets
 rendered prompt/messages
-output shape
+output contract
 raw model output
 validation result
 ```
@@ -451,7 +453,7 @@ Trace 要能回答：
 - 哪些 selected context 可见？
 - 哪些 context item 被裁剪？
 - 请求了哪些 provider hint 和 runtime behavior？
-- 请求了什么 shape？
+- 请求了什么 contract？
 - 尝试了几次？
 - 使用了什么 validation mode？
 - 返回了什么值？

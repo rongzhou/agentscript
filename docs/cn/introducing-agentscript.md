@@ -50,8 +50,8 @@ generate({
 }) -> {
     title
     summary
-    key_points list[string]
-    action_items list[string]
+    key_points: list[string]
+    action_items: list[string]
 }
 ```
 
@@ -94,7 +94,7 @@ generate({
     strict: true
 }) -> {
     answer
-    citations list[string]
+    citations: list[string]
 }
 ```
 
@@ -114,7 +114,7 @@ main agent FileSummarizer {
     role "技术文档撰写人"
     description "读取本地文件，生成结构化摘要。"
 
-    main func(input { path string }) {
+    main func(input { path: string }) {
         content = File.read({
             path: input.path
         })
@@ -128,8 +128,8 @@ main agent FileSummarizer {
         }) -> {
             title
             summary
-            key_points list[string]
-            action_items list[string]
+            key_points: list[string]
+            action_items: list[string]
         }
     }
 }
@@ -182,9 +182,9 @@ answer = generate({
     attempts: 3,
     strict: true
 }) -> {
-    ok boolean
+    ok: boolean
     answer
-    citations list[string]
+    citations: list[string]
 }
 ```
 
@@ -211,7 +211,7 @@ func helper(input) {
     use input.detail as detail
 
     generate({ input: "基于细节处理" }) -> {
-        ok boolean
+        ok: boolean
     }
 }
 ```

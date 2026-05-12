@@ -8,7 +8,7 @@ Context 选择的基础模型见 [`use ... as ...`](./use-as.md)。整体设计�
 
 `use one of` 不是另一套 prompt 机制。它是对 `use` 的聚焦扩展：允许一条 `use` 声明**多个可选的 source**，并通过命名变体（variant）让作者和优化器共享一份关于"如何选择"的契约。
 
-```agentscript
+```text
 use one of {
     compact:  scratch.digest max 500
     verbose:  scratch.summary max 4k
@@ -28,7 +28,7 @@ use one of {
 
 ## 推荐语法
 
-```agentscript
+```text
 use one of {
     name1: expr1
     name2: expr2 max budget2
@@ -43,19 +43,19 @@ use one of {
 identifier ":" (use-expression | "empty") [ "selected" ]
 ```
 
-其中 use-expression 就是普通 `use` 里 `as label` 之前的部分（`expr` 或 `expr max budget`）。变体之间用换行或 `,` 分隔，与 AgentScript 的 shape / 对象字面量约定一致。
+其中 use-expression 就是普通 `use` 里 `as label` 之前的部分（`expr` 或 `expr max budget`）。变体之间用换行分隔，与 contract block 约定一致。
 
 尾缀 `selected` 是可选的单词修饰符，紧跟在候选值之后，用于显式标记默认选中的候选。一个 `use one of` 中最多只能有一个候选带 `selected`。
 
 完整示例：
 
-```agentscript
+```text
 main agent Researcher {
     model Qwen
     role "Senior Researcher"
     description "Answer with selected evidence."
 
-    main func(input { question string }) {
+    main func(input { question: string }) {
         lessons = Lessons.query({ kind: "how-to" })
         docs = Search.search(input.question)
 
@@ -69,7 +69,7 @@ main agent Researcher {
         } as "evidence"
 
         generate({ input: "Answer from evidence" }) -> {
-            ok boolean
+            ok: boolean
             answer
         }
     }
@@ -99,7 +99,7 @@ main agent Researcher {
 
 label 写在 `}` 之后，由所有候选共享：
 
-```agentscript
+```text
 use one of {
     compact: scratch.digest max 500
     verbose: scratch.summary max 4k
@@ -108,7 +108,7 @@ use one of {
 
 候选内部**不能**再写 `as ...`：
 
-```agentscript
+```text
 // 非法
 use one of {
     compact: scratch.digest max 500 as "short-evidence"    // NO
@@ -122,7 +122,7 @@ use one of {
 
 每个候选可以独立声明 `max budget`：
 
-```agentscript
+```text
 use one of {
     compact: scratch.digest max 500
     verbose: scratch.summary max 4k
@@ -135,7 +135,7 @@ budget 是候选的一部分——不同候选往往对应不同的数据体积�
 
 候选槽位可以写成保留字 `empty`，表示**该变体被选中时，此位置不声明任何 context**：
 
-```agentscript
+```text
 use one of {
     none: empty
     verbose: scratch.summary max 4k
@@ -153,7 +153,7 @@ use one of {
 
 候选可以在末尾加关键字 `selected`，标记该候选为默认选中：
 
-```agentscript
+```text
 use one of {
     compact:  scratch.digest max 500
     verbose:  scratch.summary max 4k selected
@@ -182,7 +182,7 @@ use one of {
 - **`none`** 作为 `empty` 变体的命名（visual 上与 AgentScript 的 `none` null literal 对应，一眼可读）。
 - 也可以用 `skip` / `off` / `omit` 等；语言不强制。
 
-```agentscript
+```text
 // 推荐
 use one of {
     none: empty
@@ -206,7 +206,7 @@ use one of {
 
 候选数量必须 ≥ 2。`empty` 也算一个候选；因此 `{ none: empty, long: X }` 是合法的最小 `use one of`。
 
-```agentscript
+```text
 // 非法：只有一个候选
 use one of {
     only: scratch.summary max 4k
@@ -245,7 +245,7 @@ use one of {
 
 优化器保留完整的 `use one of` 结构，只把 `selected` 标记移到胜出的候选上：
 
-```agentscript
+```text
 // 优化前
 use one of {
     none:     empty
@@ -265,7 +265,7 @@ use one of {
 
 diff 是 `selected` 的一次移动加一段可选注释：
 
-```agentscript
+```text
 use one of {
     none:     empty
     compact:  scratch.digest max 500
@@ -281,14 +281,14 @@ use one of {
 
 优化器把 `use one of` 崩塌成普通 `use`：
 
-```agentscript
+```text
 // 扁平化
 use scratch.summary max 2k as "evidence"  // optimizer: grounded variant (F1 0.82)
 ```
 
 如果优化器选中的是 `empty` 变体，扁平化产物就是**完全移除这条 `use`**：
 
-```agentscript
+```text
 // 优化前
 use one of {
     none: empty selected
@@ -313,7 +313,7 @@ use one of {
 
 Agent-level `use one of` 的约束也和 agent-level `use` 相同——只能引用 agent 顶层可解析的名字（通常是 `import file`），不能依赖 function 参数或局部变量，不能包含 call expression。下例合法：
 
-```agentscript
+```text
 import file ShortPlaybook from "./playbook.short.md"
 import file LongPlaybook  from "./playbook.long.md"
 
@@ -340,7 +340,7 @@ Agent-level `use one of` 是**声明式**的 context 选择点，和 agent `role
 
 runtime capability 仍然不能出现在任何候选的根引用中：
 
-```agentscript
+```text
 // 非法：tool / memory / llm / agent / function binding 不是 prompt context
 use one of {
     cached: lessons max 2k
@@ -353,7 +353,7 @@ use one of {
 - 候选可以引用 *data*，但不能把 capability 本身或 capability 的 call 直接写成候选。
 - 需要动态数据时，沿用"call then use"模式：先把调用结果存进局部变量，再让变量成为候选。
 
-```agentscript
+```text
 // 合法写法
 live_docs = Search.search(input.question)
 

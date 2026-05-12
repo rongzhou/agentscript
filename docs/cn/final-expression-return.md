@@ -11,7 +11,7 @@ func answer(input) {
     use input.question
 
     generate({ input: "Answer the question" }) -> {
-        ok boolean
+        ok: boolean
         answer
     }
 }
@@ -24,7 +24,7 @@ func answer(input) {
     use input.question
 
     return generate({ input: "Answer the question" }) -> {
-        ok boolean
+        ok: boolean
         answer
     }
 }
@@ -41,7 +41,7 @@ final expression return
 允许最后一行隐式返回以下表达式形式：
 
 ```text
-generate(...) -> shape
+generate(...) -> contract
 普通函数调用
 agent 调用
 变量引用
@@ -65,7 +65,7 @@ func run(input) {
 agent Planner {
     main func(input) {
         generate({ input: "Create a plan" }) -> {
-            steps list[string]
+            steps: list[string]
         }
     }
 }
@@ -147,7 +147,7 @@ func answer(input) {
     }
 
     generate({ input: "Answer" }) -> {
-        ok boolean
+        ok: boolean
         answer
     }
 }
@@ -183,7 +183,7 @@ func summarize(content) {
     }) -> {
         title
         summary
-        key_points list[string]
+        key_points: list[string]
     }
 }
 ```
@@ -202,7 +202,7 @@ func answer(input) {
     use input.question
 
     generate({ input: "Answer the question" }) -> {
-        ok boolean
+        ok: boolean
         answer
     }
 }

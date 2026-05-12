@@ -379,7 +379,7 @@ function makeRequest(uri: string): GenerateRequest {
     agent A {
       func act(input) {
         return generate({ input: "answer", max_output: 100 }) -> {
-            ok boolean
+            ok: boolean
         }
       }
     }
@@ -396,7 +396,7 @@ function makeRequest(uri: string): GenerateRequest {
     model,
     identity: {},
     instruction: "answer",
-    returnShape: stmt.value.returnShape,
+    returnContract: stmt.value.returnContract,
     uses: [],
     maxOutput,
   });

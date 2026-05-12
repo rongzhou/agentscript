@@ -139,7 +139,7 @@ describe("runtime core", () => {
 
           repeat * 2 {
             insight = generate({ input: "reflect" }) -> {
-                value string
+                value: string
             }
           }
 
@@ -249,8 +249,8 @@ describe("runtime core", () => {
           use input.question
 
           generate({ input: "answer" }) -> {
-              ok boolean
-              answer string
+              ok: boolean
+              answer: string
           }
         }
       }

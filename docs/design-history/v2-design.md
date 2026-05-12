@@ -214,9 +214,9 @@ agent Reflector {
             input: "Extract one reusable lesson from this run.",
             attempts: 3
         }) -> {
-            insight string
-            mistake string
-            next_rule string
+            insight: string
+            mistake: string
+            next_rule: string
         }
     }
 }
@@ -254,7 +254,7 @@ main agent Learner {
     description "Use durable lessons to improve future answers."
 
     main func(input {
-        goal string
+        goal: string
     }) {
         past = Lessons.query({
             text: input.goal
@@ -269,9 +269,9 @@ main agent Learner {
             input: "Answer the goal using relevant past lessons.",
             attempts: 3
         }) -> {
-            ok boolean
-            answer string
-            reason string
+            ok: boolean
+            answer: string
+            reason: string
         }
 
         reflection = reflect({
@@ -296,7 +296,7 @@ main agent Learner {
             input: "Extract one reusable lesson from this run.",
             attempts: 3
         }) -> {
-            insight string
+            insight: string
         }
     }
 }

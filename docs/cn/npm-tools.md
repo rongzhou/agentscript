@@ -362,7 +362,7 @@ main agent FrontMatterSummarizer {
     role "Technical Writer"
     description "Summarize a Markdown file with YAML front matter."
 
-    main func(input { path string }) {
+    main func(input { path: string }) {
         content = Fs.readFile(input.path, "utf8")
 
         parts = Yaml.parseAllDocuments(content)
@@ -377,7 +377,7 @@ main agent FrontMatterSummarizer {
         }) -> {
             title
             summary
-            tags list[string]
+            tags: list[string]
         }
     }
 }
@@ -407,7 +407,10 @@ main agent SectionSummarizer {
     role "Editor"
     description "Summarize one section of a Markdown file."
 
-    main func(input { path string, heading string }) {
+    main func(input {
+      path: string
+      heading: string
+    }) {
         content = Fs.readFile(input.path, "utf8")
         tokens = Marked.lexer(content)
 
@@ -419,7 +422,7 @@ main agent SectionSummarizer {
             input: "Summarize the target section."
         }) -> {
             summary
-            key_points list[string]
+            key_points: list[string]
         }
     }
 
@@ -441,7 +444,7 @@ main agent RunRecorder {
     role "Run Recorder"
     description "Produce a stable run identifier for downstream storage."
 
-    main func(input { label string }) {
+    main func(input { label: string }) {
         run_id = Crypto.randomUUID()
 
         use input.label as "label"
@@ -540,7 +543,7 @@ import tool Fs from "node:fs/promises"
 import tool Yaml from "npm:yaml"
 
 main agent Example {
-    main func(input { path string }) {
+    main func(input { path: string }) {
         content = Fs.readFile(input.path, "utf8")
         meta = Yaml.parse(content)
 

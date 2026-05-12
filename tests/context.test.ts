@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { parse } from "../src/parser/parser.js";
 import { buildContext, builtContextToJson } from "../src/runtime/context.js";
-import { shapeToSchema } from "../src/runtime/context-schema.js";
+import { contractToSchema } from "../src/runtime/contract-schema.js";
 
 describe("buildContext", () => {
   it("builds system prompt, clipped context, final instruction, and schema", () => {
@@ -9,9 +9,9 @@ describe("buildContext", () => {
       agent A {
         func act(input) {
           return generate({ input: "answer" }) -> {
-              ok boolean
-              text string
-              facts list[string]
+              ok: boolean
+              text: string
+              facts: list[string]
           }
         }
       }
@@ -25,7 +25,7 @@ describe("buildContext", () => {
       agentName: "A",
       identity: { role: "Researcher" },
       instruction: "answer",
-      returnShape: generate.value.returnShape,
+      returnContract: generate.value.returnContract,
       uses: [{ source: "input.text", label: "evidence", value: "abcdefghijklmnopqrstuvwxyz", budget: { amount: 5 } }],
       maxOutput: { amount: 100 },
     });
@@ -67,7 +67,7 @@ describe("buildContext", () => {
       agent A {
         func act(input) {
           return generate({ input: "answer" }) -> {
-              ok boolean
+              ok: boolean
           }
         }
       }
@@ -81,7 +81,7 @@ describe("buildContext", () => {
       agentName: "A",
       identity: {},
       instruction: "answer",
-      returnShape: generate.value.returnShape,
+      returnContract: generate.value.returnContract,
       uses: [
         { source: "items", value: ["alpha", "beta", "gamma"], budget: { amount: 25 } },
         { source: "object", value: { first: "alpha", second: "beta" }, budget: { amount: 25 } },
@@ -95,15 +95,15 @@ describe("buildContext", () => {
   });
 });
 
-describe("shapeToSchema", () => {
-  it("converts AgentScript generate shape to JSON schema-like structure", () => {
+describe("contractToSchema", () => {
+  it("converts AgentScript generate contract to JSON schema-like structure", () => {
     const ast = parse(`
       agent A {
         func act(input) {
           return generate({ input: "x" }) -> {
-              items list[string]
-              score number
-              data json
+              items: list[string]
+              score: number
+              data: json
           }
         }
       }
@@ -112,11 +112,11 @@ describe("shapeToSchema", () => {
     if (stmt.kind !== "ReturnStmt" || stmt.value.kind !== "GenerateExpr") {
       throw new Error("unexpected test AST");
     }
-    if (!stmt.value.returnShape) {
-      throw new Error("unexpected missing return shape");
+    if (!stmt.value.returnContract) {
+      throw new Error("unexpected missing return contract");
     }
 
-    expect(shapeToSchema(stmt.value.returnShape)).toMatchObject({
+    expect(contractToSchema(stmt.value.returnContract)).toMatchObject({
       properties: {
         items: {
           type: "array",

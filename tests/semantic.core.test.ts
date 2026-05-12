@@ -38,8 +38,8 @@ describe("semantic core", () => {
         main agent A {
           main func act(input) {
             return generate({ input: "x" }) -> {
-                ok boolean
-                ok string
+                ok: boolean
+                ok: string
             }
           }
 
@@ -51,7 +51,7 @@ describe("semantic core", () => {
     );
 
     expect(result.diagnostics.map((diagnostic) => diagnostic.code)).toEqual(
-      expect.arrayContaining(["DUPLICATE_FUNCTION", "DUPLICATE_SHAPE_FIELD"]),
+      expect.arrayContaining(["DUPLICATE_FUNCTION", "DUPLICATE_CONTRACT_FIELD"]),
     );
   });
 

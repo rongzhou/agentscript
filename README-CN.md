@@ -10,7 +10,7 @@ use scratch.summary max 2k as observations
 generate({
     input: "Answer from observations"
 }) -> {
-    ok boolean
+    ok: boolean
     text
 }
 ```
@@ -75,7 +75,7 @@ main agent FileSummarizer {
     role "Technical Writer"
     description "Read one local file and produce a useful structured summary."
 
-    main func(input { path string }) {
+    main func(input { path: string }) {
         file = File.read({
             path: input.path
         })
@@ -88,8 +88,8 @@ main agent FileSummarizer {
         }) -> {
             title
             summary
-            key_points list[string]
-            action_items list[string]
+            key_points: list[string]
+            action_items: list[string]
         }
     }
 }
@@ -213,7 +213,7 @@ main agent ResearchAgent {
     description "Answer questions with search and structured reasoning."
 
     main func(input {
-        question string
+        question: string
     }) {
         use input.question as "user question"
 
@@ -237,7 +237,7 @@ main agent ResearchAgent {
         generate({
             input: "Answer using only the observations"
         }) -> {
-            ok boolean
+            ok: boolean
             text
             error
         }
@@ -248,7 +248,7 @@ main agent ResearchAgent {
 ## 六个核心概念
 
 1. **`use` 显式声明上下文** —— 未被 `use` 的变量不会进入 LLM prompt；`as label` 标注 context section
-2. **`generate` 是唯一的 LLM 调用点** —— 必须包含 input 指令，可选择声明输出 shape
+2. **`generate` 是唯一的 LLM 调用点** —— 必须包含 input 指令，可选择声明输出 contract
 3. **Final expression return 让流程更简洁** —— 函数返回最后一个顶层表达式
 4. **作用域即上下文边界** —— 函数、Agent、块级作用域隔离 prompt 可见性
 5. **工具、memory、文件都是导入资源** —— 访问可审计
@@ -282,7 +282,7 @@ stdio transport，并且不引入 runtime dependency。
 import tool Search from "mcp://search"
 
 main agent Researcher {
-    main func(input { query string }) {
+    main func(input { query: string }) {
         result = Search.call({
             tool: "web-search",
             args: {

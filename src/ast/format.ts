@@ -16,8 +16,8 @@ export function formatExpressionSource(expr: Expr): string {
       return `[${formatItems(expr.items)}]`;
     case "ObjectExpr":
       return `{ ${formatProperties(expr.properties)} }`;
-    case "ShapeObjectExpr":
-      return "{ shape }";
+    case "ContractObjectExpr":
+      return "{ contract }";
     case "MemberExpr":
       return `${formatExpressionSource(expr.object)}.${expr.property}`;
     case "IndexExpr":

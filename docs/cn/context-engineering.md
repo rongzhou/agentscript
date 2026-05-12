@@ -25,7 +25,7 @@ AgentScript 的核心对象是：
 - **Data**：普通值，例如 input、JSON、list、文件内容、工具 observation、memory 查询结果和 Agent 返回值。
 - **Context source**：通过 `use expr` 选择进入 prompt context 的数据，可带 budget 和 label。
 - **Context choice point**：通过 `use one of { ... }` 声明的单个 context slot。一次可见 `generate` 构建 prompt 前，它会确定性地选择一个候选 source。
-- **Generation site**：一次由 `generate({ input, max_output, attempts, temperature, think, strict, debug }) -> shape` 表示的 LLM 调用。
+- **Generation site**：一次由 `generate({ input, max_output, attempts, temperature, think, strict, debug }) -> contract` 表示的 LLM 调用。
 - **Boundary**：由 Agent、function 或 block scope 形成的可见性边界。
 - **Trace**：解释哪些 source 被选择、prompt context 如何构建、每次 generation 返回了什么的审计记录。
 
@@ -115,7 +115,7 @@ func caller(input) {
 func helper(input) {
     use input.detail as detail
     generate({ input: "Work on detail" }) -> {
-        ok boolean
+        ok: boolean
     }
 }
 ```
@@ -133,7 +133,7 @@ func helper(input) {
 1. **Agent identity**：当前 Agent 的 `role`、`description` 和稳定身份。
 2. **Selected context**：可见的 `use` 声明，包括已经解析的 `use one of` choice，渲染时带 source、label、value 和 budget 信息。
 3. **Instruction**：来自 `generate({ input: ... })` 的本次任务。
-4. **Output contract**：可选的 `-> { ... }` shape。
+4. **Output contract**：可选的 `-> { ... }` contract。
 
 详细构造规则见 [`generate`](./generate.md)。
 

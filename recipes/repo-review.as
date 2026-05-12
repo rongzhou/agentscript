@@ -9,7 +9,7 @@ main agent RepoReviewAssistant {
     description "Review a repository for release readiness using explicit, bounded context."
 
     main func(input {
-        path string
+        path: string
     }) {
         files = Find.run({
             path: input.path,
@@ -48,10 +48,10 @@ main agent RepoReviewAssistant {
 
         generate({ input: "Review this repository for release readiness", max_output: 4k, strict: true, think: "medium" }) -> {
             summary
-            blockers list[string]
-            risks list[string]
-            quick_wins list[string]
-            next_steps list[string]
+            blockers: list[string]
+            risks: list[string]
+            quick_wins: list[string]
+            next_steps: list[string]
         }
     }
 }

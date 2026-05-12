@@ -2,7 +2,7 @@
 
 > **Agent context as code.**
 > `use` declares what the model can see, with optional labels for prompt sections.
-> `generate` defines the only LLM call site and optional output shape.
+> `generate` defines the only LLM call site and optional output contract.
 > Zero runtime dependencies. TypeScript-powered.
 
 ```agentscript
@@ -10,7 +10,7 @@ use scratch.summary max 2k as observations
 generate({
     input: "Answer from observations"
 }) -> {
-    ok boolean
+    ok: boolean
     text
 }
 ```
@@ -75,7 +75,7 @@ main agent FileSummarizer {
     role "Technical Writer"
     description "Read one local file and produce a useful structured summary."
 
-    main func(input { path string }) {
+    main func(input { path: string }) {
         file = File.read({
             path: input.path
         })
@@ -88,8 +88,8 @@ main agent FileSummarizer {
         }) -> {
             title
             summary
-            key_points list[string]
-            action_items list[string]
+            key_points: list[string]
+            action_items: list[string]
         }
     }
 }
@@ -208,7 +208,7 @@ AgentScript doesn't hardcode agent patterns as keywords. You compose them from t
 | **Reflection / Self-Improvement** | `tutorials/self-improve.as` | Query past lessons → generate → reflect → persist new lessons |
 | **Multi-Agent** | `tutorials/plan-execute.as` | Independent agents with isolated context boundaries |
 
-Every pattern is explicit — which data enters the prompt, which tools each agent can use, and which output shape each LLM call must satisfy when one is declared.
+Every pattern is explicit — which data enters the prompt, which tools each agent can use, and which output contract each LLM call must satisfy when one is declared.
 
 ## Language at a glance
 
@@ -223,7 +223,7 @@ main agent ResearchAgent {
     description "Answer questions with search and structured reasoning."
 
     main func(input {
-        question string
+        question: string
     }) {
         use input.question as "user question"
 
@@ -247,7 +247,7 @@ main agent ResearchAgent {
         generate({
             input: "Answer using only the observations"
         }) -> {
-            ok boolean
+            ok: boolean
             text
             error
         }
@@ -258,7 +258,7 @@ main agent ResearchAgent {
 ## Key ideas
 
 1. **`use` is explicit context** — nothing enters the LLM prompt unless `use`d; `as label` names the context section
-2. **`generate` is the only LLM call site** — with a required input instruction and optional output shape
+2. **`generate` is the only LLM call site** — with a required input instruction and optional output contract
 3. **Final expression return keeps flows concise** — a function returns its final top-level expression
 4. **Scope is context boundary** — functions, agents, and blocks isolate prompt visibility
 5. **Tools, memory, and files are imported resources** — with auditable access
@@ -292,7 +292,7 @@ Then import and call the server:
 import tool Search from "mcp://search"
 
 main agent Researcher {
-    main func(input { query string }) {
+    main func(input { query: string }) {
         result = Search.call({
             tool: "web-search",
             args: {
@@ -320,7 +320,7 @@ npm packages through `node:` and `npm:` tool imports.
 import tool Crypto from "node:crypto"
 
 main agent NodeCryptoExample {
-    main func(input { label string }) {
+    main func(input { label: string }) {
         run_id = Crypto.randomUUID()
         digest = Crypto.hash("sha256", input.label, "hex")
 

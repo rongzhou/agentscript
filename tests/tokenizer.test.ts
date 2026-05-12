@@ -49,7 +49,7 @@ describe("tokenize", () => {
     ]);
   });
 
-  it("tokenizes shape type names as keywords", () => {
+  it("tokenizes contract type names as keywords", () => {
     const tokens = tokenize("string number boolean json list");
     expect(tokens.map((token) => token.kind)).toEqual(["keyword", "keyword", "keyword", "keyword", "keyword", "eof"]);
   });

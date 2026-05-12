@@ -17,7 +17,7 @@ This language reference is the compact syntax and feature map. Detailed design d
 
 - [`use ... as ...`](./use-as.md): prompt context selection, labels, budgets, scope visibility, deferred evaluation, and trace.
 - [`generate`](./generate.md): generation sites, prompt construction, agent identity, output contracts, provider hints, validation, retries, and trace.
-- [Default String Fields in `generate` Output Shapes](./generate-default-string-fields.md): shorthand for string fields in `generate` output contracts.
+- [Label-only Contract Fields](./generate-default-string-fields.md): default-value shorthand for `generate` output contracts.
 - [`parallel for`](./parallel-for.md): structured parallelism for independent bounded list work.
 - [Final Expression Return](./final-expression-return.md): implicit return from the final top-level expression in a function body.
 - [npm and node tools](./npm-tools.md): calling npm packages and Node built-in modules from AgentScript.
@@ -35,11 +35,11 @@ main agent Assistant {
     description "Answer with structured JSON."
 
     main func(input {
-        question string
+        question: string
     }) {
         use input.question
         generate({ input: "Answer the question" }) -> {
-            ok boolean
+            ok: boolean
             answer
         }
     }
@@ -143,27 +143,36 @@ func careful(input) {
 }
 ```
 
-## Values and shapes
+## Values and Contract Blocks
 
 Runtime values are JSON-oriented:
 
 - `string`, `number`, `boolean`, `none`
 - `list`, `object`
 
-Shapes are used for input validation and `generate` output validation:
+Contract blocks describe structured entry inputs and structured `generate` outputs:
 
 ```agentscript
+main func(input {
+    question: string
+    max_results: number
+}) {
+    ...
+}
+
 generate({ input: "Extract facts" }) -> {
-    ok boolean
+    ok: boolean
     title
-    items list[json]
-    meta json
+    items: list[json]
+    meta: json
 }
 ```
 
-Supported shape types: `string`, `number`, `boolean`, `json`, `list`, `list[T]` where T is any supported type.
+Contract fields use newline-separated `label: value` entries. Commas are not allowed. A label-only field means `label: default_value`; the default value is defined by the contract's usage site. `generate` output contracts default label-only fields to `string`, so `title` means `title: string`. Input contracts do not define a default value and must use explicit `label: value` fields.
 
-Shapes are not a full static type system.
+Supported contract types: `string`, `number`, `boolean`, `json`, `list`, `list[T]` where T is any supported type.
+
+Contract blocks are used only where the language expects a contract: function input parameters and `generate(...) -> { ... }` output contracts. The `generate({ ... })` argument itself is a JSON-like options object, not a contract block. Contract blocks are not object literals and not a full static type system.
 
 Object literals use JSON-like syntax: fields are written as `key: value`, and multiple fields must be separated with commas.
 
@@ -236,7 +245,7 @@ optimizer contract.
 
 ## Generate
 
-`generate` calls the current model and requires an `input` instruction. A return shape is optional.
+`generate` calls the current model and requires an `input` instruction. A return contract is optional.
 
 ```agentscript
 answer = generate({
@@ -245,7 +254,7 @@ answer = generate({
     attempts: 3,
     debug: true
 }) -> {
-    ok boolean
+    ok: boolean
     answer
     reason
 }
@@ -255,15 +264,15 @@ answer = generate({
 
 - `input` is the per-generation instruction. Required.
 - `max_output` is the output generation budget (number or `2k` style). Optional.
-- `attempts` controls retry for JSON parse errors or shape mismatch. It is the maximum total number of attempts, including the first one. Optional, defaults to 1.
+- `attempts` controls retry for JSON parse errors or contract mismatch. It is the maximum total number of attempts, including the first one. Optional, defaults to 1.
 - `temperature` is a provider sampling hint. Optional. Unsupported provider hints default to warn in debug mode and ignore otherwise.
 - `think` is a provider/model reasoning hint. Optional. Unsupported provider hints default to warn in debug mode and ignore otherwise.
-- `strict` controls shape validation strictness. Optional, defaults to false.
+- `strict` controls contract validation strictness. Optional, defaults to false.
 - `debug` prints the full prompt to stderr. Optional, defaults to false.
-- The optional `-> { ... }` block declares the expected output shape.
+- The optional `-> { ... }` block declares the expected output contract.
 - Without `-> { ... }`, the generate output is unconstrained: AgentScript does not add a return schema to the prompt, does not request provider structured output, and does not coerce or validate the returned value. Free-form generate is allowed but not recommended for agent workflows.
 - Provider errors (auth, network, timeout, missing model) fail directly without retry.
-- Shape validation includes coercion (e.g. `"true"` -> `true`, `"42"` -> `42`).
+- Contract validation includes coercion (e.g. `"true"` -> `true`, `"42"` -> `42`).
 
 For prompt construction, identity, retry, and trace semantics, see [`generate`](./generate.md).
 
@@ -518,7 +527,7 @@ agent Assistant {
         use Requirements max 4k
         use Config
         generate({ input: "Answer from the referenced file." }) -> {
-            ok boolean
+            ok: boolean
             answer
         }
     }

@@ -2,7 +2,7 @@
 
 This document defines the semantics of `generate` in AgentScript: generation sites, prompt layers, agent identity, selected context, output contracts, generation configuration, retries, validation, debug output, and trace output.
 
-For context selection and labels, see [`use ... as ...`](./use-as.md). For the broader design map, see [Context Engineering](./context-engineering.md). For the default string shorthand in output shapes, see [Default String Fields in `generate` Output Shapes](./generate-default-string-fields.md).
+For context selection and labels, see [`use ... as ...`](./use-as.md). For the broader design map, see [Context Engineering](./context-engineering.md). For the label-only default value rule in output contracts, see [Label-only Contract Fields](./generate-default-string-fields.md).
 
 ## Purpose
 
@@ -10,7 +10,7 @@ For context selection and labels, see [`use ... as ...`](./use-as.md). For the b
 
 ```agentscript
 generate({ input: "Answer using the selected context." }) -> {
-    ok boolean
+    ok: boolean
     answer
 }
 ```
@@ -30,28 +30,31 @@ generate({
     debug: false
 }) -> {
     category
-    confidence number
+    confidence: number
 }
 ```
 
-The output shape after `->` is optional:
+The output contract after `->` is optional:
 
 ```agentscript
 generate({ input: "Draft a response." })
 ```
 
-When no shape is declared, the runtime should not inject a schema or require structured JSON output. Free-form generate is allowed but not recommended for agent workflows; prefer an explicit output shape so retries, validation, trace, and downstream agent calls stay auditable.
+When no contract is declared, the runtime should not inject a schema or require structured JSON output. Free-form generate is allowed but not recommended for agent workflows; prefer an explicit output contract so retries, validation, trace, and downstream agent calls stay auditable.
 
 ## Configuration fields
+
+The argument to `generate(...)` is a JSON-like options object. It is not a
+contract block. The optional contract is the block after `->`.
 
 | Field | Required | Type | Meaning |
 |---|---:|---|---|
 | `input` | yes | `string` | Per-generation task instruction. |
 | `max_output` | no | `number` / budget literal | Requested output generation budget. |
-| `attempts` | no | `number` | Retry count for JSON parse failures or shape validation failures. |
+| `attempts` | no | `number` | Retry count for JSON parse failures or contract validation failures. |
 | `temperature` | no | `number` | Sampling temperature passed to providers that support it. |
 | `think` | no | `boolean` / `string` | Request model reasoning / thinking mode. |
-| `strict` | no | `boolean` | Controls whether output shape validation is strict. |
+| `strict` | no | `boolean` | Controls whether output contract validation is strict. |
 | `debug` | no | `boolean` | Enables prompt / trace debug output for this generation. |
 
 Recommended defaults:
@@ -144,17 +147,17 @@ The instruction is the local task for this one LLM call. It is distinct from lon
 
 ### Output contract
 
-The output contract comes from the optional shape after `->`:
+The output contract comes from the optional contract after `->`:
 
 ```agentscript
 generate({ input: "Answer" }) -> {
-    ok boolean
+    ok: boolean
     answer
-    citations list[string]
+    citations: list[string]
 }
 ```
 
-The runtime asks the provider for structured output when possible and validates the returned value against the shape.
+The runtime asks the provider for structured output when possible and validates the returned value against the contract.
 
 ## `max_output`
 
@@ -206,7 +209,7 @@ generate({
     attempts: 3
 }) -> {
     title
-    tags list[string]
+    tags: list[string]
 }
 ```
 
@@ -214,7 +217,7 @@ Retryable failures:
 
 ```text
 JSON parse failed
-shape validation failed
+contract validation failed
 required field missing
 type mismatch
 strict mode violation
@@ -246,7 +249,7 @@ generate({
     max_output: 1000,
     temperature: 0.7
 }) -> {
-    ideas list[string]
+    ideas: list[string]
 }
 ```
 
@@ -292,8 +295,8 @@ generate({
     think: "high"
 }) -> {
     decision
-    tradeoffs list[string]
-    risks list[string]
+    tradeoffs: list[string]
+    risks: list[string]
 }
 ```
 
@@ -321,7 +324,7 @@ unsupported provider hints default to warn in debug mode and ignore otherwise
 
 ## `strict`
 
-`strict` controls output shape validation.
+`strict` controls output contract validation.
 
 ```agentscript
 generate({
@@ -330,7 +333,7 @@ generate({
     strict: true
 }) -> {
     category
-    confidence number
+    confidence: number
 }
 ```
 
@@ -368,7 +371,7 @@ coercion is forbidden
 required fields must exist
 field types must match exactly
 extra fields are rejected
-shape mismatch triggers retry if attempts > 1
+contract mismatch triggers retry if attempts > 1
 ```
 
 In one sentence:
@@ -400,7 +403,7 @@ selected context entries
 context labels
 budgets
 rendered prompt/messages
-output shape
+output contract
 raw model output
 validation result
 ```
@@ -451,7 +454,7 @@ Trace answers:
 - What selected context was visible?
 - Which context items were clipped?
 - What provider hints and runtime behavior were requested?
-- What shape was requested?
+- What contract was requested?
 - How many attempts were needed?
 - What validation mode was used?
 - What value was returned?

@@ -16,7 +16,7 @@ describe("generate validation", () => {
 
         main func act(input) {
           return generate({ input: "answer", attempts: 0 }) -> {
-              ok boolean
+              ok: boolean
           }
         }
       }
@@ -25,7 +25,7 @@ describe("generate validation", () => {
     await expect(executeAgent(ast, {})).rejects.toThrow(/generate attempts must be a positive integer/);
   });
 
-  it("rejects LLM results that do not match generate return shape", async () => {
+  it("rejects LLM results that do not match generate return contract", async () => {
     const ast = parse(`
       import llm Qwen from "openai://gpt-4.1-mini"
 
@@ -36,7 +36,7 @@ describe("generate validation", () => {
 
         main func(input) {
           return generate({ input: "x" }) -> {
-              ok boolean
+              ok: boolean
           }
         }
       }
@@ -57,7 +57,7 @@ describe("generate validation", () => {
     ).rejects.toThrow(RuntimeError);
   });
 
-  it("coerces simple string values in LLM generate results before shape validation", async () => {
+  it("coerces simple string values in LLM generate results before contract validation", async () => {
     const ast = parse(`
       import llm Qwen from "openai://gpt-4.1-mini"
 
@@ -68,11 +68,11 @@ describe("generate validation", () => {
 
         main func(input) {
           return generate({ input: "x" }) -> {
-              ok boolean
-              count number
-              flags list[boolean]
-              scores list[number]
-              text string
+              ok: boolean
+              count: number
+              flags: list[boolean]
+              scores: list[number]
+              text: string
           }
         }
       }
@@ -105,7 +105,7 @@ describe("generate validation", () => {
     });
   });
 
-  it("builds empty mock defaults for list shape fields", async () => {
+  it("builds empty mock defaults for list contract fields", async () => {
     const ast = parse(`
       import llm Qwen from "openai://gpt-4.1-mini"
 
@@ -116,8 +116,8 @@ describe("generate validation", () => {
 
         main func(input) {
           return generate({ input: "x" }) -> {
-              title string
-              tags list[string]
+              title: string
+              tags: list[string]
           }
         }
       }
@@ -141,7 +141,7 @@ describe("generate validation", () => {
 
         main func(input) {
           return generate({ input: "x", strict: true }) -> {
-              ok boolean
+              ok: boolean
           }
         }
       }

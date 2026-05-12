@@ -6,7 +6,7 @@ main agent StructuredGenerateExample {
     description "Classify one short request into a structured result."
 
     main func(input {
-        request string
+        request: string
     }) {
         generate({ input: "Classify the user request", max_output: 300 }) -> {
             category

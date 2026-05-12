@@ -7,7 +7,7 @@ main agent Learner {
     description "Use explicit memory to improve future answers."
 
     main func(input {
-        goal string
+        goal: string
     }) {
         past = Lessons.query({
             text: input.goal,
@@ -22,9 +22,9 @@ main agent Learner {
             input: "Answer the goal using relevant past lessons.",
             attempts: 2
         }) -> {
-            ok boolean
-            answer string
-            reason string
+            ok: boolean
+            answer: string
+            reason: string
         }
 
         reflection = reflect({
@@ -53,7 +53,7 @@ main agent Learner {
             input: "Extract one reusable lesson from this run.",
             attempts: 2
         }) -> {
-            insight string
+            insight: string
         }
     }
 }

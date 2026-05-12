@@ -17,7 +17,7 @@ describe("MCP stdio tools", () => {
       import tool Echo from "mcp://echo"
 
       main agent A {
-        main func(input { text string }) {
+        main func(input { text: string }) {
           return Echo.call({
             tool: "echo",
             args: {
@@ -58,7 +58,7 @@ describe("MCP stdio tools", () => {
       import tool Echo from "mcp://echo"
 
       main agent A {
-        main func(input { text string }) {
+        main func(input { text: string }) {
           return Echo.echo({
             text: input.text
           }).text
@@ -77,7 +77,7 @@ describe("MCP stdio tools", () => {
       import tool Search from "mcp://echo"
 
       main agent A {
-        main func(input { query string }) {
+        main func(input { query: string }) {
           return Search.call({
             tool: "web-search",
             args: {

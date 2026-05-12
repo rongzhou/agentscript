@@ -13,7 +13,7 @@ import {
 import { isLlmBinding } from "./guards.js";
 import { budgetToJson } from "./json.js";
 import type { RuntimeScope } from "./scope.js";
-import { coerceValueToShape, validateValueAgainstShape } from "./shape.js";
+import { coerceValueToContract, validateValueAgainstContract } from "./contract.js";
 import { buildTraceEvent } from "./trace-event.js";
 import {
   type ContextUse,
@@ -122,7 +122,7 @@ export class GenerateRuntime {
       model: environment.model,
       identity: environment.identity,
       instruction: repair ? appendGenerateRepair(options.input, repair) : options.input,
-      returnShape: expr.returnShape,
+      returnContract: expr.returnContract,
       uses: environment.context,
       maxOutput: options.maxOutput,
     });
@@ -164,13 +164,14 @@ export class GenerateRuntime {
     errors: string[],
   ): GenerateAttemptResult {
     try {
-      const result = expr.returnShape && !options.strict ? coerceValueToShape(rawResult, expr.returnShape) : rawResult;
-      if (expr.returnShape) {
-        validateValueAgainstShape(result, expr.returnShape, expr.range, { rejectExtraFields: options.strict });
+      const result =
+        expr.returnContract && !options.strict ? coerceValueToContract(rawResult, expr.returnContract) : rawResult;
+      if (expr.returnContract) {
+        validateValueAgainstContract(result, expr.returnContract, expr.range, { rejectExtraFields: options.strict });
       }
       this.recordGenerateTrace(options, builtContext, {
         attempts: attempt,
-        validation: expr.returnShape ? { ok: true, strict: options.strict } : null,
+        validation: expr.returnContract ? { ok: true, strict: options.strict } : null,
         result,
         ok: true,
         errors,
@@ -181,7 +182,7 @@ export class GenerateRuntime {
       if (attempt >= options.attempts) {
         this.recordGenerateTrace(options, builtContext, {
           attempts: attempt,
-          validation: expr.returnShape ? { ok: false, strict: options.strict } : null,
+          validation: expr.returnContract ? { ok: false, strict: options.strict } : null,
           result: rawResult,
           ok: false,
           error: message,

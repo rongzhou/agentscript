@@ -57,7 +57,7 @@ export interface FuncDecl extends NodeBase {
 export interface FuncParam extends NodeBase {
   kind: "FuncParam";
   name: string;
-  shape?: ShapeObjectExpr;
+  contract?: ContractObjectExpr;
 }
 
 export type Stmt =
@@ -136,7 +136,7 @@ export type Expr =
   | NullExpr
   | ListExpr
   | ObjectExpr
-  | ShapeObjectExpr
+  | ContractObjectExpr
   | MemberExpr
   | IndexExpr
   | CallExpr
@@ -186,29 +186,29 @@ export interface ObjectProperty extends NodeBase {
   value: Expr;
 }
 
-export interface ShapeObjectExpr extends NodeBase {
-  kind: "ShapeObjectExpr";
-  fields: ShapeField[];
+export interface ContractObjectExpr extends NodeBase {
+  kind: "ContractObjectExpr";
+  fields: ContractField[];
 }
 
-export interface ShapeField extends NodeBase {
-  kind: "ShapeField";
+export interface ContractField extends NodeBase {
+  kind: "ContractField";
   name: string;
-  type: ShapeTypeExpr;
+  type: ContractTypeExpr;
 }
 
-export type NamedShapeTypeName = "string" | "number" | "boolean" | "json" | "list";
+export type ContractTypeName = "string" | "number" | "boolean" | "json" | "list";
 
-export type ShapeTypeExpr = NamedShapeType | ListShapeType;
+export type ContractTypeExpr = NamedContractType | ListContractType;
 
-export interface NamedShapeType extends NodeBase {
-  kind: "NamedShapeType";
-  name: NamedShapeTypeName;
+export interface NamedContractType extends NodeBase {
+  kind: "NamedContractType";
+  name: ContractTypeName;
 }
 
-export interface ListShapeType extends NodeBase {
-  kind: "ListShapeType";
-  itemType: ShapeTypeExpr;
+export interface ListContractType extends NodeBase {
+  kind: "ListContractType";
+  itemType: ContractTypeExpr;
 }
 
 export interface MemberExpr extends NodeBase {
@@ -245,7 +245,7 @@ export interface BinaryExpr extends NodeBase {
 export interface GenerateExpr extends NodeBase {
   kind: "GenerateExpr";
   options: GenerateOptionsExpr;
-  returnShape?: ShapeObjectExpr;
+  returnContract?: ContractObjectExpr;
 }
 
 export interface ParallelForExpr extends NodeBase {

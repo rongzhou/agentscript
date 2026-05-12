@@ -7,7 +7,7 @@ main agent SelfImprover {
     description "Read relevant lessons, answer the goal, then store a new lesson."
 
     main func(input {
-        goal string
+        goal: string
     }) {
         past = Lessons.query({
             kind: "lesson",
@@ -22,7 +22,7 @@ main agent SelfImprover {
             input: "Answer the goal using any relevant lessons.",
             attempts: 3
         }) -> {
-            ok boolean
+            ok: boolean
             answer
             reason
         }

@@ -17,7 +17,7 @@
 
 - [`use ... as ...`](./use-as.md)：prompt context 选择、label、budget、scope 可见性、延迟求值和 trace。
 - [`generate`](./generate.md)：generation site、prompt 构造、agent identity、输出契约、provider hint、校验、重试和 trace。
-- [`generate` 输出 Shape 中的默认 String 字段](./generate-default-string-fields.md)：`generate` 输出契约中 string 字段的简写规则。
+- [Contract block 中的 label-only 字段](./generate-default-string-fields.md)：`generate` 输出 contract 中基于 default value 的简写规则。
 - [`parallel for`](./parallel-for.md)：面向独立有界 list 工作的结构化并行。
 - [Final Expression Return](./final-expression-return.md)：函数体最后一个顶层表达式的隐式返回规则。
 - [npm 和 node tools](./npm-tools.md)：在 AgentScript 中调用 npm 包和 Node 内置模块。
@@ -35,11 +35,11 @@ main agent Assistant {
     description "Answer with structured JSON."
 
     main func(input {
-        question string
+        question: string
     }) {
         use input.question
         generate({ input: "Answer the question" }) -> {
-            ok boolean
+            ok: boolean
             answer
         }
     }
@@ -143,27 +143,36 @@ func careful(input) {
 }
 ```
 
-## 值和 Shape
+## 值和 Contract Block
 
 运行时值以 JSON 为核心：
 
 - `string`、`number`、`boolean`、`none`
 - `list`、`object`
 
-Shape 用于输入校验和 `generate` 输出校验：
+Contract block 用于描述结构化入口输入和结构化 `generate` 输出：
 
 ```agentscript
+main func(input {
+    question: string
+    max_results: number
+}) {
+    ...
+}
+
 generate({ input: "Extract facts" }) -> {
-    ok boolean
+    ok: boolean
     title
-    items list[json]
-    meta json
+    items: list[json]
+    meta: json
 }
 ```
 
-支持的 shape 类型：`string`、`number`、`boolean`、`json`、`list`、`list[T]`（T 为任意支持的类型）。
+Contract 字段使用换行分隔的 `label: value` 条目。字段之间不允许逗号。Label-only 字段表示 `label: default_value`；default value 由 contract 的使用位置定义。`generate` 输出 contract 将 label-only 字段默认为 `string`，所以 `title` 等价于 `title: string`。Input contract 没有定义 default value，必须显式写作 `label: value`。
 
-Shape 不是完整的静态类型系统。
+支持的 contract 类型：`string`、`number`、`boolean`、`json`、`list`、`list[T]`（T 为任意支持的类型）。
+
+Contract block 只出现在语言期待 contract 的位置：函数 input 参数和 `generate(...) -> { ... }` 输出契约。`generate({ ... })` 的参数本身是 JSON-like options object，不是 contract block。Contract block 不是对象字面量，也不是完整的静态类型系统。
 
 对象字面量使用 JSON-like 语法：字段写作 `key: value`，多字段之间必须用逗号分隔。
 
@@ -229,7 +238,7 @@ use one of {
 
 ## Generate
 
-`generate` 调用当前模型，需要 `input` 指令。返回 shape 是可选的。
+`generate` 调用当前模型，需要 `input` 指令。返回 contract 是可选的。
 
 ```agentscript
 answer = generate({
@@ -238,7 +247,7 @@ answer = generate({
     attempts: 3,
     debug: true
 }) -> {
-    ok boolean
+    ok: boolean
     answer
     reason
 }
@@ -248,15 +257,15 @@ answer = generate({
 
 - `input`：每次生成的指令。必填。
 - `max_output`：输出生成预算（数字或 `2k` 格式）。可选。
-- `attempts`：JSON 解析失败或 shape 不匹配时的尝试次数。它是包含第一次调用在内的最大总尝试次数。可选，默认 1。
+- `attempts`：JSON 解析失败或 contract 不匹配时的尝试次数。它是包含第一次调用在内的最大总尝试次数。可选，默认 1。
 - `temperature`：provider sampling hint。可选。不支持的 provider hint 默认在 debug mode 下 warn，否则 ignore。
 - `think`：provider/model reasoning hint。可选。不支持的 provider hint 默认在 debug mode 下 warn，否则 ignore。
-- `strict`：控制 shape validation 是否严格。可选，默认 false。
+- `strict`：控制 contract validation 是否严格。可选，默认 false。
 - `debug`：将完整 prompt 打印到 stderr。可选，默认 false。
-- 可选的 `-> { ... }` 块声明期望的输出 shape。
-- 不写 `-> { ... }` 时，`generate` 输出无约束：AgentScript 不会在 prompt 中加入返回 schema，不会要求 provider 使用结构化输出，也不会对返回值做类型强制转换或 shape 校验。自由形式的 `generate` 是允许的，但不推荐用于 agent workflow。
+- 可选的 `-> { ... }` 块声明期望的输出 contract。
+- 不写 `-> { ... }` 时，`generate` 输出无约束：AgentScript 不会在 prompt 中加入返回 schema，不会要求 provider 使用结构化输出，也不会对返回值做类型强制转换或 contract 校验。自由形式的 `generate` 是允许的，但不推荐用于 agent workflow。
 - Provider 错误（认证、网络、超时、模型不存在）直接失败，不做重试。
-- Shape 校验包含类型强制转换（如 `"true"` -> `true`，`"42"` -> `42`）。
+- Contract 校验包含类型强制转换（如 `"true"` -> `true`，`"42"` -> `42`）。
 
 Prompt 构造、identity、retry 和 trace 语义见 [`generate`](./generate.md)。
 
@@ -502,7 +511,7 @@ agent Assistant {
         use Requirements max 4k
         use Config
         generate({ input: "Answer from the referenced file." }) -> {
-            ok boolean
+            ok: boolean
             answer
         }
     }

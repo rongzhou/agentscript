@@ -7,8 +7,8 @@ main agent MarkdownTranslator {
     description "Find markdown files and prepare a batch translation plan."
 
     main func(input {
-        path string
-        target_language string
+        path: string
+        target_language: string
     }) {
         files = Find.run({
             path: input.path,
@@ -23,8 +23,8 @@ main agent MarkdownTranslator {
 
         generate({ input: "Create a practical markdown translation plan", max_output: 1000 }) -> {
             target_language
-            files list[string]
-            glossary_notes list[string]
+            files: list[string]
+            glossary_notes: list[string]
             instructions
         }
     }

@@ -1,7 +1,7 @@
-import type { Budget, ShapeObjectExpr } from "../ast/types.js";
+import type { Budget, ContractObjectExpr } from "../ast/types.js";
 import { clipJson } from "./context-clip.js";
 import { renderJson } from "./context-render.js";
-import { shapeToSchema } from "./context-schema.js";
+import { contractToSchema } from "./contract-schema.js";
 import { budgetToJson, sanitizeForJson } from "./json.js";
 import type { ContextUse, JsonObject, JsonValue, LlmBinding, RuntimeValue } from "./types.js";
 
@@ -10,7 +10,7 @@ export interface ContextBuildInput {
   model?: LlmBinding;
   identity: JsonObject;
   instruction: RuntimeValue;
-  returnShape?: ShapeObjectExpr;
+  returnContract?: ContractObjectExpr;
   uses: ContextUse[];
   maxOutput?: Budget;
 }
@@ -43,7 +43,7 @@ export function buildContext(input: ContextBuildInput): BuiltContext {
   const instruction = sanitizeForJson(input.instruction);
   const instructionText = renderJson(instruction);
   const system = buildSystemPrompt(input.agentName, input.identity);
-  const returnSchema = input.returnShape ? shapeToSchema(input.returnShape) : undefined;
+  const returnSchema = input.returnContract ? contractToSchema(input.returnContract) : undefined;
 
   return {
     agentName: input.agentName,

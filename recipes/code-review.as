@@ -7,7 +7,7 @@ main agent CodeReviewAssistant {
     description "Scan TODO and FIXME markers and return concrete review actions."
 
     main func(input {
-        path string
+        path: string
     }) {
         findings = parallel for marker in ["TODO", "FIXME"] max 2 {
             Grep.run({
@@ -24,9 +24,9 @@ main agent CodeReviewAssistant {
 
         generate({ input: "Turn TODO and FIXME scan results into prioritized repair suggestions", max_output: 1200 }) -> {
             summary
-            findings list[string]
-            suggested_fixes list[string]
-            next_steps list[string]
+            findings: list[string]
+            suggested_fixes: list[string]
+            next_steps: list[string]
         }
     }
 }

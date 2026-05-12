@@ -3,7 +3,6 @@ export const SQLITE_SCHEME = "sqlite";
 export const NPM_SCHEME = "npm";
 export const NODE_SCHEME = "node";
 export const MCP_SCHEME = "mcp";
-export const HOST_SCHEME = "host";
 export const ENV_SCHEME = "env";
 export const HTTP_SCHEME = "http";
 export const HTTPS_SCHEME = "https";

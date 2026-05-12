@@ -1,25 +1,18 @@
 import type { AgentDecl, ConfigDecl, Expr, GenerateExpr, Program, SourceRange, Stmt } from "../ast/types.js";
-import { childExpressions } from "../ast/walk.js";
 import { REQUIRED_GENERATE_CONFIG_KEYS } from "../language/config.js";
 import type { NpmRegistry } from "../providers/tools/npm-registry.js";
 import { createAgentScope, createFunctionScope, defineAgentFunctions } from "./agents.js";
-import { checkAssignmentStatement } from "./assignment.js";
-import { checkCallExpression } from "./calls.js";
-import { checkConfigDeclaration, checkGenerateRequiredConfig } from "./config.js";
-import {
-  checkForInStatement,
-  checkIfStatement,
-  checkLoopUntilStatement,
-  checkRepeatStatement,
-} from "./control-flow.js";
+import { collectAssignmentDiagnostics } from "./assignment.js";
+import { collectCallDiagnostics } from "./calls.js";
+import { collectConfigDiagnostics, collectGenerateRequiredConfigDiagnostics } from "./config.js";
 import { SemanticError, errorDiagnostic, type SemanticDiagnostic, type SemanticResult } from "./diagnostics.js";
-import { checkGenerateOptions } from "./generate.js";
-import { blockEndsWithExpression, checkParallelForBodyRules } from "./parallel-for.js";
+import { collectGenerateOptionDiagnostics } from "./generate.js";
+import { collectParallelForDiagnostics } from "./parallel-for.js";
 import { collectProgramDeclarations, type ImportBindingDecl } from "./program.js";
-import { checkShapeObject } from "./shape.js";
+import { collectShapeDiagnostics } from "./shape.js";
 import { SemanticScope } from "./scope.js";
-import { checkAgentUse, checkFunctionUse } from "./use.js";
-import { scopeWithItemBinding } from "./walker.js";
+import { collectAgentUseDiagnostics, collectFunctionUseDiagnostics } from "./use.js";
+import { walkExpressionInScope, walkStatementsInScope } from "./walker.js";
 
 export interface AnalyzeOptions {
   npmRegistry?: NpmRegistry;
@@ -81,142 +74,93 @@ class Analyzer {
   private checkFunction(fn: AgentDecl["functions"][number], agentScope: SemanticScope): void {
     const { scope, diagnostics } = createFunctionScope(fn, agentScope);
     this.diagnostics.push(...diagnostics);
-
-    for (const stmt of fn.body) {
-      this.checkStatement(stmt, scope);
-    }
+    this.checkStatements(fn.body, scope);
   }
 
-  private checkStatement(stmt: Stmt, scope: SemanticScope): void {
-    switch (stmt.kind) {
-      case "ConfigDecl":
-        this.checkConfig(stmt, scope);
-        break;
-      case "UseStmt":
-        this.checkFunctionUseStatement(stmt, scope);
-        break;
-      case "AssignStmt":
-        this.diagnostics.push(
-          ...checkAssignmentStatement(stmt, scope, {
-            checkExpression: (expr, currentScope) => this.checkExpression(expr, currentScope),
-          }),
-        );
-        break;
-      case "ExprStmt":
-        this.checkExpression(stmt.expr, scope);
-        break;
-      case "IfStmt":
-        this.diagnostics.push(
-          ...checkIfStatement(stmt, scope, {
-            checkBlock: (statements, currentScope) => this.checkBlock(statements, currentScope),
-            checkExpression: (expr, currentScope) => this.checkExpression(expr, currentScope),
-          }),
-        );
-        break;
-      case "ForInStmt":
-        this.diagnostics.push(
-          ...checkForInStatement(stmt, scope, {
-            checkBlock: (statements, currentScope) => this.checkBlock(statements, currentScope),
-            checkExpression: (expr, currentScope) => this.checkExpression(expr, currentScope),
-          }),
-        );
-        break;
-      case "LoopUntilStmt":
-        this.diagnostics.push(
-          ...checkLoopUntilStatement(stmt, scope, {
-            checkBlock: (statements, currentScope) => this.checkBlock(statements, currentScope),
-            checkExpression: (expr, currentScope) => this.checkExpression(expr, currentScope),
-          }),
-        );
-        break;
-      case "RepeatStmt":
-        this.diagnostics.push(
-          ...checkRepeatStatement(stmt, scope, {
-            checkBlock: (statements, currentScope) => this.checkBlock(statements, currentScope),
-            checkExpression: (expr, currentScope) => this.checkExpression(expr, currentScope),
-          }),
-        );
-        break;
-      case "ReturnStmt":
-        this.checkExpression(stmt.value, scope);
-        break;
-    }
+  private checkStatements(statements: Stmt[], scope: SemanticScope): void {
+    walkStatementsInScope(statements, scope, {
+      afterStatement: (stmt, currentScope) => this.checkStatementAfterChildren(stmt, currentScope),
+      enterStatement: (stmt, currentScope) => this.checkStatementRules(stmt, currentScope),
+      enterExpression: (expr, currentScope) => this.checkExpressionRules(expr, currentScope),
+    });
   }
 
   private checkConfig(config: ConfigDecl, scope: SemanticScope): void {
-    this.diagnostics.push(...checkConfigDeclaration(config, scope));
+    this.diagnostics.push(...collectConfigDiagnostics(config, scope));
   }
 
   private checkAgentUseStatement(stmt: Extract<Stmt, { kind: "UseStmt" }>, scope: SemanticScope): void {
     this.checkExpression(stmt.value, scope);
-    this.diagnostics.push(...checkAgentUse(stmt, scope));
+    this.diagnostics.push(...collectAgentUseDiagnostics(stmt, scope));
   }
 
   private checkFunctionUseStatement(stmt: Extract<Stmt, { kind: "UseStmt" }>, scope: SemanticScope): void {
-    this.checkExpression(stmt.value, scope);
-    this.diagnostics.push(...checkFunctionUse(stmt, scope));
+    this.diagnostics.push(...collectFunctionUseDiagnostics(stmt, scope));
   }
 
-  private checkBlock(statements: Stmt[], scope: SemanticScope): void {
-    for (const stmt of statements) {
-      this.checkStatement(stmt, scope);
+  private checkStatementRules(stmt: Stmt, scope: SemanticScope): false | void {
+    switch (stmt.kind) {
+      case "ConfigDecl":
+        this.checkConfig(stmt, scope);
+        return false;
+      case "UseStmt":
+        this.checkFunctionUseStatement(stmt, scope);
+        return;
+      case "ForInStmt":
+        if (stmt.maxIterations <= 0) {
+          this.error("INVALID_ITERATION_LIMIT", "For iteration count must be greater than 0", stmt.range);
+        }
+        return;
+      case "IfStmt":
+      case "AssignStmt":
+      case "ExprStmt":
+      case "LoopUntilStmt":
+      case "RepeatStmt":
+      case "ReturnStmt":
+        return;
+    }
+  }
+
+  private checkStatementAfterChildren(stmt: Stmt, scope: SemanticScope): void {
+    if (stmt.kind === "AssignStmt") {
+      this.diagnostics.push(...collectAssignmentDiagnostics(stmt, scope));
     }
   }
 
   private checkExpression(expr: Expr, scope: SemanticScope): void {
+    walkExpressionInScope(expr, scope, {
+      enterExpression: (nestedExpr, currentScope) => this.checkExpressionRules(nestedExpr, currentScope),
+    });
+  }
+
+  private checkExpressionRules(expr: Expr, scope: SemanticScope): false | void {
     switch (expr.kind) {
       case "IdentifierExpr":
         this.checkIdentifier(expr.name, expr.range, scope);
-        break;
-      case "StringExpr":
-      case "NumberExpr":
-      case "BooleanExpr":
-      case "NullExpr":
-        break;
+        return;
+      case "ShapeObjectExpr":
+        this.diagnostics.push(...collectShapeDiagnostics(expr));
+        return;
+      case "CallExpr":
+        this.diagnostics.push(...collectCallDiagnostics(expr, scope, this.agentDecls));
+        return;
+      case "GenerateExpr":
+        this.checkGenerate(expr, scope);
+        return;
+      case "ParallelForExpr":
+        this.diagnostics.push(...collectParallelForDiagnostics(expr, scope));
+        return;
       case "MemberExpr":
       case "IndexExpr":
       case "ListExpr":
       case "ObjectExpr":
       case "UnaryExpr":
       case "BinaryExpr":
-        for (const child of childExpressions(expr)) {
-          this.checkExpression(child, scope);
-        }
-        break;
-      case "ShapeObjectExpr":
-        this.diagnostics.push(...checkShapeObject(expr));
-        break;
-      case "CallExpr":
-        this.diagnostics.push(
-          ...checkCallExpression(expr, scope, this.agentDecls, {
-            checkExpression: (nestedExpr, nestedScope) => this.checkExpression(nestedExpr, nestedScope),
-          }),
-        );
-        break;
-      case "GenerateExpr":
-        this.checkGenerate(expr, scope);
-        break;
-      case "ParallelForExpr":
-        this.checkParallelFor(expr, scope);
-        break;
-    }
-  }
-
-  private checkParallelFor(expr: Extract<Expr, { kind: "ParallelForExpr" }>, scope: SemanticScope): void {
-    this.checkExpression(expr.iterable, scope);
-    if (expr.maxIterations <= 0) {
-      this.error("INVALID_PARALLEL_FOR_LIMIT", "parallel for item count must be greater than 0", expr.range);
-    }
-    if (!blockEndsWithExpression(expr.body)) {
-      this.error("INVALID_PARALLEL_FOR_BODY", "parallel for body must end with a value expression", expr.range);
-    }
-    this.checkParallelForBody(expr.body, scopeWithItemBinding(scope, expr.item));
-  }
-
-  private checkParallelForBody(statements: Stmt[], scope: SemanticScope): void {
-    this.diagnostics.push(...checkParallelForBodyRules(statements, scope));
-    for (const stmt of statements) {
-      this.checkStatement(stmt, scope);
+      case "StringExpr":
+      case "NumberExpr":
+      case "BooleanExpr":
+      case "NullExpr":
+        return;
     }
   }
 
@@ -227,15 +171,12 @@ class Analyzer {
   }
 
   private checkGenerate(expr: GenerateExpr, scope: SemanticScope): void {
-    for (const property of expr.options.properties) {
-      this.checkExpression(property.value, scope);
-    }
-    this.diagnostics.push(...checkGenerateOptions(expr));
+    this.diagnostics.push(...collectGenerateOptionDiagnostics(expr));
     if (expr.returnShape) {
-      this.diagnostics.push(...checkShapeObject(expr.returnShape));
+      this.diagnostics.push(...collectShapeDiagnostics(expr.returnShape));
     }
     for (const key of REQUIRED_GENERATE_CONFIG_KEYS) {
-      this.diagnostics.push(...checkGenerateRequiredConfig(key, expr, scope));
+      this.diagnostics.push(...collectGenerateRequiredConfigDiagnostics(key, expr, scope));
     }
   }
 

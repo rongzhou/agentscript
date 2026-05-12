@@ -119,7 +119,7 @@ function memoryTraceData(object: MemoryBinding, method: MemoryMethod, arg: Runti
   return traceData;
 }
 
-export function isModuleTool(value: ToolBinding): boolean {
+function isModuleTool(value: ToolBinding): boolean {
   const scheme = uriScheme(value.uri);
   return scheme === NPM_SCHEME || scheme === NODE_SCHEME;
 }

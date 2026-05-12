@@ -1,7 +1,7 @@
 import type { AgentDecl, FuncDecl, Program } from "../ast/types.js";
 import { errorDiagnostic, type SemanticDiagnostic } from "./diagnostics.js";
 import type { ImportBindingDecl } from "./program.js";
-import { checkShapeObject } from "./shape.js";
+import { collectShapeDiagnostics } from "./shape.js";
 import { SemanticScope, functionBinding, isImportedBinding } from "./scope.js";
 
 export function createAgentScope(program: Program, importBindings: Map<string, ImportBindingDecl>): SemanticScope {
@@ -122,7 +122,7 @@ export function createFunctionScope(
           ),
         );
       }
-      diagnostics.push(...checkShapeObject(param.shape));
+      diagnostics.push(...collectShapeDiagnostics(param.shape));
     }
   }
 

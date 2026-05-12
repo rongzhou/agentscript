@@ -33,8 +33,6 @@ export interface BuiltContext {
   identity: JsonObject;
   system: string;
   context: BuiltContextItem[];
-  instruction: JsonValue;
-  instructionText: string;
   returnSchema?: JsonObject;
   maxOutput?: Budget;
   finalUserMessage: string;
@@ -53,8 +51,6 @@ export function buildContext(input: ContextBuildInput): BuiltContext {
     identity: input.identity,
     system,
     context,
-    instruction,
-    instructionText,
     returnSchema,
     maxOutput: input.maxOutput,
     finalUserMessage: buildFinalUserMessage(context, instructionText, returnSchema),

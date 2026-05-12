@@ -63,9 +63,12 @@ export class SqliteMemoryBackend {
         ${needPostFilter ? "" : "LIMIT ?"}
       `;
     const sqlParams = needPostFilter ? params : [...params, limit];
-    const rows = db.prepare(sql).all(...sqlParams) as unknown as SqliteMemoryRow[];
+    const rows = db
+      .prepare(sql)
+      .all(...sqlParams)
+      .map(readSqliteMemoryRow);
 
-    const records = rows.map((row) => rowToEnvelope(row)).filter((item) => matchesQuery(item.record, query));
+    const records = rows.map(rowToEnvelope).filter((item) => matchesQuery(item.record, query));
 
     return records.slice(0, limit);
   }
@@ -102,6 +105,27 @@ function openSqlite(path: string): DatabaseSync {
     )
   `);
   return db;
+}
+
+function readSqliteMemoryRow(value: unknown): SqliteMemoryRow {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    throw new RuntimeError("Invalid sqlite memory row: expected an object");
+  }
+  const row = value as Record<string, unknown>;
+  if (
+    typeof row.id !== "string" ||
+    typeof row.created_at !== "string" ||
+    typeof row.updated_at !== "string" ||
+    typeof row.record_json !== "string"
+  ) {
+    throw new RuntimeError("Invalid sqlite memory row: expected string id, timestamps, and record_json");
+  }
+  return {
+    id: row.id,
+    created_at: row.created_at,
+    updated_at: row.updated_at,
+    record_json: row.record_json,
+  };
 }
 
 function rowToEnvelope(row: SqliteMemoryRow): MemoryEnvelope {

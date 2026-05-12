@@ -2,7 +2,7 @@ import type { NamedShapeType, ShapeObjectExpr, ShapeTypeExpr } from "../ast/type
 import { isShapeTypeName } from "../language/shape.js";
 import { errorDiagnostic as error, type SemanticDiagnostic } from "./diagnostics.js";
 
-export function checkShapeObject(shape: ShapeObjectExpr): SemanticDiagnostic[] {
+export function collectShapeDiagnostics(shape: ShapeObjectExpr): SemanticDiagnostic[] {
   const diagnostics: SemanticDiagnostic[] = [];
   const fields = new Set<string>();
 
@@ -11,20 +11,20 @@ export function checkShapeObject(shape: ShapeObjectExpr): SemanticDiagnostic[] {
       diagnostics.push(error("DUPLICATE_SHAPE_FIELD", `Duplicate shape field '${field.name}'`, field.range));
     }
     fields.add(field.name);
-    diagnostics.push(...checkShapeType(field.type));
+    diagnostics.push(...collectShapeTypeDiagnostics(field.type));
   }
 
   return diagnostics;
 }
 
-function checkShapeType(type: ShapeTypeExpr): SemanticDiagnostic[] {
+function collectShapeTypeDiagnostics(type: ShapeTypeExpr): SemanticDiagnostic[] {
   if (type.kind === "ListShapeType") {
-    return checkShapeType(type.itemType);
+    return collectShapeTypeDiagnostics(type.itemType);
   }
-  return checkNamedShapeType(type);
+  return collectNamedShapeTypeDiagnostics(type);
 }
 
-function checkNamedShapeType(type: NamedShapeType): SemanticDiagnostic[] {
+function collectNamedShapeTypeDiagnostics(type: NamedShapeType): SemanticDiagnostic[] {
   if (!isShapeTypeName(type.name)) {
     return [error("UNKNOWN_SHAPE_TYPE", `Unsupported shape type '${type.name}'`, type.range)];
   }

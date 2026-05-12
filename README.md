@@ -347,6 +347,17 @@ Enable the capability in `agentscript.npm.json`:
 See [npm and node tools](docs/en/npm-tools.md) for registry, marshalling, and
 safety rules.
 
+## TypeScript API
+
+The package root exports only stable runtime entry points. Public types that are
+useful for embedding are exposed through explicit subpaths:
+
+```ts
+import { executeAgent, parse } from "@rong/agentscript";
+import type { ExecuteOptions, RuntimeValue } from "@rong/agentscript/runtime/types";
+import type { Program } from "@rong/agentscript/ast/types";
+```
+
 ## Why not just Python or TypeScript?
 
 | | Python / TypeScript | AgentScript |

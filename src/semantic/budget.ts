@@ -1,14 +1,14 @@
 import type { Budget, SourceRange } from "../ast/types.js";
 import { errorDiagnostic as error, type SemanticDiagnostic } from "./diagnostics.js";
 
-export interface BudgetDiagnosticOptions {
+interface BudgetDiagnosticOptions {
   invalidAmountCode?: string;
   invalidAmountMessage?: string;
   invalidUnitCode?: string;
   invalidUnitMessage?: string;
 }
 
-export function checkBudget(
+export function collectBudgetDiagnostics(
   budget: Budget | undefined,
   range: SourceRange,
   options: BudgetDiagnosticOptions = {},

@@ -1,19 +1,10 @@
-import type { AssignStmt, Expr, SourceRange } from "../ast/types.js";
+import type { AssignStmt, SourceRange } from "../ast/types.js";
 import { MUTABLE_BINDING_KINDS } from "../language/bindings.js";
 import { errorDiagnostic, type SemanticDiagnostic } from "./diagnostics.js";
 import type { SemanticScope } from "./scope.js";
 
-export interface AssignmentCheckHost {
-  checkExpression(expr: Expr, scope: SemanticScope): void;
-}
-
-export function checkAssignmentStatement(
-  stmt: AssignStmt,
-  scope: SemanticScope,
-  host: AssignmentCheckHost,
-): SemanticDiagnostic[] {
+export function collectAssignmentDiagnostics(stmt: AssignStmt, scope: SemanticScope): SemanticDiagnostic[] {
   const diagnostics: SemanticDiagnostic[] = [];
-  host.checkExpression(stmt.value, scope);
 
   if (stmt.target.kind === "IdentifierExpr") {
     const existing = scope.resolve(stmt.target.name);
@@ -34,7 +25,6 @@ export function checkAssignmentStatement(
   }
 
   if (stmt.target.kind === "MemberExpr") {
-    host.checkExpression(stmt.target.object, scope);
     return diagnostics;
   }
 

@@ -1,17 +1,16 @@
 import type { Budget, Expr, GenerateExpr } from "../ast/types.js";
 import {
-  findGenerateProperty,
-  isBooleanExpression,
-  isGenerateThinkExpression,
-  isNumberExpression,
-  readGenerateProperty,
+  findGenerateInputProperty,
+  readGenerateBooleanProperty,
+  readGenerateNumberProperty,
+  readGenerateThinkProperty,
   requiredGenerateOptionDefault,
 } from "../language/generate-options.js";
 import { RuntimeError } from "./errors.js";
 import type { RuntimeScope } from "./scope.js";
 import type { RuntimeValue } from "./types.js";
 
-export interface GenerateOptionsHost {
+interface GenerateOptionsHost {
   evaluate(expr: Expr, scope: RuntimeScope): Promise<RuntimeValue>;
 }
 
@@ -30,11 +29,11 @@ export async function parseGenerateOptions(
   scope: RuntimeScope,
   host: GenerateOptionsHost,
 ): Promise<GenerateOptions> {
-  const inputProperty = findGenerateProperty(expr.options, "input");
+  const inputProperty = findGenerateInputProperty(expr.options);
   if (!inputProperty) {
     throw new RuntimeError("generate object argument requires an input field", expr.options.range);
   }
-  const attemptsExpr = readGenerateProperty(expr.options, "attempts", isNumberExpression);
+  const attemptsExpr = readGenerateNumberProperty(expr.options, "attempts");
   const attempts = attemptsExpr?.value ?? requiredGenerateOptionDefault<number>("attempts");
   if (!Number.isInteger(attempts) || attempts <= 0) {
     throw new RuntimeError("generate attempts must be a positive integer", attemptsExpr?.range ?? expr.options.range);
@@ -43,13 +42,10 @@ export async function parseGenerateOptions(
     input: await host.evaluate(inputProperty.value, scope),
     attempts,
     maxOutput: expr.options.maxOutput,
-    temperature: readGenerateProperty(expr.options, "temperature", isNumberExpression)?.value,
-    think: readGenerateProperty(expr.options, "think", isGenerateThinkExpression)?.value,
+    temperature: readGenerateNumberProperty(expr.options, "temperature")?.value,
+    think: readGenerateThinkProperty(expr.options)?.value,
     strict:
-      readGenerateProperty(expr.options, "strict", isBooleanExpression)?.value ??
-      requiredGenerateOptionDefault<boolean>("strict"),
-    debug:
-      readGenerateProperty(expr.options, "debug", isBooleanExpression)?.value ??
-      requiredGenerateOptionDefault<boolean>("debug"),
+      readGenerateBooleanProperty(expr.options, "strict")?.value ?? requiredGenerateOptionDefault<boolean>("strict"),
+    debug: readGenerateBooleanProperty(expr.options, "debug")?.value ?? requiredGenerateOptionDefault<boolean>("debug"),
   };
 }

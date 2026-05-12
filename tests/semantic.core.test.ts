@@ -298,6 +298,26 @@ describe("semantic core", () => {
     expect(result.diagnostics.filter((diagnostic) => diagnostic.code === "IMMUTABLE_ASSIGNMENT")).toHaveLength(2);
   });
 
+  it("checks assignment values before defining new locals", () => {
+    const result = analyze(
+      parse(`
+        main agent A {
+          main func(input) {
+            value = value
+            return input
+          }
+        }
+      `),
+    );
+
+    expect(result.diagnostics).toContainEqual(
+      expect.objectContaining({
+        severity: "error",
+        code: "UNKNOWN_IDENTIFIER",
+      }),
+    );
+  });
+
   it("scopes for-in item variables to the loop body", () => {
     const result = analyze(
       parse(`

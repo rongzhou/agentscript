@@ -3,7 +3,7 @@ import { analyze, assertSemanticallyValid, type AnalyzeOptions } from "../semant
 import type { SemanticResult } from "../semantic/diagnostics.js";
 import { loadNpmRegistry } from "../providers/tools/npm-registry.js";
 
-export function cliAnalyzeOptions(): AnalyzeOptions {
+function cliAnalyzeOptions(): AnalyzeOptions {
   return { npmRegistry: loadNpmRegistry(process.cwd()) };
 }
 

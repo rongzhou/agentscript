@@ -2,7 +2,7 @@ import { RuntimeError } from "./errors.js";
 import { CONTINUE_JSON_WALK, mapJsonLikeValue, type JsonWalkPolicy } from "./json-walk.js";
 import type { JsonObject, JsonValue, RuntimeValue } from "./types.js";
 
-export interface MarshalContext {
+interface MarshalContext {
   label: string;
 }
 

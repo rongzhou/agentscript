@@ -1,6 +1,6 @@
 import type { AgentDecl, Program } from "../ast/types.js";
 
-export function findMainAgent(program: Program): AgentDecl | undefined {
+function findMainAgent(program: Program): Program["agents"][number] | undefined {
   return program.agents.find((agent) => agent.isMain);
 }
 

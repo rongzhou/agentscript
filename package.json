@@ -1,8 +1,24 @@
 {
   "name": "@rong/agentscript",
-  "version": "0.1.14",
+  "version": "0.1.15",
   "description": "A DSL for explicit, scoped, auditable LLM context",
   "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./ast/types": {
+      "types": "./dist/ast/types.d.ts",
+      "import": "./dist/ast/types.js"
+    },
+    "./runtime/types": {
+      "types": "./dist/runtime/types.d.ts",
+      "import": "./dist/runtime/types.js"
+    },
+    "./package.json": "./package.json"
+  },
   "bin": {
     "agentscript": "dist/bin/agentscript.js"
   },

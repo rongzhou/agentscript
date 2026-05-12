@@ -1,4 +1,3 @@
-import { assertNever } from "../utils/assert.js";
 import type { AgentDecl, CallExpr, ConfigDecl, Expr, MemberExpr, SourceRange, Stmt } from "../ast/types.js";
 import { RuntimeError } from "./errors.js";
 import { GenerateRuntime } from "./generate.js";
@@ -117,8 +116,6 @@ export class Evaluator {
           evaluateBlockFinalValue: (statements, currentScope, trace) =>
             this.host.evaluateBlockFinalValue(statements, currentScope, { trace }),
         });
-      default:
-        assertNever(expr);
     }
   }
 

@@ -23,11 +23,7 @@ describe("parser generate-shape", () => {
     expect(stmt.value.kind).toBe("GenerateExpr");
     if (stmt.value.kind !== "GenerateExpr") return;
     expect(stmt.value.options.maxOutput).toEqual({ amount: 2, unit: "k" });
-    expect(stmt.value.options.properties.map((property) => property.key)).toEqual(["input", "max_output", "debug"]);
-    expect(stmt.value.options.properties.find((p) => p.key === "max_output")?.value).toMatchObject({
-      kind: "NumberExpr",
-      raw: "2k",
-    });
+    expect(stmt.value.options.properties.map((property) => property.key)).toEqual(["input", "debug"]);
     expect(stmt.value.options.properties.find((p) => p.key === "debug")?.value).toMatchObject({
       kind: "BooleanExpr",
       value: true,
@@ -101,6 +97,20 @@ describe("parser generate-shape", () => {
               path
           }) {
             return input
+          }
+        }
+      `),
+    ).toThrow(ParseError);
+  });
+
+  it("rejects duplicate max_output generate options", () => {
+    expect(() =>
+      parse(`
+        main agent A {
+          main func act(input) {
+            return generate({ input: "x", max_output: 100, max_output: 200 }) -> {
+                ok boolean
+            }
           }
         }
       `),

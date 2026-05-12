@@ -300,6 +300,16 @@ main agent Researcher {
 
 MCP 返回值只是普通数据。只有通过 `use` 显式选择后，它才会进入模型 context。
 
+## TypeScript API
+
+Package 根入口只导出稳定的 runtime 入口。嵌入场景需要的 public type 通过明确的 subpath 暴露：
+
+```ts
+import { executeAgent, parse } from "@rong/agentscript";
+import type { ExecuteOptions, RuntimeValue } from "@rong/agentscript/runtime/types";
+import type { Program } from "@rong/agentscript/ast/types";
+```
+
 ## 为什么不用 Python 或 TypeScript？
 
 | | Python / TypeScript | AgentScript |

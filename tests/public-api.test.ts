@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
 import * as api from "../src/index.js";
 
 describe("public package API", () => {
@@ -25,5 +26,20 @@ describe("public package API", () => {
     expect(api).not.toHaveProperty("GenerateRuntime");
     expect(api).not.toHaveProperty("RuntimeScope");
     expect(api).not.toHaveProperty("tokenize");
+  });
+
+  it("declares explicit package exports for stable value and type entry points", () => {
+    const packageJson = JSON.parse(readFileSync("package.json", "utf8")) as {
+      types?: string;
+      exports?: Record<string, unknown>;
+    };
+
+    expect(packageJson.types).toBe("dist/index.d.ts");
+    expect(Object.keys(packageJson.exports ?? {}).sort()).toEqual([
+      ".",
+      "./ast/types",
+      "./package.json",
+      "./runtime/types",
+    ]);
   });
 });

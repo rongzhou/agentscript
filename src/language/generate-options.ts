@@ -1,19 +1,21 @@
 import type { BooleanExpr, Expr, GenerateOptionsExpr, NumberExpr, ObjectProperty, StringExpr } from "../ast/types.js";
 
 export type GenerateOptionKey = "input" | "attempts" | "max_output" | "temperature" | "think" | "strict" | "debug";
+type NumberGenerateOptionKey = "attempts" | "temperature";
+type BooleanGenerateOptionKey = "strict" | "debug";
 
 const DEFAULT_GENERATE_ATTEMPTS = 1;
 const DEFAULT_GENERATE_STRICT = false;
 const DEFAULT_GENERATE_DEBUG = false;
 
-export interface GenerateOptionSpec {
+interface GenerateOptionSpec {
   defaultValue?: unknown;
   invalidCode?: string;
   invalidMessage?: string;
   isValid?: (value: Expr) => boolean;
 }
 
-export const GENERATE_OPTION_SPECS: Record<GenerateOptionKey, GenerateOptionSpec> = {
+const GENERATE_OPTION_SPECS: Record<GenerateOptionKey, GenerateOptionSpec> = {
   input: {},
   attempts: {
     defaultValue: DEFAULT_GENERATE_ATTEMPTS,
@@ -49,39 +51,64 @@ export const GENERATE_OPTION_SPECS: Record<GenerateOptionKey, GenerateOptionSpec
   },
 };
 
-export const GENERATE_OPTION_KEYS = new Set(Object.keys(GENERATE_OPTION_SPECS));
+const GENERATE_OPTION_KEYS = new Set(Object.keys(GENERATE_OPTION_SPECS));
 
-export const GENERATE_THINK_VALUES = new Set(["auto", "low", "medium", "high"]);
+const GENERATE_THINK_VALUES = new Set(["auto", "low", "medium", "high"]);
 
 export function isGenerateOptionKey(value: string): boolean {
   return GENERATE_OPTION_KEYS.has(value);
 }
 
-export function isGenerateThinkValue(value: string): boolean {
+function isGenerateThinkValue(value: string): boolean {
   return GENERATE_THINK_VALUES.has(value);
 }
 
-export function getGenerateOptionSpec(key: string): GenerateOptionSpec | undefined {
-  return GENERATE_OPTION_SPECS[key as GenerateOptionKey];
-}
-
-export function generateOptionDefault<T>(key: GenerateOptionKey): T | undefined {
-  return GENERATE_OPTION_SPECS[key].defaultValue as T | undefined;
+export function invalidGenerateOptionValue(key: string, value: Expr): { code: string; message: string } | undefined {
+  const spec = GENERATE_OPTION_SPECS[key as GenerateOptionKey];
+  if (!spec?.isValid || spec.isValid(value)) {
+    return undefined;
+  }
+  return {
+    code: spec.invalidCode ?? "INVALID_GENERATE_OPTION",
+    message: spec.invalidMessage ?? "Invalid generate option",
+  };
 }
 
 export function requiredGenerateOptionDefault<T>(key: GenerateOptionKey): T {
-  const value = generateOptionDefault<T>(key);
+  const value = GENERATE_OPTION_SPECS[key].defaultValue as T | undefined;
   if (value === undefined) {
     throw new Error(`Missing default for generate option '${key}'`);
   }
   return value;
 }
 
-export function findGenerateProperty(options: GenerateOptionsExpr, key: GenerateOptionKey): ObjectProperty | undefined {
+function findGenerateProperty(options: GenerateOptionsExpr, key: GenerateOptionKey): ObjectProperty | undefined {
   return options.properties.find((property) => property.key === key);
 }
 
-export function readGenerateProperty<T extends Expr>(
+export function findGenerateInputProperty(options: GenerateOptionsExpr): ObjectProperty | undefined {
+  return findGenerateProperty(options, "input");
+}
+
+export function readGenerateNumberProperty(
+  options: GenerateOptionsExpr,
+  key: NumberGenerateOptionKey,
+): NumberExpr | undefined {
+  return readGenerateProperty(options, key, isNumberExpression);
+}
+
+export function readGenerateBooleanProperty(
+  options: GenerateOptionsExpr,
+  key: BooleanGenerateOptionKey,
+): BooleanExpr | undefined {
+  return readGenerateProperty(options, key, isBooleanExpression);
+}
+
+export function readGenerateThinkProperty(options: GenerateOptionsExpr): BooleanExpr | StringExpr | undefined {
+  return readGenerateProperty(options, "think", isGenerateThinkExpression);
+}
+
+function readGenerateProperty<T extends Expr>(
   options: GenerateOptionsExpr,
   key: GenerateOptionKey,
   predicate: (value: Expr) => value is T,
@@ -90,14 +117,14 @@ export function readGenerateProperty<T extends Expr>(
   return property && predicate(property.value) ? property.value : undefined;
 }
 
-export function isNumberExpression(value: Expr): value is NumberExpr {
+function isNumberExpression(value: Expr): value is NumberExpr {
   return value.kind === "NumberExpr";
 }
 
-export function isBooleanExpression(value: Expr): value is BooleanExpr {
+function isBooleanExpression(value: Expr): value is BooleanExpr {
   return value.kind === "BooleanExpr";
 }
 
-export function isGenerateThinkExpression(value: Expr): value is BooleanExpr | StringExpr {
+function isGenerateThinkExpression(value: Expr): value is BooleanExpr | StringExpr {
   return isBooleanExpression(value) || (value.kind === "StringExpr" && isGenerateThinkValue(value.value));
 }

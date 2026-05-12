@@ -30,31 +30,39 @@ function clipValueToBudget(value: JsonValue, maxChars: number): JsonValue {
 }
 
 function clipArrayToBudget(value: JsonValue[], maxChars: number): JsonValue[] {
-  const end = findLargestPrefix(value.length, (count) => renderJson(value.slice(0, count)).length <= maxChars);
+  const end = renderedPrefixCount(
+    value.map((item) => renderJson(item)),
+    maxChars,
+  );
   return value.slice(0, end);
 }
 
 function clipObjectToBudget(value: JsonObject, maxChars: number): JsonObject {
   const entries = Object.entries(value);
-  const end = findLargestPrefix(
-    entries.length,
-    (count) => renderJson(Object.fromEntries(entries.slice(0, count))).length <= maxChars,
+  const end = renderedPrefixCount(
+    entries.map(([key, item]) => `${JSON.stringify(key)}: ${renderJson(item)}`),
+    maxChars,
   );
   return Object.fromEntries(entries.slice(0, end));
 }
 
-function findLargestPrefix(length: number, fits: (count: number) => boolean): number {
-  let low = 0;
-  let high = length;
-  while (low < high) {
-    const mid = Math.ceil((low + high) / 2);
-    if (fits(mid)) {
-      low = mid;
-    } else {
-      high = mid - 1;
+function renderedPrefixCount(renderedItems: string[], maxChars: number): number {
+  if (renderedItems.length === 0) return 0;
+  let length = 4; // "[\n" + "\n]" or "{\n" + "\n}"
+  let count = 0;
+  for (const renderedItem of renderedItems) {
+    const nextLength = length + indentedLength(renderedItem) + (count > 0 ? 2 : 0);
+    if (nextLength > maxChars) {
+      break;
     }
+    length = nextLength;
+    count += 1;
   }
-  return low;
+  return count;
+}
+
+function indentedLength(text: string): number {
+  return text.length + 2 * text.split("\n").length;
 }
 
 function budgetToCharLimit(budget?: Budget): number | undefined {

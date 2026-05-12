@@ -1,11 +1,11 @@
 import { dirname, resolve } from "node:path";
 
-export interface RuntimePathOptions {
+interface RuntimePathOptions {
   sourcePath?: string;
   workspaceRoot?: string;
 }
 
-export interface RuntimePaths {
+interface RuntimePaths {
   sourceDir: string;
   workspaceRoot: string;
 }

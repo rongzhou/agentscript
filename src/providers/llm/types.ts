@@ -4,7 +4,7 @@ export const OPENAI_PROTOCOL = "openai";
 export const ANTHROPIC_PROTOCOL = "anthropic";
 export const OLLAMA_PROTOCOL = "ollama";
 
-export const SUPPORTED_LLM_PROTOCOLS = [OPENAI_PROTOCOL, ANTHROPIC_PROTOCOL, OLLAMA_PROTOCOL] as const;
+const SUPPORTED_LLM_PROTOCOLS = [OPENAI_PROTOCOL, ANTHROPIC_PROTOCOL, OLLAMA_PROTOCOL] as const;
 
 export type LlmProtocol = (typeof SUPPORTED_LLM_PROTOCOLS)[number];
 

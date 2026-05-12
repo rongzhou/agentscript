@@ -1,4 +1,3 @@
-import { assertNever } from "../utils/assert.js";
 import type { Expr, ObjectProperty } from "./types.js";
 
 export function formatExpressionSource(expr: Expr): string {
@@ -33,8 +32,6 @@ export function formatExpressionSource(expr: Expr): string {
       return `generate({ ${formatGenerateOptions(expr.options)} })`;
     case "ParallelForExpr":
       return `parallel for ${expr.item.name} in ${formatExpressionSource(expr.iterable)} max ${expr.maxIterations}`;
-    default:
-      assertNever(expr);
   }
 }
 
@@ -46,13 +43,6 @@ function formatProperties(properties: ObjectProperty[]): string {
   return properties.map((p) => `${p.key}: ${formatExpressionSource(p.value)}`).join(", ");
 }
 
-function formatGenerateOptions(options: {
-  properties: ObjectProperty[];
-  maxOutput?: { amount: number; unit?: string };
-}): string {
-  const items = options.properties.map((p) => `${p.key}: ${formatExpressionSource(p.value)}`);
-  if (options.maxOutput && !options.properties.some((property) => property.key === "max_output")) {
-    items.push(`max_output: ${options.maxOutput.amount}${options.maxOutput.unit ?? ""}`);
-  }
-  return items.join(", ");
+function formatGenerateOptions(options: { properties: ObjectProperty[] }): string {
+  return options.properties.map((p) => `${p.key}: ${formatExpressionSource(p.value)}`).join(", ");
 }

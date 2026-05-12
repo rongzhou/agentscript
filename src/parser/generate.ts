@@ -1,11 +1,4 @@
-import type {
-  Budget,
-  GenerateExpr,
-  GenerateOptionsExpr,
-  NumberExpr,
-  ObjectProperty,
-  SourceRange,
-} from "../ast/types.js";
+import type { Budget, GenerateExpr, GenerateOptionsExpr, ObjectProperty, SourceRange } from "../ast/types.js";
 import type { ExpressionParserHost } from "./host.js";
 import { parseShapeObject } from "./shape.js";
 
@@ -35,15 +28,15 @@ function parseGenerateOptions(parser: ExpressionParserHost): GenerateOptionsExpr
     const key = parser.consumeObjectKey();
     parser.consume(":");
     if (key === "max_output") {
+      if (maxOutput !== undefined) {
+        throw parser.errorAtRange("Duplicate generate option 'max_output'", {
+          start: propStart,
+          end: parser.previous().range.end,
+        });
+      }
       const token = parser.consumeKind("number", "Expected generate max_output");
       maxOutput = parser.parseBudgetToken(token);
       maxOutputRange = token.range;
-      properties.push({
-        kind: "ObjectProperty",
-        key,
-        value: numberExprFromToken(token),
-        range: { start: propStart, end: token.range.end },
-      });
     } else {
       const value = parser.parseExpression();
       properties.push({
@@ -62,14 +55,5 @@ function parseGenerateOptions(parser: ExpressionParserHost): GenerateOptionsExpr
     maxOutput,
     maxOutputRange,
     range: { start, end: parser.previous().range.end },
-  };
-}
-
-function numberExprFromToken(token: { value: string; range: SourceRange }): NumberExpr {
-  return {
-    kind: "NumberExpr",
-    value: Number.parseFloat(token.value),
-    raw: token.value,
-    range: token.range,
   };
 }

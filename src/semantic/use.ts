@@ -1,9 +1,9 @@
-import type { UseStmt } from "../ast/types.js";
+import type { Expr, SourceRange, UseStmt } from "../ast/types.js";
+import { childExpressions } from "../ast/walk.js";
 import { NON_CONTEXT_BINDING_KINDS } from "../language/bindings.js";
-import { checkBudget } from "./budget.js";
+import { collectBudgetDiagnostics } from "./budget.js";
 import { errorDiagnostic as error, type SemanticDiagnostic } from "./diagnostics.js";
 import type { Binding } from "./scope.js";
-import { containsCallExpression, identifiersInExpression } from "../ast/walk.js";
 
 interface UseScope {
   resolve(name: string): Binding | undefined;
@@ -11,19 +11,20 @@ interface UseScope {
 
 const RESERVED_CONTEXT_LABELS = new Set(["system", "assistant", "tool", "developer"]);
 
-export function checkAgentUse(stmt: UseStmt, scope: UseScope): SemanticDiagnostic[] {
-  return [...checkCommonUseRules(stmt, scope), ...checkAgentLevelUseValue(stmt, scope)];
+export function collectAgentUseDiagnostics(stmt: UseStmt, scope: UseScope): SemanticDiagnostic[] {
+  const valueFacts = collectUseValueFacts(stmt.value);
+  return [...checkCommonUseRules(stmt, scope, valueFacts), ...checkAgentLevelUseValue(valueFacts, scope)];
 }
 
-export function checkFunctionUse(stmt: UseStmt, scope: UseScope): SemanticDiagnostic[] {
-  return checkCommonUseRules(stmt, scope);
+export function collectFunctionUseDiagnostics(stmt: UseStmt, scope: UseScope): SemanticDiagnostic[] {
+  return checkCommonUseRules(stmt, scope, collectUseValueFacts(stmt.value));
 }
 
-function checkCommonUseRules(stmt: UseStmt, scope: UseScope): SemanticDiagnostic[] {
+function checkCommonUseRules(stmt: UseStmt, scope: UseScope, valueFacts: UseValueFacts): SemanticDiagnostic[] {
   const diagnostics: SemanticDiagnostic[] = [];
 
-  diagnostics.push(...checkUseValue(stmt, scope));
-  if (containsCallExpression(stmt.value, { shallow: true })) {
+  diagnostics.push(...checkUseValue(valueFacts, scope));
+  if (valueFacts.containsCall) {
     diagnostics.push(
       error(
         "INVALID_USE_CALL",
@@ -32,7 +33,7 @@ function checkCommonUseRules(stmt: UseStmt, scope: UseScope): SemanticDiagnostic
       ),
     );
   }
-  diagnostics.push(...checkBudget(stmt.budget, stmt.range));
+  diagnostics.push(...collectBudgetDiagnostics(stmt.budget, stmt.range));
   if (stmt.label && RESERVED_CONTEXT_LABELS.has(stmt.label)) {
     diagnostics.push(error("RESERVED_CONTEXT_LABEL", `Context label '${stmt.label}' is reserved`, stmt.range));
   }
@@ -40,9 +41,32 @@ function checkCommonUseRules(stmt: UseStmt, scope: UseScope): SemanticDiagnostic
   return diagnostics;
 }
 
-function checkUseValue(stmt: UseStmt, scope: UseScope): SemanticDiagnostic[] {
+function checkAgentLevelUseValue(facts: UseValueFacts, scope: UseScope): SemanticDiagnostic[] {
   const diagnostics: SemanticDiagnostic[] = [];
-  for (const identifier of identifiersInExpression(stmt.value, { shallow: true })) {
+  for (const identifier of facts.identifiers) {
+    const binding = scope.resolve(identifier.name);
+    if (binding && binding.kind !== "file") {
+      diagnostics.push(
+        error("INVALID_AGENT_USE", "Agent-level use may only reference imported file bindings", identifier.range),
+      );
+    }
+  }
+  return diagnostics;
+}
+
+interface UseValueFacts {
+  containsCall: boolean;
+  identifiers: IdentifierUse[];
+}
+
+interface IdentifierUse {
+  name: string;
+  range: SourceRange;
+}
+
+function checkUseValue(facts: UseValueFacts, scope: UseScope): SemanticDiagnostic[] {
+  const diagnostics: SemanticDiagnostic[] = [];
+  for (const identifier of facts.identifiers) {
     const binding = scope.resolve(identifier.name);
     if (binding && NON_CONTEXT_BINDING_KINDS.has(binding.kind)) {
       diagnostics.push(
@@ -57,15 +81,20 @@ function checkUseValue(stmt: UseStmt, scope: UseScope): SemanticDiagnostic[] {
   return diagnostics;
 }
 
-function checkAgentLevelUseValue(stmt: UseStmt, scope: UseScope): SemanticDiagnostic[] {
-  const diagnostics: SemanticDiagnostic[] = [];
-  for (const identifier of identifiersInExpression(stmt.value, { shallow: true })) {
-    const binding = scope.resolve(identifier.name);
-    if (binding && binding.kind !== "file") {
-      diagnostics.push(
-        error("INVALID_AGENT_USE", "Agent-level use may only reference imported file bindings", identifier.range),
-      );
-    }
+function collectUseValueFacts(expr: Expr): UseValueFacts {
+  const facts: UseValueFacts = { containsCall: false, identifiers: [] };
+  collectUseValueFactsInto(expr, facts);
+  return facts;
+}
+
+function collectUseValueFactsInto(expr: Expr, facts: UseValueFacts): void {
+  if (expr.kind === "IdentifierExpr") {
+    facts.identifiers.push({ name: expr.name, range: expr.range });
   }
-  return diagnostics;
+  if (expr.kind === "CallExpr" || expr.kind === "GenerateExpr" || expr.kind === "ParallelForExpr") {
+    facts.containsCall = true;
+  }
+  for (const child of childExpressions(expr)) {
+    collectUseValueFactsInto(child, facts);
+  }
 }

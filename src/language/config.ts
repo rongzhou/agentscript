@@ -1,11 +1,11 @@
 import type { ConfigKey } from "../ast/types.js";
 
 export const MODEL_CONFIG_KEY = "model";
-export const ROLE_CONFIG_KEY = "role";
-export const DESCRIPTION_CONFIG_KEY = "description";
+const ROLE_CONFIG_KEY = "role";
+const DESCRIPTION_CONFIG_KEY = "description";
 
-export const CONFIG_KEYS = new Set<ConfigKey>([MODEL_CONFIG_KEY, ROLE_CONFIG_KEY, DESCRIPTION_CONFIG_KEY]);
-export const STRING_CONFIG_KEYS = new Set<ConfigKey>([ROLE_CONFIG_KEY, DESCRIPTION_CONFIG_KEY]);
+const CONFIG_KEYS = new Set<ConfigKey>([MODEL_CONFIG_KEY, ROLE_CONFIG_KEY, DESCRIPTION_CONFIG_KEY]);
+const STRING_CONFIG_KEYS = new Set<ConfigKey>([ROLE_CONFIG_KEY, DESCRIPTION_CONFIG_KEY]);
 export const REQUIRED_GENERATE_CONFIG_KEYS: readonly ConfigKey[] = [
   MODEL_CONFIG_KEY,
   ROLE_CONFIG_KEY,

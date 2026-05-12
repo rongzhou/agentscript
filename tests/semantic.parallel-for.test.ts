@@ -122,15 +122,15 @@ describe("semantic parallel-for", () => {
     );
   });
 
-  it("rejects host tool calls inside parallel for", () => {
+  it("does not report outer mutation for imported tool add methods", () => {
     const result = analyze(
       parse(`
-        import tool Search from "host://search"
+        import tool Store from "file://workspace"
 
         main agent A {
           main func(input) {
             return parallel for item in input.items max 2 {
-              Search.run({ query: item })
+              Store.add(item)
               item
             }
           }
@@ -138,10 +138,9 @@ describe("semantic parallel-for", () => {
       `),
     );
 
-    expect(result.diagnostics).toContainEqual(
+    expect(result.diagnostics).not.toContainEqual(
       expect.objectContaining({
-        severity: "error",
-        code: "PARALLEL_FOR_EFFECTFUL_CALL",
+        code: "PARALLEL_FOR_OUTER_MUTATION",
       }),
     );
   });

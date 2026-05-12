@@ -1,4 +1,3 @@
-import { assertNever } from "../utils/assert.js";
 import type { JsonValue, TraceEvent } from "./types.js";
 
 export function formatTrace(trace: TraceEvent[]): string {
@@ -39,8 +38,6 @@ function formatEvent(event: TraceEvent, depth: number): string {
       return formatParallelFor(event, depth);
     case "use":
       return `${indent}- use ${summarize(event.data.source)}`;
-    default:
-      assertNever(event.kind);
   }
 }
 

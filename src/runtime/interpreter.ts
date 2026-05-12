@@ -11,7 +11,6 @@ import { createRuntimeImportBindings, type RuntimeImportBinding } from "./import
 import { createRuntimePaths } from "./paths.js";
 import { RuntimeScope } from "./scope.js";
 import { buildTraceEvent } from "./trace-event.js";
-import { assertNever } from "../utils/assert.js";
 import { isTruthy } from "./truth.js";
 import { createDefaultMemoryProvider } from "../providers/memory/host.js";
 import { MockLlmProvider } from "../providers/mock/provider.js";
@@ -329,8 +328,6 @@ class Interpreter {
 
       case "ReturnStmt":
         return { kind: "return", value: await evaluator.evaluate(stmt.value, scope) };
-      default:
-        assertNever(stmt);
     }
   }
 

@@ -3,26 +3,18 @@ import { getMemoryMethodSpec } from "../language/memory.js";
 import { errorDiagnostic as error, type SemanticDiagnostic } from "./diagnostics.js";
 import { type Binding, type SemanticScope, functionBinding } from "./scope.js";
 
-export interface CallCheckHost {
-  checkExpression(expr: Expr, scope: SemanticScope): void;
-}
-
-export function checkCallExpression(
+export function collectCallDiagnostics(
   expr: CallExpr,
   scope: SemanticScope,
   agentDecls: Map<string, AgentDecl>,
-  host: CallCheckHost,
 ): SemanticDiagnostic[] {
   const diagnostics: SemanticDiagnostic[] = [];
-  diagnostics.push(...checkCallable(expr.callee, scope, host));
-  for (const arg of expr.args) {
-    host.checkExpression(arg, scope);
-  }
+  diagnostics.push(...checkCallable(expr.callee, scope));
   diagnostics.push(...checkCallArity(expr, scope, agentDecls));
   return diagnostics;
 }
 
-export function formatArityError(binding: Binding, actual: number): string | undefined {
+function formatArityError(binding: Binding, actual: number): string | undefined {
   if (binding.arity === undefined || binding.arity === actual) {
     return undefined;
   }
@@ -31,7 +23,7 @@ export function formatArityError(binding: Binding, actual: number): string | und
   return `Function '${displayName}' expects ${binding.arity} argument(s), got ${actual}`;
 }
 
-function checkCallable(callee: Expr, scope: SemanticScope, host: CallCheckHost): SemanticDiagnostic[] {
+function checkCallable(callee: Expr, scope: SemanticScope): SemanticDiagnostic[] {
   if (callee.kind === "IdentifierExpr") {
     const binding = scope.resolve(callee.name);
     if (!binding) {
@@ -44,7 +36,6 @@ function checkCallable(callee: Expr, scope: SemanticScope, host: CallCheckHost):
   }
 
   if (callee.kind === "MemberExpr") {
-    host.checkExpression(callee.object, scope);
     if (callee.object.kind === "IdentifierExpr") {
       const binding = scope.resolve(callee.object.name);
       if (binding?.kind === "memory" && !getMemoryMethodSpec(callee.property)) {
@@ -60,7 +51,6 @@ function checkCallable(callee: Expr, scope: SemanticScope, host: CallCheckHost):
     return [];
   }
 
-  host.checkExpression(callee, scope);
   return [error("NOT_CALLABLE", "Only agent functions and member calls can currently be called", callee.range)];
 }
 

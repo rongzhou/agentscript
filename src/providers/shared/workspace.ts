@@ -9,7 +9,7 @@ export interface WorkspaceContext {
   visitWorkspaceTree(root: string, visitor: WorkspaceTreeVisitor): void;
 }
 
-export type WorkspaceTreeVisitor = (path: string, relativePath: string, stat: Stats) => boolean;
+type WorkspaceTreeVisitor = (path: string, relativePath: string, stat: Stats) => boolean;
 
 export class Workspace implements WorkspaceContext {
   readonly workspaceRoot: string;

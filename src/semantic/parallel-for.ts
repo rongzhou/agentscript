@@ -4,13 +4,30 @@ import { isEffectfulMemoryMethod } from "../language/memory.js";
 import { isEffectfulToolCall } from "../language/tools.js";
 import { errorDiagnostic as error, type SemanticDiagnostic } from "./diagnostics.js";
 import type { SemanticScope } from "./scope.js";
-import { walkStatementsInScope } from "./walker.js";
+import { scopeWithItemBinding, walkStatementsInScope } from "./walker.js";
 
-export function blockEndsWithExpression(statements: Stmt[]): boolean {
+export function collectParallelForDiagnostics(
+  expr: Extract<Expr, { kind: "ParallelForExpr" }>,
+  scope: SemanticScope,
+): SemanticDiagnostic[] {
+  const diagnostics: SemanticDiagnostic[] = [];
+  if (expr.maxIterations <= 0) {
+    diagnostics.push(error("INVALID_PARALLEL_FOR_LIMIT", "parallel for item count must be greater than 0", expr.range));
+  }
+  if (!blockEndsWithExpression(expr.body)) {
+    diagnostics.push(
+      error("INVALID_PARALLEL_FOR_BODY", "parallel for body must end with a value expression", expr.range),
+    );
+  }
+  diagnostics.push(...checkParallelForBodyRules(expr.body, scopeWithItemBinding(scope, expr.item)));
+  return diagnostics;
+}
+
+function blockEndsWithExpression(statements: Stmt[]): boolean {
   return statements.length > 0 && statements[statements.length - 1]?.kind === "ExprStmt";
 }
 
-export function checkParallelForBodyRules(statements: Stmt[], scope: SemanticScope): SemanticDiagnostic[] {
+function checkParallelForBodyRules(statements: Stmt[], scope: SemanticScope): SemanticDiagnostic[] {
   const diagnostics: SemanticDiagnostic[] = [];
 
   walkStatementsInScope(statements, scope, {
@@ -69,9 +86,9 @@ function checkCallRules(callee: Expr, scope: SemanticScope): SemanticDiagnostic[
   const isEffectfulMemoryCall = binding?.kind === "memory" && isEffectfulMemoryMethod(callee.property);
   const isOuterMutationLikeCall =
     binding !== undefined &&
-    binding.kind !== "memory" &&
+    (binding.kind === "local" || binding.kind === "param") &&
     !scope.isLocalToThisScope(root) &&
-    isEffectfulMemoryMethod(callee.property);
+    callee.property === "add";
   if (isEffectfulMemoryCall) {
     diagnostics.push(
       error(

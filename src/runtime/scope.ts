@@ -8,7 +8,7 @@ interface Binding {
   kind: BindingKind;
 }
 
-export interface RuntimeContextUse {
+interface RuntimeContextUse {
   expr: Expr;
   source: string;
   budget?: Budget;

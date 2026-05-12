@@ -1,5 +1,4 @@
 import type { Budget } from "../ast/types.js";
-import { assertNever } from "../utils/assert.js";
 import { isRuntimeResource } from "./guards.js";
 import { CONTINUE_JSON_WALK, mapJsonLikeValue, OMIT_JSON_VALUE, type JsonWalkPolicy } from "./json-walk.js";
 import type { JsonObject, JsonValue, RuntimeResource, RuntimeValue } from "./types.js";
@@ -51,8 +50,6 @@ function runtimeResourceToJson(value: RuntimeResource): JsonObject {
       return { agent: value.name };
     case "memory":
       return { memory: value.name, uri: value.uri };
-    default:
-      assertNever(value);
   }
 }
 

@@ -1,14 +1,14 @@
 import type { NamedShapeTypeName } from "../ast/types.js";
 
-export const SHAPE_TYPE_KEYS = new Set<NamedShapeTypeName>(["string", "number", "boolean", "json", "list"]);
+const SHAPE_TYPE_KEYS = new Set<NamedShapeTypeName>(["string", "number", "boolean", "json", "list"]);
 
-export type ShapeJsonSchema = Record<string, string>;
+type ShapeJsonSchema = Record<string, string>;
 
-export interface ShapeTypeSpec {
+interface ShapeTypeSpec {
   jsonSchema: ShapeJsonSchema;
 }
 
-export const SHAPE_TYPE_SPECS: Record<NamedShapeTypeName, ShapeTypeSpec> = {
+const SHAPE_TYPE_SPECS: Record<NamedShapeTypeName, ShapeTypeSpec> = {
   string: {
     jsonSchema: { type: "string" },
   },

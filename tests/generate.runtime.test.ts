@@ -178,8 +178,8 @@ describe("generate runtime", () => {
 
     expect(result.value).toEqual({ ok: true });
     expect(requests).toHaveLength(2);
-    expect(requests[1]!.builtContext.instructionText).toContain("Previous generation failed.");
-    expect(requests[1]!.builtContext.instructionText).toContain('"ok": "maybe"');
+    expect(requests[1]!.builtContext.finalUserMessage).toContain("Previous generation failed.");
+    expect(requests[1]!.builtContext.finalUserMessage).toContain('"ok": "maybe"');
     const event = result.trace.find((item) => item.kind === "generate");
     expect(event?.data.attempts).toBe(2);
     expect(event?.data.ok).toBe(true);

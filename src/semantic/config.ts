@@ -3,7 +3,7 @@ import { MODEL_CONFIG_KEY, isStringConfigKey } from "../language/config.js";
 import { errorDiagnostic, type SemanticDiagnostic } from "./diagnostics.js";
 import type { SemanticScope } from "./scope.js";
 
-export function checkConfigDeclaration(config: ConfigDecl, scope: SemanticScope): SemanticDiagnostic[] {
+export function collectConfigDiagnostics(config: ConfigDecl, scope: SemanticScope): SemanticDiagnostic[] {
   const diagnostics: SemanticDiagnostic[] = [];
   scope.defineConfig(config.key);
 
@@ -31,7 +31,7 @@ export function checkConfigDeclaration(config: ConfigDecl, scope: SemanticScope)
   return diagnostics;
 }
 
-export function checkGenerateRequiredConfig(
+export function collectGenerateRequiredConfigDiagnostics(
   key: ConfigKey,
   expr: GenerateExpr,
   scope: SemanticScope,

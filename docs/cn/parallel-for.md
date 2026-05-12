@@ -378,7 +378,6 @@ File.read
 File.list
 Grep.run
 HTTP GET
-pure host tools
 agent calls
 generate calls
 ```

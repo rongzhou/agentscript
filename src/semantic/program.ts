@@ -1,12 +1,12 @@
 import type { AgentDecl, Program, SourceRange } from "../ast/types.js";
-import { type BindingKind, importResourceKindToBindingKind } from "../language/bindings.js";
+import type { BindingKind } from "../language/bindings.js";
 import { defaultEntryAgent } from "../language/entry.js";
 import { NODE_SCHEME, NPM_SCHEME } from "../language/schemes.js";
 import { uriScheme } from "../language/uri.js";
 import { checkNodeImport, checkNpmImport, type NpmRegistry } from "../providers/tools/npm-registry.js";
 import { errorDiagnostic, type SemanticDiagnostic } from "./diagnostics.js";
 
-export interface ProgramAnalyzeOptions {
+interface ProgramAnalyzeOptions {
   npmRegistry?: NpmRegistry;
 }
 
@@ -16,7 +16,7 @@ export interface ImportBindingDecl {
   uri: string;
 }
 
-export interface ProgramDeclarations {
+interface ProgramDeclarations {
   agentDecls: Map<string, AgentDecl>;
   importBindings: Map<string, ImportBindingDecl>;
   diagnostics: SemanticDiagnostic[];
@@ -45,7 +45,7 @@ function collectImportBindings(
       diagnostics.push(errorDiagnostic("DUPLICATE_IMPORT", `Duplicate import '${imported.name}'`, imported.range));
       continue;
     }
-    const kind = importResourceKindToBindingKind(imported.resourceKind);
+    const kind: BindingKind = imported.resourceKind;
     importBindings.set(imported.name, { kind, range: imported.range, uri: imported.uri });
     if (imported.resourceKind === "tool") {
       checkToolImportAuthorization(imported.uri, imported.range, options, diagnostics);

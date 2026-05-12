@@ -24,7 +24,7 @@ import {
   type TraceEvent,
 } from "./types.js";
 
-export interface GenerateRuntimeHost {
+interface GenerateRuntimeHost {
   currentAgent(): AgentDecl;
   evaluate(expr: Expr, scope: RuntimeScope): Promise<RuntimeValue>;
   resolveContextUses(scope: RuntimeScope): Promise<ContextUse[]>;

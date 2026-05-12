@@ -5,7 +5,7 @@ import type { RuntimeScope } from "./scope.js";
 import { buildTraceEvent } from "./trace-event.js";
 import type { RuntimeValue, TraceEvent } from "./types.js";
 
-export interface ParallelForRuntimeHost {
+interface ParallelForRuntimeHost {
   concurrency(): number;
   evaluateExpression(expr: ParallelForExpr["iterable"], scope: RuntimeScope): Promise<RuntimeValue>;
   evaluateBlockFinalValue(
@@ -115,7 +115,7 @@ async function mapLimitWaitAll<T, R>(
   concurrency: number,
   mapper: (item: T, index: number) => Promise<R>,
 ): Promise<{ values: R[]; failures: MapLimitFailure[] }> {
-  const results = new Array<R>(items.length);
+  const results: Array<R | undefined> = Array.from({ length: items.length }, () => undefined);
   const failures: MapLimitFailure[] = [];
   let nextIndex = 0;
 
@@ -134,5 +134,5 @@ async function mapLimitWaitAll<T, R>(
   const workerCount = Math.min(concurrency, items.length);
   await Promise.all(Array.from({ length: workerCount }, () => worker()));
   failures.sort((left, right) => left.index - right.index);
-  return { values: results, failures };
+  return { values: results as R[], failures };
 }

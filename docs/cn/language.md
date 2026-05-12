@@ -172,7 +172,7 @@ Contract 字段使用换行分隔的 `label: value` 条目。字段之间不允�
 
 支持的 contract 类型：`string`、`number`、`boolean`、`json`、`list`、`list[T]`（T 为任意支持的类型）。
 
-Contract block 只出现在语言期待 contract 的位置：函数 input 参数和 `generate(...) -> { ... }` 输出契约。`generate({ ... })` 的参数本身是 JSON-like options object，不是 contract block。Contract block 不是对象字面量，也不是完整的静态类型系统。
+Contract block 用在语言期待具名结构块的位置：函数 input 参数和 `generate(...) -> { ... }` 输出契约。`use one of { ... }` 沿用同一套 contract block 约定来书写候选条目，但它的 value 是候选表达式，不是 contract type，并且不定义 label-only default value。`generate({ ... })` 的参数本身是 JSON-like options object，不是 contract block。Contract block 不是对象字面量，也不是完整的静态类型系统。
 
 对象字面量使用 JSON-like 语法：字段写作 `key: value`，多字段之间必须用逗号分隔。
 
@@ -219,9 +219,9 @@ use input.question as user
 
 完整设计语义见 [`use ... as ...`](./use-as.md)。
 
-### 可选择 context 设计：`use one of`
+### 可选择 context：`use one of`
 
-`use one of` 是让单个 context slot 变成可选择位点的设计扩展，同时不把优化结果藏进 runtime state。它保持 `use` 的语义，但允许在一个共享 label 下声明多个候选 source：
+`use one of` 让单个 context slot 变成可选择位点，同时不把优化结果藏进 runtime state。它保持 `use` 的语义，但允许在一个共享 label 下声明多个候选 source：
 
 ```agentscript
 use one of {
@@ -234,7 +234,7 @@ use one of {
 
 一次可见的 `generate` 构建 prompt 前，会有且只有一个候选被选中。`selected` 标记源码层面的默认候选；未标记时默认选择第一个候选。`empty` 表示这段 context slot 被有意省略。模型只看到被选中的 source，不会看到候选列表。
 
-该语法目前作为 context optimization 的设计面记录。候选约束、trace 要求和优化器契约见 [`use one of ...`](./use-one-of.md)。
+候选约束、trace 要求和优化器契约见 [`use one of ...`](./use-one-of.md)。
 
 ## Generate
 

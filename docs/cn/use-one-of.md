@@ -213,7 +213,7 @@ use one of {
 } as "evidence"
 ```
 
-没有选择空间的 `use one of` 没有存在必要，parser 和 runtime 都应把它视为错误，引导用户改写为 `use X as L`。
+没有选择空间的 `use one of` 没有存在必要，parser 会把它视为错误，引导用户改写为 `use X as L`。
 
 ## 变体选择
 
@@ -430,7 +430,6 @@ source: scratch.summary
 - `"trial"` — 由 `ExecuteOptions.variant` 传入。
 - `"selected"` — 源码中某候选带了 `selected` 修饰。
 - `"first"` — 既无 trial hint 也无 `selected`，取第一个候选。
-- `"specialized"` — 源程序已经是单候选（扁平化形态后的退化情况，仅当 `use one of` 只剩一个候选时发生；推荐的保留结构 specialization 不产生这种情况）。
 
 `generate` 事件的 built context item 不新增字段——它仍然只记录"实际进入 prompt 的 source 和值"。被 empty 变体命中的 `use one of` 根本不会产生 context item。变体信息在 `use` event 上完整可审计，足以让外部工具重建"这个 generate 用的哪个变体组合"，包括哪些 slot 被显式跳过。
 

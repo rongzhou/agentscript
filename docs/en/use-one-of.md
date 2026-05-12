@@ -213,7 +213,7 @@ use one of {
 } as "evidence"
 ```
 
-A `use one of` without choice space is pointless; the parser and runtime should reject it and direct the author to write `use X as L` instead.
+A `use one of` without choice space is pointless; the parser rejects it and directs the author to write `use X as L` instead.
 
 ## Variant selection
 
@@ -430,7 +430,6 @@ Non-empty variant picked:
 - `"trial"` — supplied via `ExecuteOptions.variant`.
 - `"selected"` — a candidate in source carried `selected`.
 - `"first"` — neither a trial hint nor `selected` was available; the first candidate was picked.
-- `"specialized"` — the source program is already single-candidate (a degenerate form after flattening that leaves a `use one of` with only one remaining candidate; the recommended structure-preserving specialization does not produce this).
 
 The `generate` event's built context items do not grow new fields—they still record "the source and value that actually entered the prompt". A `use one of` that resolved to `empty` produces no context item at all. The variant detail lives on the `use` event and is sufficient for external tooling to reconstruct the full variant combination used by any given `generate`, including slots that were deliberately skipped.
 

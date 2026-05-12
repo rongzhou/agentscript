@@ -203,4 +203,79 @@ describe("semantic use", () => {
 
     expect(result.diagnostics.filter((diagnostic) => diagnostic.severity === "error")).toEqual([]);
   });
+
+  it("checks use one of candidates like use declarations", () => {
+    const invalid = analyze(
+      parse(`
+        import tool Search from "host://search"
+
+        agent A {
+          func act(input) {
+            use one of {
+              live: Search.search(input.question)
+              cached: input.docs max 0
+            } as evidence
+            return input
+          }
+        }
+      `),
+    );
+
+    expect(invalid.diagnostics).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ severity: "error", code: "INVALID_USE_CALL" }),
+        expect.objectContaining({ severity: "error", code: "INVALID_USE_RESOURCE" }),
+        expect.objectContaining({ severity: "error", code: "INVALID_BUDGET" }),
+      ]),
+    );
+  });
+
+  it("checks agent-level use one of candidates are declarative file context", () => {
+    const result = analyze(
+      parse(`
+        import file Playbook from "./playbook.md"
+
+        agent A {
+          use one of {
+            short: Playbook
+            invalid: input.docs
+          } as playbook
+
+          func act(input) {
+            return input
+          }
+        }
+      `),
+    );
+
+    expect(result.diagnostics).toContainEqual(
+      expect.objectContaining({
+        severity: "error",
+        code: "UNKNOWN_IDENTIFIER",
+      }),
+    );
+  });
+
+  it("reports duplicate use one of candidates and reserved shared labels", () => {
+    const result = analyze(
+      parse(`
+        agent A {
+          func act(input) {
+            use one of {
+              compact: input.digest
+              compact: input.summary
+            } as system
+            return input
+          }
+        }
+      `),
+    );
+
+    expect(result.diagnostics).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ severity: "error", code: "DUPLICATE_USE_ONE_OF_CANDIDATE" }),
+        expect.objectContaining({ severity: "error", code: "RESERVED_CONTEXT_LABEL" }),
+      ]),
+    );
+  });
 });

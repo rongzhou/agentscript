@@ -21,6 +21,11 @@ generate({
 
 [English](./README.md)
 
+文章：[模型到底看到了什么？](./docs/cn/introducing-agentscript.md) ·
+[别再死磕提示词优化，真正该优化的是上下文](./docs/cn/introducing-agentscript-2.md) ·
+[English Part 1](./docs/en/introducing-agentscript.md) ·
+[English Part 2](./docs/en/introducing-agentscript-2.md)
+
 <p align="center">
   <img src="docs/cn/assets/context-boundaries.png" alt="传统追加式 chat 与 AgentScript scoped context boundaries 的对比" width="900">
 </p>

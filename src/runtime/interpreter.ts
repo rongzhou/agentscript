@@ -1,4 +1,4 @@
-import type { AgentDecl, CallExpr, FuncDecl, Program, Stmt, UseStmt } from "../ast/types.js";
+import type { AgentDecl, CallExpr, FuncDecl, Program, Stmt, UseOneOfStmt, UseStmt } from "../ast/types.js";
 import { formatExpressionSource } from "../ast/format.js";
 import { createAgentMap, findFunction, requireAgent, resolveEntryAgent, resolveMainFunction } from "./agents.js";
 import { Evaluator } from "./evaluator.js";
@@ -12,6 +12,7 @@ import { createRuntimePaths } from "./paths.js";
 import { RuntimeScope } from "./scope.js";
 import { buildTraceEvent } from "./trace-event.js";
 import { isTruthy } from "./truth.js";
+import { pickUseOneOfCandidate } from "./use-one-of.js";
 import { createDefaultMemoryProvider } from "../providers/memory/host.js";
 import { MockLlmProvider } from "../providers/mock/provider.js";
 import { createDefaultToolProvider } from "../providers/tools/host.js";
@@ -29,6 +30,7 @@ export interface ExecuteOptions {
   sourcePath?: string;
   toolProvider?: ToolProvider;
   workspaceRoot?: string;
+  variant?: Record<string, string>;
 }
 
 export interface ExecuteResult {
@@ -147,18 +149,26 @@ class Interpreter {
       evaluate: (expr, scope) => evaluator.evaluate(expr, scope),
       resolveContextUses: (scope) => evaluator.resolveContextUses(scope),
     });
-    evaluator = new Evaluator(this.toolProvider, this.memoryProvider, trace, generateRuntime, {
-      callAgent: (agentName, functionName, args, range) => this.callAgent(agentName, functionName, args, range, trace),
-      callFunction: (agent, name, args, range) => this.callFunction(agent, name, args, range, trace),
-      concurrency: () => this.options.concurrency ?? 4,
-      evaluateBlockFinalValue: (statements, scope, blockOptions = {}) => {
-        const blockTrace = blockOptions.trace ?? trace;
-        const blockEvaluator = blockOptions.trace ? this.createEvaluator(blockTrace, activeAgent) : evaluator;
-        return this.evaluateBlockFinalValue(statements, scope, blockEvaluator, blockTrace);
+    evaluator = new Evaluator(
+      this.toolProvider,
+      this.memoryProvider,
+      trace,
+      generateRuntime,
+      {
+        callAgent: (agentName, functionName, args, range) =>
+          this.callAgent(agentName, functionName, args, range, trace),
+        callFunction: (agent, name, args, range) => this.callFunction(agent, name, args, range, trace),
+        concurrency: () => this.options.concurrency ?? 4,
+        evaluateBlockFinalValue: (statements, scope, blockOptions = {}) => {
+          const blockTrace = blockOptions.trace ?? trace;
+          const blockEvaluator = blockOptions.trace ? this.createEvaluator(blockTrace, activeAgent) : evaluator;
+          return this.evaluateBlockFinalValue(statements, scope, blockEvaluator, blockTrace);
+        },
+        requireAgent: (name, range) => this.requireAgent(name, range),
+        resolveMainFunction,
       },
-      requireAgent: (name, range) => this.requireAgent(name, range),
-      resolveMainFunction,
-    });
+      this.options.variant,
+    );
     return evaluator;
   }
 
@@ -242,6 +252,11 @@ class Interpreter {
         return undefined;
 
       case "UseStmt": {
+        this.declareUse(stmt, scope, trace);
+        return undefined;
+      }
+
+      case "UseOneOfStmt": {
         this.declareUse(stmt, scope, trace);
         return undefined;
       }
@@ -356,10 +371,46 @@ class Interpreter {
     return requireAgent(this.agents, name, range);
   }
 
-  private declareUse(stmt: UseStmt, scope: RuntimeScope, trace: TraceEvent[]): void {
+  private declareUse(stmt: UseStmt | UseOneOfStmt, scope: RuntimeScope, trace: TraceEvent[]): void {
+    if (stmt.kind === "UseOneOfStmt") {
+      this.declareUseOneOf(stmt, scope, trace);
+      return;
+    }
     const source = formatExpressionSource(stmt.value);
     scope.addUse(stmt.value, source, stmt.budget, stmt.label);
     trace.push(buildTraceEvent("use", { source, label: stmt.label ?? null, budget: budgetToJson(stmt.budget) }));
+  }
+
+  private declareUseOneOf(stmt: UseOneOfStmt, scope: RuntimeScope, trace: TraceEvent[]): void {
+    const siteId = this.useOneOfSiteId(stmt);
+    const candidates = stmt.candidates.map((candidate) => ({
+      name: candidate.name,
+      expr: candidate.value,
+      budget: candidate.budget,
+      selected: candidate.selected,
+      source: candidate.value ? formatExpressionSource(candidate.value) : undefined,
+    }));
+    const picked = pickUseOneOfCandidate(candidates, this.options.variant?.[siteId], siteId);
+    scope.addUseOneOf(siteId, stmt.label, candidates);
+    trace.push(
+      buildTraceEvent("use", {
+        source: picked.candidate.source ?? null,
+        label: stmt.label,
+        budget: budgetToJson(picked.candidate.budget),
+        variant: {
+          site_id: siteId,
+          picked: picked.candidate.name,
+          available: candidates.map((candidate) => candidate.name),
+          reason: picked.reason,
+          empty: !picked.candidate.expr,
+        },
+      }),
+    );
+  }
+
+  private useOneOfSiteId(stmt: UseOneOfStmt): string {
+    const source = this.options.sourcePath ?? "<memory>";
+    return `${source}:${stmt.range.start.line}:${stmt.range.start.column}`;
   }
 }
 

@@ -1,4 +1,4 @@
-import type { AgentDecl, ConfigDecl, FuncDecl, FuncParam, ImportDecl, UseStmt } from "../ast/types.js";
+import type { AgentDecl, ConfigDecl, FuncDecl, FuncParam, ImportDecl, UseDecl } from "../ast/types.js";
 import { ANONYMOUS_MAIN_AGENT, ANONYMOUS_MAIN_FUNC } from "../language/anonymous.js";
 import { isImportResourceKind } from "../language/bindings.js";
 import type { DeclarationParserHost } from "./host.js";
@@ -39,7 +39,7 @@ export function parseAgentDecl(parser: DeclarationParserHost): AgentDecl {
   parser.consume("{");
 
   const config: ConfigDecl[] = [];
-  const uses: UseStmt[] = [];
+  const uses: UseDecl[] = [];
   const functions: FuncDecl[] = [];
   let seenFunction = false;
 

@@ -10,6 +10,8 @@ import type {
   Program,
   ReturnStmt,
   Stmt,
+  UseOneOfCandidate,
+  UseOneOfStmt,
   UseStmt,
 } from "../ast/types.js";
 import { isConfigKey } from "../language/config.js";
@@ -17,6 +19,7 @@ import { ParseError } from "./errors.js";
 import { parseForIn, parseIf, parseLoop, parseRepeat } from "./control-flow.js";
 import { parseAgentDecl, parseImportDecl } from "./declarations.js";
 import { parseExpressionExpr, parsePostfixExpr } from "./expressions.js";
+import { parseContractBlock } from "./contract.js";
 import { isNewLineBetween, isOnSameLine } from "./tokens.js";
 import { type Token, tokenize } from "./tokenizer.js";
 
@@ -98,8 +101,13 @@ class Parser {
     return this.parseAssignmentOrExpressionStatement();
   }
 
-  parseUse(): UseStmt {
+  parseUse(): UseStmt | UseOneOfStmt {
     const start = this.consume("use").range.start;
+    if (this.check("one") && this.peekNext().value === "of") {
+      this.consume("one");
+      this.consume("of");
+      return this.parseUseOneOf(start);
+    }
     const value = this.parseExpression();
     const budget = this.match("max") ? this.parseBudget() : undefined;
     const label = this.match("as") ? this.parseUseLabel() : undefined;
@@ -108,6 +116,56 @@ class Parser {
       value,
       budget,
       label,
+      range: { start, end: this.previous().range.end },
+    };
+  }
+
+  private parseUseOneOf(start: UseOneOfStmt["range"]["start"]): UseOneOfStmt {
+    const block = parseContractBlock(this, {
+      fieldNameMessage: "Expected use one of candidate name",
+      parseValue: () => this.parseUseOneOfCandidateValue(),
+    });
+    if (block.entries.length < 2) {
+      throw this.errorAtRange("use one of requires at least two candidates", block.range);
+    }
+    const selected = block.entries.filter((entry) => entry.value.selected);
+    if (selected.length > 1) {
+      throw this.errorAtRange("use one of can mark at most one candidate as selected", selected[1]!.range);
+    }
+    this.consume("as");
+    const label = this.parseUseLabel();
+    return {
+      kind: "UseOneOfStmt",
+      candidates: block.entries.map((entry) => ({
+        kind: "UseOneOfCandidate",
+        name: entry.name,
+        value: entry.value.value,
+        budget: entry.value.budget,
+        selected: entry.value.selected,
+        range: entry.range,
+      })),
+      label,
+      range: { start, end: this.previous().range.end },
+    };
+  }
+
+  private parseUseOneOfCandidateValue(): Omit<UseOneOfCandidate, "kind" | "name"> {
+    const start = this.peek().range.start;
+    if (this.match("empty")) {
+      const selected = this.match("selected");
+      return {
+        selected,
+        range: { start, end: this.previous().range.end },
+      };
+    }
+
+    const value = this.parseExpression();
+    const budget = this.match("max") ? this.parseBudget() : undefined;
+    const selected = this.match("selected");
+    return {
+      value,
+      budget,
+      selected,
       range: { start, end: this.previous().range.end },
     };
   }
@@ -178,13 +236,13 @@ class Parser {
     this.consume(",");
   }
 
-  consumeContractFieldSeparator(terminator: string): void {
+  consumeContractBlockEntrySeparator(terminator: string): void {
     if (this.check(terminator)) return;
     if (this.match(",")) {
-      throw this.error("Commas are not allowed between contract fields; use newlines");
+      throw this.error("Commas are not allowed between contract block entries; use newlines");
     }
     if (isNewLineBetween(this.previous(), this.peek())) return;
-    throw this.error("Expected newline between contract fields");
+    throw this.error("Expected newline between contract block entries");
   }
 
   private parseBudget(): Budget {
@@ -303,6 +361,10 @@ class Parser {
 
   peek(): Token {
     return this.tokens[this.current]!;
+  }
+
+  private peekNext(): Token {
+    return this.tokens[this.current + 1] ?? this.tokens[this.tokens.length - 1]!;
   }
 
   previous(): Token {

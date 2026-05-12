@@ -44,6 +44,7 @@ function walkStatementInScope(stmt: Stmt, scope: SemanticScope, visitor: ScopedA
       break;
     case "ConfigDecl":
     case "UseStmt":
+    case "UseOneOfStmt":
     case "AssignStmt":
     case "ExprStmt":
     case "ReturnStmt":
@@ -63,6 +64,8 @@ function statementReadExpressions(stmt: Stmt): Expr[] {
       return [stmt.value];
     case "UseStmt":
       return [stmt.value];
+    case "UseOneOfStmt":
+      return stmt.candidates.flatMap((candidate) => (candidate.value ? [candidate.value] : []));
     case "ExprStmt":
       return [stmt.expr];
     case "IfStmt":

@@ -21,6 +21,11 @@ generate({
 
 [中文版](./README-CN.md)
 
+Essays: [What Did the Model Actually See?](./docs/en/introducing-agentscript.md) ·
+[Why You Should Optimize Context, Not Prompts](./docs/en/introducing-agentscript-2.md) ·
+[中文一](./docs/cn/introducing-agentscript.md) ·
+[中文二](./docs/cn/introducing-agentscript-2.md)
+
 <p align="center">
   <img src="docs/en/assets/context-boundaries.png" alt="Traditional append-only chat versus AgentScript scoped context boundaries" width="900">
 </p>

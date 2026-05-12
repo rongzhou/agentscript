@@ -77,7 +77,7 @@ describe("parser generate-contract", () => {
         }
       }
     `),
-    ).toThrow("Commas are not allowed between contract fields");
+    ).toThrow("Commas are not allowed between contract block entries");
   });
 
   it("rejects label-only input contract fields", () => {

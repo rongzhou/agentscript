@@ -8,6 +8,7 @@ import { ResourceCallRuntime } from "./resource-calls.js";
 import type { RuntimeScope } from "./scope.js";
 import { isTruthy } from "./truth.js";
 import { evaluateParallelFor } from "./parallel-for.js";
+import { pickUseOneOfCandidate } from "./use-one-of.js";
 import {
   type ContextUse,
   type MemoryProvider,
@@ -38,6 +39,7 @@ export class Evaluator {
     private readonly trace: TraceEvent[],
     private readonly generateRuntime: GenerateRuntime,
     private readonly host: EvaluatorHost,
+    private readonly variant: Record<string, string> = {},
   ) {
     this.resourceCalls = new ResourceCallRuntime(toolProvider, memoryProvider, trace);
   }
@@ -122,6 +124,19 @@ export class Evaluator {
   async resolveContextUses(scope: RuntimeScope): Promise<ContextUse[]> {
     const uses: ContextUse[] = [];
     for (const item of scope.visibleUses()) {
+      if (item.kind === "use_one_of") {
+        const picked = pickUseOneOfCandidate(item.candidates, this.variant[item.siteId], item.siteId).candidate;
+        if (!picked.expr) {
+          continue;
+        }
+        uses.push({
+          source: picked.source,
+          label: item.label,
+          value: await this.evaluate(picked.expr, item.scope),
+          budget: picked.budget,
+        });
+        continue;
+      }
       uses.push({
         source: item.source,
         label: item.label,

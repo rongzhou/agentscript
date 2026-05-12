@@ -2,6 +2,7 @@ import type { Budget, Expr, SourceRange } from "../ast/types.js";
 import { type BindingKind, MUTABLE_BINDING_KINDS } from "../language/bindings.js";
 import { RuntimeError } from "./errors.js";
 import type { RuntimeValue } from "./types.js";
+import type { RuntimeUseOneOfCandidate } from "./use-one-of.js";
 
 interface Binding {
   value: RuntimeValue;
@@ -9,6 +10,7 @@ interface Binding {
 }
 
 interface RuntimeContextUse {
+  kind: "use";
   expr: Expr;
   source: string;
   budget?: Budget;
@@ -16,10 +18,20 @@ interface RuntimeContextUse {
   scope: RuntimeScope;
 }
 
+interface RuntimeContextUseOneOf {
+  kind: "use_one_of";
+  siteId: string;
+  label: string;
+  candidates: RuntimeUseOneOfCandidate[];
+  scope: RuntimeScope;
+}
+
+export type RuntimeContextDeclaration = RuntimeContextUse | RuntimeContextUseOneOf;
+
 export class RuntimeScope {
   private readonly bindings = new Map<string, Binding>();
   private readonly config = new Map<string, RuntimeValue>();
-  private readonly uses: RuntimeContextUse[] = [];
+  private readonly uses: RuntimeContextDeclaration[] = [];
 
   constructor(readonly parent?: RuntimeScope) {}
 
@@ -52,7 +64,23 @@ export class RuntimeScope {
   }
 
   addUse(expr: Expr, source: string, budget?: Budget, label?: string): void {
-    this.uses.push({ expr, source, budget, label, scope: this });
+    this.uses.push({ kind: "use", expr, source, budget, label, scope: this });
+  }
+
+  addUseOneOf(siteId: string, label: string, candidates: RuntimeUseOneOfCandidate[]): void {
+    this.uses.push({
+      kind: "use_one_of",
+      siteId,
+      label,
+      candidates: candidates.map((candidate) => ({
+        name: candidate.name,
+        expr: candidate.expr,
+        source: candidate.source,
+        budget: candidate.budget,
+        selected: candidate.selected,
+      })),
+      scope: this,
+    });
   }
 
   setConfig(name: string, value: RuntimeValue): void {
@@ -63,7 +91,7 @@ export class RuntimeScope {
     return this.config.get(name) ?? this.parent?.getConfig(name);
   }
 
-  visibleUses(): RuntimeContextUse[] {
+  visibleUses(): RuntimeContextDeclaration[] {
     return [...(this.parent?.visibleUses() ?? []), ...this.uses];
   }
 

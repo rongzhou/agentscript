@@ -148,7 +148,7 @@ describe("parser expressions", () => {
         }
       }
     `),
-    ).toThrow("Expected newline between contract fields");
+    ).toThrow("Expected newline between contract block entries");
   });
 
   it("parses list index access as a postfix expression", () => {

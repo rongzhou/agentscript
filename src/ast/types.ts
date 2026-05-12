@@ -34,7 +34,7 @@ export interface AgentDecl extends NodeBase {
   name: string;
   isMain: boolean;
   config: ConfigDecl[];
-  uses: UseStmt[];
+  uses: UseDecl[];
   functions: FuncDecl[];
 }
 
@@ -62,7 +62,7 @@ export interface FuncParam extends NodeBase {
 
 export type Stmt =
   | ConfigDecl
-  | UseStmt
+  | UseDecl
   | AssignStmt
   | ExprStmt
   | IfStmt
@@ -76,6 +76,22 @@ export interface UseStmt extends NodeBase {
   value: Expr;
   budget?: Budget;
   label?: string;
+}
+
+export type UseDecl = UseStmt | UseOneOfStmt;
+
+export interface UseOneOfStmt extends NodeBase {
+  kind: "UseOneOfStmt";
+  candidates: UseOneOfCandidate[];
+  label: string;
+}
+
+export interface UseOneOfCandidate extends NodeBase {
+  kind: "UseOneOfCandidate";
+  name: string;
+  value?: Expr;
+  budget?: Budget;
+  selected: boolean;
 }
 
 export interface AssignStmt extends NodeBase {

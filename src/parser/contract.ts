@@ -1,7 +1,7 @@
 import {
   type ListContractType,
   type NamedContractType,
-  type ContractField,
+  type SourceRange,
   type ContractObjectExpr,
   type ContractTypeExpr,
 } from "../ast/types.js";
@@ -14,51 +14,93 @@ export interface ContractParseOptions {
   defaultType?: "string";
 }
 
+export interface ContractBlockEntry<T> {
+  name: string;
+  value: T;
+  range: SourceRange;
+}
+
+interface ContractBlockOptions<T> {
+  parseValue: (nameToken: Token) => T;
+  parseDefaultValue?: (nameToken: Token) => T;
+  fieldNameMessage: string;
+}
+
 export function parseContractObject(
   parser: ContractParserHost,
   options: ContractParseOptions = {},
 ): ContractObjectExpr {
+  const block = parseContractBlock(parser, {
+    fieldNameMessage: "Expected contract field name",
+    parseValue: () => parseContractType(parser),
+    parseDefaultValue: options.defaultType
+      ? (nameToken) => defaultContractType(nameToken, options.defaultType!)
+      : undefined,
+  });
+  return {
+    kind: "ContractObjectExpr",
+    fields: block.entries.map((entry) => ({
+      kind: "ContractField",
+      name: entry.name,
+      type: entry.value,
+      range: entry.range,
+    })),
+    range: block.range,
+  };
+}
+
+export function parseContractBlock<T extends { range: SourceRange }>(
+  parser: ContractParserHost,
+  options: ContractBlockOptions<T>,
+): { entries: ContractBlockEntry<T>[]; range: SourceRange } {
   const start = parser.consume("{").range.start;
-  const fields: ContractField[] = [];
+  const entries: ContractBlockEntry<T>[] = [];
   while (!parser.check("}") && !parser.isAtEnd()) {
-    fields.push(parseContractField(parser, options));
-    parser.consumeContractFieldSeparator("}");
+    entries.push(parseContractBlockEntry(parser, options));
+    parser.consumeContractBlockEntrySeparator("}");
   }
 
   parser.consume("}");
   return {
-    kind: "ContractObjectExpr",
-    fields,
+    entries,
     range: { start, end: parser.previous().range.end },
   };
 }
 
-function parseContractField(parser: ContractParserHost, options: ContractParseOptions): ContractField {
-  const nameToken = parser.consumeIdentifier("Expected contract field name");
+function parseContractBlockEntry<T extends { range: SourceRange }>(
+  parser: ContractParserHost,
+  options: ContractBlockOptions<T>,
+): ContractBlockEntry<T> {
+  const nameToken = parser.consumeIdentifier(options.fieldNameMessage);
   const start = nameToken.range.start;
-  const type = parser.match(":") ? parseContractType(parser) : parseLabelOnlyContractField(parser, nameToken, options);
+  const value = parser.match(":")
+    ? options.parseValue(nameToken)
+    : parseLabelOnlyContractBlockEntry(parser, nameToken, options);
   return {
-    kind: "ContractField",
     name: nameToken.value,
-    type,
-    range: { start, end: type.range.end },
+    value,
+    range: { start, end: value.range.end },
   };
 }
 
-function parseLabelOnlyContractField(
+function parseLabelOnlyContractBlockEntry<T extends { range: SourceRange }>(
   parser: ContractParserHost,
-  fieldName: Token,
-  options: ContractParseOptions,
-): NamedContractType {
-  if (!parser.check("}") && !parser.check(",") && !isNewLineBetween(fieldName, parser.peek())) {
+  nameToken: Token,
+  options: ContractBlockOptions<T>,
+): T {
+  if (!parser.check("}") && !parser.check(",") && !isNewLineBetween(nameToken, parser.peek())) {
     throw parser.error("Expected ':' after contract field name");
   }
-  if (!options.defaultType) {
-    throw parser.errorAtRange("Label-only contract fields are not allowed in this contract", fieldName.range);
+  if (!options.parseDefaultValue) {
+    throw parser.errorAtRange("Label-only contract fields are not allowed in this contract", nameToken.range);
   }
+  return options.parseDefaultValue(nameToken);
+}
+
+function defaultContractType(fieldName: Token, name: "string"): NamedContractType {
   return {
     kind: "NamedContractType",
-    name: options.defaultType,
+    name,
     range: { start: fieldName.range.end, end: fieldName.range.end },
   };
 }

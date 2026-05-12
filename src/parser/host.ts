@@ -1,4 +1,4 @@
-import type { Budget, ConfigDecl, Expr, SourceLocation, SourceRange, Stmt, UseStmt } from "../ast/types.js";
+import type { Budget, ConfigDecl, Expr, SourceLocation, SourceRange, Stmt, UseDecl } from "../ast/types.js";
 import type { ParseError } from "./errors.js";
 import type { Token } from "./tokenizer.js";
 
@@ -20,8 +20,8 @@ export interface TokenParserHost {
 
 export interface ExpressionParserHost extends TokenParserHost {
   consumeObjectKey(): string;
+  consumeContractBlockEntrySeparator(terminator: string): void;
   consumePropertySeparator(terminator: string): void;
-  consumeContractFieldSeparator(terminator: string): void;
   parseBlock(): Stmt[];
   parseBudgetToken(token: Token): Budget;
   parseCommaSeparatedUntil<T>(terminator: string, parseItem: () => T): T[];
@@ -32,9 +32,9 @@ export interface ExpressionParserHost extends TokenParserHost {
 export interface DeclarationParserHost extends ExpressionParserHost {
   isConfigKey(value: string): boolean;
   parseConfigDecl(): ConfigDecl;
-  parseUse(): UseStmt;
+  parseUse(): UseDecl;
 }
 
 export interface ContractParserHost extends TokenParserHost {
-  consumeContractFieldSeparator(terminator: string): void;
+  consumeContractBlockEntrySeparator(terminator: string): void;
 }

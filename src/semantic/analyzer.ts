@@ -11,7 +11,12 @@ import { collectParallelForDiagnostics } from "./parallel-for.js";
 import { collectProgramDeclarations, type ImportBindingDecl } from "./program.js";
 import { collectContractDiagnostics } from "./contract.js";
 import { SemanticScope } from "./scope.js";
-import { collectAgentUseDiagnostics, collectFunctionUseDiagnostics } from "./use.js";
+import {
+  collectAgentUseDiagnostics,
+  collectAgentUseOneOfDiagnostics,
+  collectFunctionUseDiagnostics,
+  collectFunctionUseOneOfDiagnostics,
+} from "./use.js";
 import { walkExpressionInScope, walkStatementsInScope } from "./walker.js";
 
 export interface AnalyzeOptions {
@@ -89,13 +94,24 @@ class Analyzer {
     this.diagnostics.push(...collectConfigDiagnostics(config, scope));
   }
 
-  private checkAgentUseStatement(stmt: Extract<Stmt, { kind: "UseStmt" }>, scope: SemanticScope): void {
-    this.checkExpression(stmt.value, scope);
-    this.diagnostics.push(...collectAgentUseDiagnostics(stmt, scope));
+  private checkAgentUseStatement(stmt: AgentDecl["uses"][number], scope: SemanticScope): void {
+    if (stmt.kind === "UseStmt") {
+      this.checkExpression(stmt.value, scope);
+      this.diagnostics.push(...collectAgentUseDiagnostics(stmt, scope));
+      return;
+    }
+    for (const candidate of stmt.candidates) {
+      if (candidate.value) this.checkExpression(candidate.value, scope);
+    }
+    this.diagnostics.push(...collectAgentUseOneOfDiagnostics(stmt, scope));
   }
 
   private checkFunctionUseStatement(stmt: Extract<Stmt, { kind: "UseStmt" }>, scope: SemanticScope): void {
     this.diagnostics.push(...collectFunctionUseDiagnostics(stmt, scope));
+  }
+
+  private checkFunctionUseOneOfStatement(stmt: Extract<Stmt, { kind: "UseOneOfStmt" }>, scope: SemanticScope): void {
+    this.diagnostics.push(...collectFunctionUseOneOfDiagnostics(stmt, scope));
   }
 
   private checkStatementRules(stmt: Stmt, scope: SemanticScope): false | void {
@@ -105,6 +121,9 @@ class Analyzer {
         return false;
       case "UseStmt":
         this.checkFunctionUseStatement(stmt, scope);
+        return;
+      case "UseOneOfStmt":
+        this.checkFunctionUseOneOfStatement(stmt, scope);
         return;
       case "ForInStmt":
         if (stmt.maxIterations <= 0) {

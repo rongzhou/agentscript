@@ -111,6 +111,160 @@ describe("runtime context", () => {
     expect(requests[0]!.builtContext.finalUserMessage).toContain("[retrieved evidence]");
   });
 
+  it("selects use one of candidates for generated context", async () => {
+    const requests: GenerateRequest[] = [];
+    const ast = parse(`
+      import llm Qwen from "openai://gpt-4.1-mini"
+
+      main agent A {
+        model Qwen
+        role "Assistant"
+        description "Use selectable context."
+
+        main func(input) {
+          use one of {
+            compact: input.digest max 500
+            verbose: input.summary max 4k selected
+          } as evidence
+
+          generate({ input: "answer" }) -> {
+              ok: boolean
+          }
+        }
+      }
+    `);
+
+    const result = await executeAgent(
+      ast,
+      {
+        digest: "short",
+        summary: "long",
+      },
+      {
+        llmProvider: {
+          async generate(request) {
+            requests.push(request);
+            return { ok: true };
+          },
+        },
+      },
+    );
+
+    expect(requests[0]!.context).toEqual([
+      expect.objectContaining({ source: "input.summary", label: "evidence", value: "long" }),
+    ]);
+    expect(result.trace).toContainEqual(
+      expect.objectContaining({
+        kind: "use",
+        data: expect.objectContaining({
+          source: "input.summary",
+          label: "evidence",
+          variant: expect.objectContaining({ picked: "verbose", reason: "selected", empty: false }),
+        }),
+      }),
+    );
+  });
+
+  it("allows runtime variant hints and empty use one of candidates", async () => {
+    const requests: GenerateRequest[] = [];
+    const ast = parse(`
+      import llm Qwen from "openai://gpt-4.1-mini"
+
+      main agent A {
+        model Qwen
+        role "Assistant"
+        description "Use selectable context."
+
+        main func(input) {
+          use one of {
+            none: empty
+            verbose: input.summary selected
+          } as evidence
+
+          generate({ input: "answer" }) -> {
+              ok: boolean
+          }
+        }
+      }
+    `);
+
+    const result = await executeAgent(
+      ast,
+      { summary: "long" },
+      {
+        variant: { "<memory>:10:11": "none" },
+        llmProvider: {
+          async generate(request) {
+            requests.push(request);
+            return { ok: true };
+          },
+        },
+      },
+    );
+
+    expect(requests[0]!.context).toEqual([]);
+    expect(result.trace).toContainEqual(
+      expect.objectContaining({
+        kind: "use",
+        data: expect.objectContaining({
+          source: null,
+          label: "evidence",
+          variant: expect.objectContaining({ picked: "none", reason: "trial", empty: true }),
+        }),
+      }),
+    );
+  });
+
+  it("picks the first use one of candidate when no selected marker or runtime hint exists", async () => {
+    const requests: GenerateRequest[] = [];
+    const ast = parse(`
+      import llm Qwen from "openai://gpt-4.1-mini"
+
+      main agent A {
+        model Qwen
+        role "Assistant"
+        description "Use selectable context."
+
+        main func(input) {
+          use one of {
+            compact: input.digest
+            verbose: input.summary
+          } as evidence
+
+          generate({ input: "answer" }) -> {
+              ok: boolean
+          }
+        }
+      }
+    `);
+
+    const result = await executeAgent(
+      ast,
+      { digest: "short", summary: "long" },
+      {
+        llmProvider: {
+          async generate(request) {
+            requests.push(request);
+            return { ok: true };
+          },
+        },
+      },
+    );
+
+    expect(requests[0]!.context).toEqual([
+      expect.objectContaining({ source: "input.digest", label: "evidence", value: "short" }),
+    ]);
+    expect(result.trace).toContainEqual(
+      expect.objectContaining({
+        kind: "use",
+        data: expect.objectContaining({
+          source: "input.digest",
+          variant: expect.objectContaining({ picked: "compact", reason: "first", empty: false }),
+        }),
+      }),
+    );
+  });
+
   it("makes agent-level use visible to every function without leaking caller function context", async () => {
     const dir = mkdtempSync(join(tmpdir(), "agentscript-agent-use-"));
     const scriptFile = join(dir, "agent.as");

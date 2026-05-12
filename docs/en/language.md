@@ -172,7 +172,7 @@ Contract fields use newline-separated `label: value` entries. Commas are not all
 
 Supported contract types: `string`, `number`, `boolean`, `json`, `list`, `list[T]` where T is any supported type.
 
-Contract blocks are used only where the language expects a contract: function input parameters and `generate(...) -> { ... }` output contracts. The `generate({ ... })` argument itself is a JSON-like options object, not a contract block. Contract blocks are not object literals and not a full static type system.
+Contract blocks are used where the language expects a named structural block: function input parameters and `generate(...) -> { ... }` output contracts. `use one of { ... }` uses the same contract block convention for candidate entries, but its values are candidate expressions rather than contract types and it does not define a label-only default value. The `generate({ ... })` argument itself is a JSON-like options object, not a contract block. Contract blocks are not object literals and not a full static type system.
 
 Object literals use JSON-like syntax: fields are written as `key: value`, and multiple fields must be separated with commas.
 
@@ -219,11 +219,11 @@ use input.question as user
 
 For the full design semantics, see [`use ... as ...`](./use-as.md).
 
-### Selectable context design: `use one of`
+### Selectable context: `use one of`
 
-`use one of` is the design extension for making a single context slot selectable
-without turning optimization into hidden runtime state. It keeps the semantics
-of `use`, but declares multiple candidate sources under one shared label:
+`use one of` makes a single context slot selectable without turning optimization
+into hidden runtime state. It keeps the semantics of `use`, but declares
+multiple candidate sources under one shared label:
 
 ```agentscript
 use one of {
@@ -239,9 +239,8 @@ Exactly one candidate is selected before a visible `generate` builds its prompt.
 candidate is the default. `empty` means this context slot is deliberately absent.
 The model sees only the selected source, not the candidate list.
 
-This syntax is documented as a design surface for context optimization. See
-[`use one of ...`](./use-one-of.md) for constraints, trace requirements, and the
-optimizer contract.
+See [`use one of ...`](./use-one-of.md) for constraints, trace requirements, and
+the optimizer contract.
 
 ## Generate
 

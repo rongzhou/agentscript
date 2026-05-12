@@ -1,4 +1,4 @@
-import type { Expr, SourceRange, UseStmt } from "../ast/types.js";
+import type { Expr, SourceRange, UseOneOfStmt, UseStmt } from "../ast/types.js";
 import { childExpressions } from "../ast/walk.js";
 import { NON_CONTEXT_BINDING_KINDS } from "../language/bindings.js";
 import { collectBudgetDiagnostics } from "./budget.js";
@@ -18,6 +18,61 @@ export function collectAgentUseDiagnostics(stmt: UseStmt, scope: UseScope): Sema
 
 export function collectFunctionUseDiagnostics(stmt: UseStmt, scope: UseScope): SemanticDiagnostic[] {
   return checkCommonUseRules(stmt, scope, collectUseValueFacts(stmt.value));
+}
+
+export function collectAgentUseOneOfDiagnostics(stmt: UseOneOfStmt, scope: UseScope): SemanticDiagnostic[] {
+  return collectUseOneOfDiagnostics(stmt, scope, true);
+}
+
+export function collectFunctionUseOneOfDiagnostics(stmt: UseOneOfStmt, scope: UseScope): SemanticDiagnostic[] {
+  return collectUseOneOfDiagnostics(stmt, scope, false);
+}
+
+function collectUseOneOfDiagnostics(stmt: UseOneOfStmt, scope: UseScope, agentLevel: boolean): SemanticDiagnostic[] {
+  const diagnostics: SemanticDiagnostic[] = [];
+  const candidateNames = new Set<string>();
+  let selectedCount = 0;
+
+  if (stmt.candidates.length < 2) {
+    diagnostics.push(error("INVALID_USE_ONE_OF", "use one of requires at least two candidates", stmt.range));
+  }
+  if (RESERVED_CONTEXT_LABELS.has(stmt.label)) {
+    diagnostics.push(error("RESERVED_CONTEXT_LABEL", `Context label '${stmt.label}' is reserved`, stmt.range));
+  }
+
+  for (const candidate of stmt.candidates) {
+    if (candidateNames.has(candidate.name)) {
+      diagnostics.push(
+        error("DUPLICATE_USE_ONE_OF_CANDIDATE", `Duplicate use one of candidate '${candidate.name}'`, candidate.range),
+      );
+    }
+    candidateNames.add(candidate.name);
+    if (candidate.selected) selectedCount += 1;
+    diagnostics.push(...collectBudgetDiagnostics(candidate.budget, candidate.range));
+    if (!candidate.value) continue;
+    const facts = collectUseValueFacts(candidate.value);
+    diagnostics.push(...checkUseValue(facts, scope));
+    if (facts.containsCall) {
+      diagnostics.push(
+        error(
+          "INVALID_USE_CALL",
+          "use declarations cannot contain call expressions; assign the call result first, then use the variable",
+          candidate.value.range,
+        ),
+      );
+    }
+    if (agentLevel) {
+      diagnostics.push(...checkAgentLevelUseValue(facts, scope));
+    }
+  }
+
+  if (selectedCount > 1) {
+    diagnostics.push(
+      error("MULTIPLE_USE_ONE_OF_SELECTED", "use one of can mark at most one candidate as selected", stmt.range),
+    );
+  }
+
+  return diagnostics;
 }
 
 function checkCommonUseRules(stmt: UseStmt, scope: UseScope, valueFacts: UseValueFacts): SemanticDiagnostic[] {

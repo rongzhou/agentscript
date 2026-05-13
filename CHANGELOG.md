@@ -2,6 +2,19 @@
 
 All notable changes to AgentScript will be documented in this file.
 
+## 0.1.18 - 2026-05-13
+
+### Added
+
+- Added the V6 `host://agentscript` optimizer toolchain with `inspect`, `trial`, and `specialize`.
+- Added optimizer CLI mode: `agentscript optimizer.as target.as --...`.
+- Added label-based `use one of` site ids for runtime variants and trace output.
+- Added `examples/optimizer/` and English/Chinese optimizer documentation.
+
+### Changed
+
+- Allowed `AgentScript.trial(...)` inside `parallel for` while keeping source-writing `AgentScript.specialize(...)` effectful.
+
 ## 0.1.11 - 2026-05-10
 
 ### Added

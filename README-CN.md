@@ -66,6 +66,13 @@ agentscript recipes/summarize-file.as --input '{"path":"README.md"}' --dry-run
 
 # 审计 trace
 agentscript recipes/summarize-file.as --input '{"path":"README.md"}' --trace
+
+# 本地优化一个 AgentScript target 程序
+agentscript examples/optimizer/optimizer.as examples/optimizer/triage.as --mock \
+  --request "Checkout is failing with 500 errors in production" \
+  --selection '{"examples/optimizer/triage.as#Triage.main[style]":"detailed"}' \
+  --write preview \
+  --trial-trace none
 ```
 
 `recipes/summarize-file.as` 读取本地文件，将其放入 LLM 上下文，并返回结构化摘要：
@@ -121,6 +128,7 @@ main agent FileSummarizer {
 ## Examples、Tutorials 和 Recipes
 
 - `examples/` 放最小化示例，每个文件只演示一个语言特性或 agent pattern。
+- `examples/optimizer/` 放一个可用 `--mock` 跑通的 V6 optimizer workflow，演示 `host://agentscript`。
 - `tutorials/` 放更完整的 walkthrough 程序，用于学习端到端的多步骤 agent pattern。
 - `recipes/` 放可直接复制改造的实际工作流，例如 repo review、code review、changelog、文件摘要、文档翻译、API 数据抽取和 research brief。
 

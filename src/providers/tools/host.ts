@@ -7,8 +7,11 @@ import {
   NODE_SCHEME,
   NPM_SCHEME,
   SHELL_SCHEME,
+  AGENTSCRIPT_SCHEME,
 } from "../../language/schemes.js";
 import type { ToolProvider } from "../../runtime/types.js";
+import { RuntimeError } from "../../runtime/errors.js";
+import { AgentscriptToolProvider, type AgentscriptToolContext } from "../../toolchain/agentscript.js";
 import { EnvToolProvider } from "./env.js";
 import { FileToolProvider } from "./file.js";
 import { HttpToolProvider } from "./http.js";
@@ -21,13 +24,19 @@ import { ShellToolProvider } from "./shell.js";
 import { Workspace } from "../shared/workspace.js";
 
 export class HostToolProvider extends SchemeToolProvider {
-  constructor(workspaceRoot = process.cwd()) {
+  constructor(workspaceRoot = process.cwd(), agentscript?: Partial<AgentscriptToolContext>) {
     const workspace = new Workspace(workspaceRoot);
     const http = new HttpToolProvider();
     const mcp = new McpToolProvider(workspaceRoot);
     const npmRegistry = loadNpmRegistry(workspaceRoot);
     super(
       {
+        host: new HostNamespaceProvider({
+          [AGENTSCRIPT_SCHEME]: new AgentscriptToolProvider({
+            workspaceRoot,
+            ...agentscript,
+          }),
+        }),
         [ENV_SCHEME]: new EnvToolProvider(),
         [FILE_SCHEME]: new FileToolProvider(workspace),
         [HTTP_SCHEME]: http,
@@ -42,6 +51,22 @@ export class HostToolProvider extends SchemeToolProvider {
   }
 }
 
-export function createDefaultToolProvider(workspaceRoot = process.cwd()): ToolProvider {
-  return new HostToolProvider(workspaceRoot);
+class HostNamespaceProvider implements ToolProvider {
+  constructor(private readonly providers: Record<string, ToolProvider>) {}
+
+  async call(request: Parameters<ToolProvider["call"]>[0]): ReturnType<ToolProvider["call"]> {
+    const namespace = new URL(request.uri).hostname;
+    const provider = this.providers[namespace];
+    if (!provider) {
+      throw new RuntimeError(`Unsupported host namespace '${namespace}'`);
+    }
+    return provider.call(request);
+  }
+}
+
+export function createDefaultToolProvider(
+  workspaceRoot = process.cwd(),
+  agentscript?: Partial<AgentscriptToolContext>,
+): ToolProvider {
+  return new HostToolProvider(workspaceRoot, agentscript);
 }

@@ -10,6 +10,7 @@ import { prepareEntryInput } from "./input.js";
 import { createRuntimeImportBindings, type RuntimeImportBinding } from "./imports.js";
 import { createRuntimePaths } from "./paths.js";
 import { RuntimeScope } from "./scope.js";
+import { collectVariantSites, type VariantSiteMetadata } from "../language/variant-sites.js";
 import { buildTraceEvent } from "./trace-event.js";
 import { isTruthy } from "./truth.js";
 import { pickUseOneOfCandidate } from "./use-one-of.js";
@@ -18,6 +19,7 @@ import { MockLlmProvider } from "../providers/mock/provider.js";
 import { createDefaultToolProvider } from "../providers/tools/host.js";
 import { isDisposable } from "./disposable.js";
 import type { InputProvider, LlmProvider, MemoryProvider, RuntimeValue, ToolProvider, TraceEvent } from "./types.js";
+import type { AgentscriptToolContext } from "../toolchain/agentscript.js";
 
 export interface ExecuteOptions {
   agentName?: string;
@@ -31,6 +33,9 @@ export interface ExecuteOptions {
   toolProvider?: ToolProvider;
   workspaceRoot?: string;
   variant?: Record<string, string>;
+  closeProviders?: boolean;
+  artifactsDir?: string;
+  agentscript?: Partial<AgentscriptToolContext>;
 }
 
 export interface ExecuteResult {
@@ -67,6 +72,7 @@ class Interpreter {
   private readonly agents: Map<string, AgentDecl>;
   private readonly imports: RuntimeImportBinding[];
   private readonly maxCallDepth: number;
+  private readonly variantSites: Map<UseOneOfStmt, VariantSiteMetadata>;
   private callDepth = 0;
 
   constructor(
@@ -76,18 +82,32 @@ class Interpreter {
     const paths = createRuntimePaths(options);
     this.llmProvider = options.llmProvider ?? new MockLlmProvider();
     this.inputProvider = options.inputProvider;
-    this.toolProvider = options.toolProvider ?? createDefaultToolProvider(paths.workspaceRoot);
     this.memoryProvider =
       options.memoryProvider ??
       createDefaultMemoryProvider({
         baseDir: paths.sourceDir,
         workspaceRoot: paths.workspaceRoot,
       });
+    this.toolProvider =
+      options.toolProvider ??
+      createDefaultToolProvider(paths.workspaceRoot, {
+        llmProvider: this.llmProvider,
+        memoryProvider: this.memoryProvider,
+        workspaceRoot: paths.workspaceRoot,
+        artifactsDir: options.artifactsDir,
+        ...options.agentscript,
+      });
     this.agents = createAgentMap(program);
     this.agent = resolveEntryAgent(program, options.agentName);
     this.entryFunction = options.functionName ?? resolveMainFunction(this.agent).name;
     this.imports = createRuntimeImportBindings(program, paths.sourceDir);
     this.maxCallDepth = readMaxCallDepth(options.maxCallDepth);
+    this.variantSites = new Map(
+      collectVariantSites(program, {
+        sourcePath: options.sourcePath,
+        workspaceRoot: paths.workspaceRoot,
+      }).map((site) => [site.node, site]),
+    );
   }
 
   async execute(input: RuntimeValue): Promise<RuntimeValue> {
@@ -100,12 +120,14 @@ class Interpreter {
         entry.params.length === 0 ? [] : [await prepareEntryInput(input, entry, this.inputProvider, this.trace)];
       return await this.callFunction(this.agent, entry.name, args, entry.range, this.trace);
     } finally {
-      await Promise.all([
-        closeIfDisposable(this.toolProvider),
-        closeIfDisposable(this.memoryProvider),
-        closeIfDisposable(this.llmProvider),
-        closeIfDisposable(this.inputProvider),
-      ]);
+      if (this.options.closeProviders !== false) {
+        await Promise.all([
+          closeIfDisposable(this.toolProvider),
+          closeIfDisposable(this.memoryProvider),
+          closeIfDisposable(this.llmProvider),
+          closeIfDisposable(this.inputProvider),
+        ]);
+      }
     }
   }
 
@@ -251,11 +273,7 @@ class Interpreter {
         scope.setConfig(stmt.key, await evaluator.evaluateConfig(stmt, scope));
         return undefined;
 
-      case "UseStmt": {
-        this.declareUse(stmt, scope, trace);
-        return undefined;
-      }
-
+      case "UseStmt":
       case "UseOneOfStmt": {
         this.declareUse(stmt, scope, trace);
         return undefined;
@@ -382,7 +400,8 @@ class Interpreter {
   }
 
   private declareUseOneOf(stmt: UseOneOfStmt, scope: RuntimeScope, trace: TraceEvent[]): void {
-    const siteId = this.useOneOfSiteId(stmt);
+    const site = this.variantSites.get(stmt);
+    const siteId = site?.siteId ?? this.useOneOfSiteId(stmt);
     const candidates = stmt.candidates.map((candidate) => ({
       name: candidate.name,
       expr: candidate.value,

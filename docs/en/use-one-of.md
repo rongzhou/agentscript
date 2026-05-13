@@ -397,6 +397,7 @@ Non-empty variant picked:
     "label": "evidence",
     "budget": { "amount": 2, "unit": "k" },
     "variant": {
+      "site_id": "research.as#Researcher.main[evidence]",
       "picked": "grounded",
       "available": ["none", "compact", "verbose", "grounded"],
       "reason": "selected",
@@ -416,6 +417,7 @@ Non-empty variant picked:
     "label": "evidence",
     "budget": null,
     "variant": {
+      "site_id": "research.as#Researcher.main[evidence]",
       "picked": "none",
       "available": ["none", "compact", "verbose", "grounded"],
       "reason": "first",
@@ -433,6 +435,8 @@ Non-empty variant picked:
 
 The `generate` event's built context items do not grow new fields—they still record "the source and value that actually entered the prompt". A `use one of` that resolved to `empty` produces no context item at all. The variant detail lives on the `use` event and is sufficient for external tooling to reconstruct the full variant combination used by any given `generate`, including slots that were deliberately skipped.
 
+`variant.site_id` is an implementation-defined site identifier used by trial-time `ExecuteOptions.variant` hints and trace correlation. The current implementation uses a label-based format: `<path>#<agent>.<func>[<label>]`; agent-level context omits the function segment. It is not a durable optimization artifact: persisted optimization should rewrite source by moving `selected`, while the runtime hint map is intended for executions against the same parsed source.
+
 ## Optimizer contract
 
 The optimizer is not part of the language core. It is a user-space agent or script that interacts with `use one of` through two contracts:
@@ -442,7 +446,7 @@ The optimizer is not part of the language core. It is a user-space agent or scri
 
 The runtime provides only two minimal hooks:
 
-- `ExecuteOptions.variant`: an execution may pass a `{ site_id: variant_name }` map so that a `use one of` at a given site uses a specific candidate during trials. This map **overrides any `selected` in source**. The `site_id` format is implementation-defined (typically source path + function name + position).
+- `ExecuteOptions.variant`: an execution may pass a `{ site_id: variant_name }` map so that a `use one of` at a given site uses a specific candidate during trials. This map **overrides any `selected` in source**. The current `site_id` uses `<path>#<agent>.<func>[<label>]`.
 - The `variant` field on `use` trace events: the optimizer can reconstruct which candidate actually ran per trial, whether it was empty, and how it was chosen.
 
 Together these keep "optimization" as a pure source-to-source function: `.as` + evaluation signal → new `.as` (candidate set unchanged; `selected` may move). The runtime only ever executes concrete programs and does not observe the optimization process.

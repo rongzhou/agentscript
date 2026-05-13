@@ -31,14 +31,8 @@ export function collectFunctionUseOneOfDiagnostics(stmt: UseOneOfStmt, scope: Us
 function collectUseOneOfDiagnostics(stmt: UseOneOfStmt, scope: UseScope, agentLevel: boolean): SemanticDiagnostic[] {
   const diagnostics: SemanticDiagnostic[] = [];
   const candidateNames = new Set<string>();
-  let selectedCount = 0;
 
-  if (stmt.candidates.length < 2) {
-    diagnostics.push(error("INVALID_USE_ONE_OF", "use one of requires at least two candidates", stmt.range));
-  }
-  if (RESERVED_CONTEXT_LABELS.has(stmt.label)) {
-    diagnostics.push(error("RESERVED_CONTEXT_LABEL", `Context label '${stmt.label}' is reserved`, stmt.range));
-  }
+  diagnostics.push(...checkContextLabel(stmt.label, stmt.range));
 
   for (const candidate of stmt.candidates) {
     if (candidateNames.has(candidate.name)) {
@@ -47,7 +41,6 @@ function collectUseOneOfDiagnostics(stmt: UseOneOfStmt, scope: UseScope, agentLe
       );
     }
     candidateNames.add(candidate.name);
-    if (candidate.selected) selectedCount += 1;
     diagnostics.push(...collectBudgetDiagnostics(candidate.budget, candidate.range));
     if (!candidate.value) continue;
     const facts = collectUseValueFacts(candidate.value);
@@ -64,12 +57,6 @@ function collectUseOneOfDiagnostics(stmt: UseOneOfStmt, scope: UseScope, agentLe
     if (agentLevel) {
       diagnostics.push(...checkAgentLevelUseValue(facts, scope));
     }
-  }
-
-  if (selectedCount > 1) {
-    diagnostics.push(
-      error("MULTIPLE_USE_ONE_OF_SELECTED", "use one of can mark at most one candidate as selected", stmt.range),
-    );
   }
 
   return diagnostics;
@@ -89,11 +76,14 @@ function checkCommonUseRules(stmt: UseStmt, scope: UseScope, valueFacts: UseValu
     );
   }
   diagnostics.push(...collectBudgetDiagnostics(stmt.budget, stmt.range));
-  if (stmt.label && RESERVED_CONTEXT_LABELS.has(stmt.label)) {
-    diagnostics.push(error("RESERVED_CONTEXT_LABEL", `Context label '${stmt.label}' is reserved`, stmt.range));
-  }
+  diagnostics.push(...checkContextLabel(stmt.label, stmt.range));
 
   return diagnostics;
+}
+
+function checkContextLabel(label: string | undefined, range: SourceRange): SemanticDiagnostic[] {
+  if (!label || !RESERVED_CONTEXT_LABELS.has(label)) return [];
+  return [error("RESERVED_CONTEXT_LABEL", `Context label '${label}' is reserved`, range)];
 }
 
 function checkAgentLevelUseValue(facts: UseValueFacts, scope: UseScope): SemanticDiagnostic[] {

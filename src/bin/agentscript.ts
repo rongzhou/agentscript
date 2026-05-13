@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { basename, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { stdin as inputStream, stdout as outputStream } from "node:process";
@@ -12,8 +12,10 @@ import { MockLlmProvider } from "../providers/mock/provider.js";
 import { sanitizeForJson } from "../runtime/json.js";
 import { formatTrace } from "../runtime/trace.js";
 import type { InputProvider, JsonObject, LlmProvider } from "../runtime/types.js";
+import type { GenerateRequest, RuntimeValue } from "../runtime/types.js";
 import { formatSemanticDiagnostics } from "../semantic/diagnostics.js";
 import { createDryRunToolProvider } from "../providers/dry-run/tool.js";
+import { RuntimeError } from "../runtime/errors.js";
 import { parseArgs, printUsage, type CliOptions } from "./args.js";
 import { createReadlineInputProvider, parseJsonObjectInput } from "./input.js";
 import { runRepl } from "./repl.js";
@@ -50,10 +52,116 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
     if (options.check) {
       return runCheck(options);
     }
+    if (options.targetFile) {
+      return await runOptimizer(options);
+    }
     return await runAgent(options);
   } catch (error) {
     console.error(error instanceof Error ? error.message : String(error));
     return 1;
+  }
+}
+
+async function runOptimizer(options: CliOptions): Promise<number> {
+  const inputProvider = terminalInputProvider();
+  const program = loadCliProgram(options);
+  assertCliProgramSemanticallyValid(program);
+  const runDir =
+    options.runDir ??
+    join(process.cwd(), ".agentscript", "optimizations", new Date().toISOString().replace(/[:.]/g, "-"));
+  mkdirSync(runDir, { recursive: true });
+  const budget = createBudgetCounter({
+    maxTrials: options.maxTrials ?? 1000,
+    maxLlmCalls: options.maxLlmCalls ?? 10000,
+    maxSeconds: options.maxSeconds ?? 1800,
+  });
+  const llmProvider = new BudgetedLlmProvider(createCliLlmProvider(options), budget);
+  const input = {
+    ...options.optimizerArgs,
+    target: options.targetFile!,
+    dry_run: options.dryRun,
+  };
+  const result = await executeAgent(program, input as JsonObject, {
+    agentName: options.agentName,
+    concurrency: options.concurrency,
+    functionName: options.functionName,
+    inputProvider,
+    llmProvider,
+    sourcePath: options.file,
+    workspaceRoot: process.cwd(),
+    artifactsDir: runDir,
+    agentscript: {
+      budget,
+    },
+  }).finally(() => inputProvider?.close?.());
+
+  const trace = optimizerTrace(result.trace, options.traceLevel);
+  if (options.traceFile) {
+    writeFileSync(options.traceFile, `${JSON.stringify(trace, null, 2)}\n`);
+  }
+
+  const value = sanitizeForJson(result.value);
+  if (options.quiet) {
+    printJson(value);
+  } else {
+    printJson({ value, trace: options.traceFile ? { file: options.traceFile } : trace, run_dir: runDir });
+  }
+  if (options.tracePretty || options.verbose) {
+    console.log(formatTrace(result.trace));
+  }
+  return 0;
+}
+
+function optimizerTrace(trace: unknown[], level: CliOptions["traceLevel"]): unknown[] {
+  return level === "none" ? [] : trace;
+}
+
+interface BudgetOptions {
+  maxTrials: number;
+  maxLlmCalls: number;
+  maxSeconds: number;
+}
+
+function createBudgetCounter(options: BudgetOptions) {
+  let trials = 0;
+  let llmCalls = 0;
+  const started = Date.now();
+  return {
+    incrementTrial() {
+      trials += 1;
+      if (options.maxTrials > 0 && trials > options.maxTrials) {
+        throw new RuntimeError("BUDGET_EXCEEDED: trials");
+      }
+      this.checkDeadline();
+    },
+    incrementLlm() {
+      llmCalls += 1;
+      if (options.maxLlmCalls > 0 && llmCalls > options.maxLlmCalls) {
+        throw new RuntimeError("BUDGET_EXCEEDED: llm_calls");
+      }
+      this.checkDeadline();
+    },
+    checkDeadline() {
+      if (options.maxSeconds > 0 && Date.now() - started > options.maxSeconds * 1000) {
+        throw new RuntimeError("BUDGET_EXCEEDED: seconds");
+      }
+    },
+  };
+}
+
+class BudgetedLlmProvider implements LlmProvider {
+  constructor(
+    private readonly inner: LlmProvider,
+    private readonly budget: ReturnType<typeof createBudgetCounter>,
+  ) {}
+
+  async generate(request: GenerateRequest): Promise<RuntimeValue> {
+    this.budget.incrementLlm();
+    return this.inner.generate(request);
+  }
+
+  async close(): Promise<void> {
+    await this.inner.close?.();
   }
 }
 

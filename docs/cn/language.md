@@ -21,6 +21,7 @@
 - [`parallel for`](./parallel-for.md)：面向独立有界 list 工作的结构化并行。
 - [Final Expression Return](./final-expression-return.md)：函数体最后一个顶层表达式的隐式返回规则。
 - [npm 和 node tools](./npm-tools.md)：在 AgentScript 中调用 npm 包和 Node 内置模块。
+- [Optimizer Toolchain](./optimizer.md)：用于 inspect、trial 和 specialize `use one of` 变体的 `host://agentscript` 工具。
 
 ## 程序结构
 
@@ -84,6 +85,7 @@ import llm Local from "ollama://localhost:11434/qwen3.6"
 | `env://` | 环境变量 | `env://process` |
 | `http://` / `https://` | HTTP 请求 | `https://api.example.com` |
 | `mcp://` | 外部 MCP 工具 | `mcp://tools/search` |
+| `host://agentscript` | 内置 optimizer toolchain | `host://agentscript` |
 | `node:` | Node 内置模块（需 `agentscript.npm.json`） | `node:path`, `node:fs/promises` |
 | `npm:` | npm 包（需 `agentscript.npm.json`） | `npm:yaml`, `npm:@scope/util` |
 

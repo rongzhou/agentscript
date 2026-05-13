@@ -192,7 +192,7 @@ describe("runtime context", () => {
       ast,
       { summary: "long" },
       {
-        variant: { "<memory>:10:11": "none" },
+        variant: { "<memory>#A.main[evidence]": "none" },
         llmProvider: {
           async generate(request) {
             requests.push(request);

@@ -1,9 +1,10 @@
 import { readFileSync } from "node:fs";
 import { dirname, isAbsolute, resolve } from "node:path";
-import type { AgentDecl, ImportDecl, Program } from "../ast/types.js";
+import type { AgentDecl, ImportDecl, NodeBase, Program } from "../ast/types.js";
 import { FILE_SCHEME, SQLITE_SCHEME, schemePrefix } from "../language/schemes.js";
 import { parse } from "../parser/parser.js";
 import { splitSqliteUri } from "../language/uri.js";
+import { setAgentSourcePath, setNodeSourcePath } from "../language/source-map.js";
 
 export interface LoadProgramOptions {
   sourcePath?: string;
@@ -15,25 +16,70 @@ interface LoadState {
   imports: ImportDecl[];
   importKeys: Set<string>;
   loadingFiles: Set<string>;
-  programs: Map<string, Program>;
+  programs: Map<string, LoadedSourceFile>;
   agents: AgentDecl[];
 }
 
+export interface LoadedSourceFile {
+  path: string;
+  source: string;
+  program: Program;
+}
+
+export interface LoadedProgramGraph {
+  entryPath?: string;
+  entryProgram: Program;
+  program: Program;
+  files: LoadedSourceFile[];
+}
+
 export function loadProgram(path: string): Program {
+  return loadProgramGraph(path).program;
+}
+
+export function loadProgramGraph(path: string): LoadedProgramGraph {
   const entryPath = resolve(path);
   const state = createLoadState();
-  const program = readProgram(entryPath, state);
-  mergeEntryProgram(program, dirname(entryPath), state);
-  return loadedProgram(program, state);
+  const entryProgram = readProgram(entryPath, state);
+  mergeEntryProgram(entryProgram, dirname(entryPath), state);
+  return {
+    entryPath,
+    entryProgram,
+    program: loadedProgram(entryProgram, state),
+    files: [...state.programs.values()].map((file) => ({
+      path: file.path,
+      source: file.source,
+      program: file.program,
+    })),
+  };
 }
 
 export function loadProgramSource(source: string, options: LoadProgramOptions = {}): Program {
+  return loadProgramSourceGraph(source, options).program;
+}
+
+export function loadProgramSourceGraph(source: string, options: LoadProgramOptions = {}): LoadedProgramGraph {
   const sourcePath = options.sourcePath ? resolve(options.sourcePath) : undefined;
   const state = createLoadState();
-  const program = parse(source);
+  const program = parseSource(source, sourcePath);
+  if (sourcePath) {
+    state.programs.set(sourcePath, { path: sourcePath, source, program });
+  }
   const baseDir = sourceBaseDir(program, sourcePath);
   mergeEntryProgram(program, baseDir, state);
-  return loadedProgram(program, state);
+  return {
+    entryPath: sourcePath,
+    entryProgram: program,
+    program: loadedProgram(program, state),
+    files:
+      sourcePath === undefined
+        ? [{ path: "<memory>", source, program }]
+        : [...state.programs.values()].map((file) => ({
+            path: file.path,
+            source: file.source,
+            program: file.program,
+          })),
+  };
 }
 
 function sourceBaseDir(program: Program, sourcePath: string | undefined): string {
@@ -75,11 +121,39 @@ function loadedProgram(program: Program, state: LoadState): Program {
 function readProgram(path: string, state: LoadState): Program {
   const cached = state.programs.get(path);
   if (cached) {
-    return cached;
+    return cached.program;
   }
-  const program = parse(readFileSync(path, "utf8"));
-  state.programs.set(path, program);
+  const source = readFileSync(path, "utf8");
+  const program = parseSource(source, path);
+  state.programs.set(path, { path, source, program });
   return program;
+}
+
+function parseSource(source: string, sourcePath: string | undefined): Program {
+  const program = parse(source);
+  if (sourcePath) {
+    annotateSourcePath(program, sourcePath);
+  }
+  return program;
+}
+
+function annotateSourcePath(node: unknown, sourcePath: string, seen = new WeakSet<object>()): void {
+  if (!node || typeof node !== "object" || seen.has(node)) return;
+  seen.add(node);
+  if (isAstNode(node)) {
+    setNodeSourcePath(node, sourcePath);
+  }
+  for (const value of Object.values(node)) {
+    if (Array.isArray(value)) {
+      for (const item of value) annotateSourcePath(item, sourcePath, seen);
+    } else if (value && typeof value === "object") {
+      annotateSourcePath(value, sourcePath, seen);
+    }
+  }
+}
+
+function isAstNode(value: object): value is NodeBase {
+  return "kind" in value && "range" in value;
 }
 
 function mergeEntryProgram(program: Program, baseDir: string, state: LoadState): void {
@@ -117,7 +191,9 @@ function loadAgentImport(imported: ImportDecl, baseDir: string, state: LoadState
       throw new Error(`Imported agent '${imported.name}' was not found in ${imported.uri}`);
     }
     for (const item of program.agents) {
-      addImportedAgent({ ...item, isMain: false }, path, state);
+      const importedAgent = { ...item, isMain: false };
+      setAgentSourcePath(importedAgent, path);
+      addImportedAgent(importedAgent, path, state);
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);

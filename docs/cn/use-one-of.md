@@ -397,6 +397,7 @@ source: scratch.summary
     "label": "evidence",
     "budget": { "amount": 2, "unit": "k" },
     "variant": {
+      "site_id": "research.as#Researcher.main[evidence]",
       "picked": "grounded",
       "available": ["none", "compact", "verbose", "grounded"],
       "reason": "selected",
@@ -416,6 +417,7 @@ source: scratch.summary
     "label": "evidence",
     "budget": null,
     "variant": {
+      "site_id": "research.as#Researcher.main[evidence]",
       "picked": "none",
       "available": ["none", "compact", "verbose", "grounded"],
       "reason": "first",
@@ -433,6 +435,8 @@ source: scratch.summary
 
 `generate` 事件的 built context item 不新增字段——它仍然只记录"实际进入 prompt 的 source 和值"。被 empty 变体命中的 `use one of` 根本不会产生 context item。变体信息在 `use` event 上完整可审计，足以让外部工具重建"这个 generate 用的哪个变体组合"，包括哪些 slot 被显式跳过。
 
+`variant.site_id` 是实现定义的位点标识，用于 trial 期的 `ExecuteOptions.variant` hint 和 trace 关联。当前实现使用 label-based 格式：`<path>#<agent>.<func>[<label>]`，agent-level context 省略函数段。它不是持久化优化产物：持久化优化应通过移动源码中的 `selected` 完成；runtime hint map 只面向同一份已解析源码的一次执行。
+
 ## 优化器契约
 
 优化器不进入语言核心。它是用户空间的 agent 或脚本，通过两个契约与 `use one of` 交互：
@@ -442,7 +446,7 @@ source: scratch.summary
 
 运行时不直接参与优化，只提供两项最小支持：
 
-- `ExecuteOptions.variant`：一次执行可以传入 `{ site_id: variant_name }` 映射，让某个 `use one of` 的候选选择可在 trial 期切换。该映射**压过源码里的 `selected`**。`site_id` 的具体格式由实现决定（通常是源文件路径 + 函数名 + 位置）。
+- `ExecuteOptions.variant`：一次执行可以传入 `{ site_id: variant_name }` 映射，让某个 `use one of` 的候选选择可在 trial 期切换。该映射**压过源码里的 `selected`**。当前 `site_id` 采用 `<path>#<agent>.<func>[<label>]`。
 - `use` trace event 的 `variant` 字段：让优化器能回溯每次 trial 实际用了哪个候选、是否 empty、选择来源是什么。
 
 这两项保证"优化"可以是 source-to-source 的纯函数：输入是 `.as` + 评估信号，输出是新的 `.as`（候选集合不变，`selected` 的位置变了）。运行时永远只执行具体程序，不感知优化过程。

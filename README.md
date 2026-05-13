@@ -66,6 +66,13 @@ agentscript recipes/summarize-file.as --input '{"path":"README.md"}' --dry-run
 
 # Audit trace
 agentscript recipes/summarize-file.as --input '{"path":"README.md"}' --trace
+
+# Optimize a target AgentScript program locally
+agentscript examples/optimizer/optimizer.as examples/optimizer/triage.as --mock \
+  --request "Checkout is failing with 500 errors in production" \
+  --selection '{"examples/optimizer/triage.as#Triage.main[style]":"detailed"}' \
+  --write preview \
+  --trial-trace none
 ```
 
 The `recipes/summarize-file.as` recipe reads a local file, includes it in the LLM context, and returns a structured summary:
@@ -131,6 +138,7 @@ The optional block after `generate` is an output schema, not ordinary object con
 ## Examples, tutorials, and recipes
 
 - `examples/` contains minimal examples. Each file demonstrates one language feature or agent pattern.
+- `examples/optimizer/` contains a mockable V6 optimizer workflow using `host://agentscript`.
 - `tutorials/` contains longer walkthrough programs for learning multi-step agent patterns end to end.
 - `recipes/` contains practical workflows you can copy and adapt, such as repo review, code review, changelog drafting, file summarization, document translation, API extraction, and research briefs.
 

@@ -72,13 +72,7 @@ export class RuntimeScope {
       kind: "use_one_of",
       siteId,
       label,
-      candidates: candidates.map((candidate) => ({
-        name: candidate.name,
-        expr: candidate.expr,
-        source: candidate.source,
-        budget: candidate.budget,
-        selected: candidate.selected,
-      })),
+      candidates,
       scope: this,
     });
   }

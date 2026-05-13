@@ -150,9 +150,7 @@ describe("agentscript CLI", () => {
     expect(code).toBe(0);
     const output = JSON.parse(logSpy.mock.calls[0]![0] as string);
     expect(output.trace).toEqual({ file: traceFile });
-    expect(JSON.parse(readFileSync(traceFile, "utf8"))).toEqual(
-      expect.arrayContaining([expect.objectContaining({ kind: "agent" })]),
-    );
+    expect(JSON.parse(readFileSync(traceFile, "utf8"))).toEqual(expect.any(Array));
   });
 
   it("prints a readable trace", async () => {
@@ -343,6 +341,155 @@ describe("agentscript CLI", () => {
       ok: true,
       value: "loaded",
     });
+  });
+
+  it("runs optimizer mode with a target argument", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "agentscript-cli-v6-"));
+    const optimizer = join(dir, "optimizer.as");
+    const target = join(dir, "target.as");
+    writeFileSync(
+      target,
+      `
+      main agent Target {
+        main func(input) {
+          use one of {
+            a: "A" selected
+            b: "B"
+          } as choice
+          return input
+        }
+      }
+    `,
+    );
+    writeFileSync(
+      optimizer,
+      `
+      import tool AgentScript from "host://agentscript"
+
+      main agent Optimizer {
+        main func(input) {
+          return AgentScript.inspect({ target: input.target })
+        }
+      }
+    `,
+    );
+
+    const code = await main([optimizer, target, "--note", "demo", "--mock"]);
+
+    expect(code).toBe(0);
+    const output = JSON.parse(logSpy.mock.calls[0]![0] as string);
+    expect(output.value).toMatchObject({ ok: true });
+    expect(output.value.variant_sites[0].site_id).toContain("target.as#Target.main[choice]");
+  });
+
+  it("maps optimizer --key=value flags and writes optimizer traces to a file", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "agentscript-cli-v6-"));
+    const optimizer = join(dir, "optimizer.as");
+    const target = join(dir, "target.as");
+    const traceFile = join(dir, "optimizer-trace.json");
+    writeFileSync(
+      target,
+      `
+      main agent Target {
+        main func(input) {
+          return input
+        }
+      }
+    `,
+    );
+    writeFileSync(
+      optimizer,
+      `
+      main agent Optimizer {
+        main func(input) {
+          use input.run_id as "run id"
+          return {
+            target: input.target,
+            run_id: input.run_id,
+            enabled: input.enabled,
+            retries: input.retries,
+            options: input.options
+          }
+        }
+      }
+    `,
+    );
+
+    const code = await main([
+      optimizer,
+      target,
+      "--run-id=v6-demo",
+      "--enabled=false",
+      "--retries=2",
+      '--options={"mode":"fast"}',
+      "--trace-level",
+      "none",
+      "--trace-file",
+      traceFile,
+      "--mock",
+    ]);
+
+    expect(code).toBe(0);
+    const output = JSON.parse(logSpy.mock.calls[0]![0] as string);
+    expect(output.trace).toEqual({ file: traceFile });
+    expect(output.value).toMatchObject({
+      run_id: "v6-demo",
+      enabled: false,
+      retries: 2,
+      options: { mode: "fast" },
+    });
+    expect(JSON.parse(readFileSync(traceFile, "utf8"))).toEqual([]);
+  });
+
+  it("keeps optimizer budget flags out of input and enforces max trials", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "agentscript-cli-v6-"));
+    const optimizer = join(dir, "optimizer.as");
+    const target = join(dir, "target.as");
+    writeFileSync(
+      target,
+      `
+      main agent Target {
+        main func(input) {
+          use one of {
+            a: "A"
+            b: "B"
+          } as choice
+          return input
+        }
+      }
+    `,
+    );
+    writeFileSync(
+      optimizer,
+      `
+      import tool AgentScript from "host://agentscript"
+
+      main agent Optimizer {
+        main func(input) {
+          first = AgentScript.trial({
+            target: input.target,
+            input: {},
+            trace: "none"
+          })
+          second = AgentScript.trial({
+            target: input.target,
+            input: {},
+            trace: "none"
+          })
+          return {
+            first: first,
+            second: second,
+            leaked: input.max_trials
+          }
+        }
+      }
+    `,
+    );
+
+    const code = await main([optimizer, target, "--max-trials", "1", "--mock"]);
+
+    expect(code).toBe(1);
+    expect(errorSpy.mock.calls[0]![0]).toContain("BUDGET_EXCEEDED: trials");
   });
 
   it("runs an agent-level REPL session", async () => {

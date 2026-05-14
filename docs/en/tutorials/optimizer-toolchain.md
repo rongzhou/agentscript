@@ -1,4 +1,4 @@
-# Optimizer Toolchain Tutorial
+# Optimizer Toolchain
 
 This is the longest tutorial in the series. It connects the previous ideas:
 

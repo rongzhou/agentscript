@@ -9,6 +9,8 @@ The workflow is:
 2. `Reviewer` agents review the same draft from different perspectives.
 3. `Editor` consolidates the reviews into final guidance.
 
+<img src="../assets/tutorial-8.png" alt="Multi-Agent Review Pattern tutorial overview" width="900">
+
 Full source: [`../../../tutorials/multi-agent-review.as`](../../../tutorials/multi-agent-review.as)
 
 ## 1. The Complete Program

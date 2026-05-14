@@ -8,6 +8,8 @@ This is the longest tutorial in the series. It connects the previous ideas:
   `inspect`, `trial`, and `specialize`.
 - The optimizer output is still normal `.as` source.
 
+<img src="../assets/tutorial-11.png" alt="Optimizer Toolchain tutorial overview" width="900">
+
 The tutorial uses the runnable example in
 [`../../../examples/optimizer/`](../../../examples/optimizer/).
 

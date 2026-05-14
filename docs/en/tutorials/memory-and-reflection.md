@@ -10,6 +10,8 @@ This tutorial builds a simple loop:
 3. Reflect on the run.
 4. Store one new lesson.
 
+<img src="../assets/tutorial-9.png" alt="Memory and Reflection tutorial overview" width="900">
+
 Full source: [`../../../tutorials/memory-reflection.as`](../../../tutorials/memory-reflection.as)
 
 ## 1. The Complete Program

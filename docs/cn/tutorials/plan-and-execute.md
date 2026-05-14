@@ -6,6 +6,8 @@
 2. 执行互相独立的步骤。
 3. 汇总步骤结果。
 
+<img src="../assets/tutorial-6.png" alt="计划与执行教程概览" width="900">
+
 这一版只使用一个 agent 和几个 helper function。Multi-agent 版本会放在 multi-agent 教程之后。
 
 完整源码：[`../../../tutorials/plan-execute.as`](../../../tutorials/plan-execute.as)

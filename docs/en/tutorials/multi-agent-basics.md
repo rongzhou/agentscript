@@ -11,6 +11,8 @@ This tutorial builds a small writing workflow:
 3. `Writer` drafts an answer.
 4. `Reviewer` checks the draft.
 
+<img src="../assets/tutorial-7.png" alt="Multi-Agent Basics tutorial overview" width="900">
+
 Full source: [`../../../tutorials/multi-agent.as`](../../../tutorials/multi-agent.as)
 
 ## 1. The Complete Program

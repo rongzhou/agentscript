@@ -5,6 +5,8 @@ replace the JavaScript and TypeScript ecosystem. When a step is ordinary
 programming work, you can call an explicitly allowed Node built-in module or an
 installed npm package through `import tool`.
 
+<img src="../assets/tutorial-3.png" alt="TypeScript and Node Interop tutorial overview" width="900">
+
 This tutorial uses a Node built-in module so it runs in this repository without
 installing anything extra.
 

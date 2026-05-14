@@ -3,6 +3,8 @@
 After the quickstart, the next useful skill is knowing how to run, inspect, and
 debug AgentScript programs from the terminal.
 
+<img src="../assets/tutorial-2.png" alt="CLI and REPL Workflow tutorial overview" width="900">
+
 This tutorial uses two small source files:
 
 - [`../../../tutorials/cli.as`](../../../tutorials/cli.as)

@@ -1,8 +1,10 @@
-# TypeScript 与 Node 交互
+# 和 TypeScript / Node 交互
 
 AgentScript 的重点是描述 agent workflow 和模型上下文，而不是替代 JavaScript /
 TypeScript 生态。遇到普通编程任务时，可以通过 `import tool` 调用显式授权的
 Node 内置模块，或宿主项目里已经安装的 npm 包。
+
+<img src="../assets/tutorial-3.png" alt="和 TypeScript/Node 交互教程概览" width="900">
 
 这篇教程使用 Node 内置模块，因此在当前仓库里不需要额外安装依赖就能运行。
 

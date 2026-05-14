@@ -4,6 +4,8 @@ ReAct means **Reason → Act → Observe**. The agent first decides what to do,
 calls a tool, turns the tool result into an observation, and then answers from
 that observation.
 
+<img src="../assets/tutorial-4.png" alt="Build a Basic ReAct Agent tutorial overview" width="900">
+
 This tutorial keeps the tool simple: it reads one environment variable with
 `env://process`, so you can run the example without MCP or network setup.
 

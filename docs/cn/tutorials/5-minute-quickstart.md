@@ -2,6 +2,8 @@
 
 这篇教程从一个全新的终端开始，到写出并运行第一个 AgentScript agent 结束。第一次运行不需要 API key，因为我们会使用 `--mock`。
 
+<img src="../assets/tutorial-1.png" alt="5 分钟上手 AgentScript 教程概览" width="900">
+
 ## 1. 检查 Node
 
 AgentScript 需要 Node.js 22.13 或更新版本：

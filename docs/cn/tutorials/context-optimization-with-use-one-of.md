@@ -2,6 +2,8 @@
 
 到目前为止，所有教程都用过 `use` 来决定模型能看到什么。`use one of` 会把这个决定显式变成一组有名字的候选项。
 
+<img src="../assets/tutorial-10.png" alt="使用 use one of 优化上下文教程概览" width="900">
+
 当你知道某个 context slot 很重要，但想比较不同策略时，它会很有用：
 
 - concise vs. detailed

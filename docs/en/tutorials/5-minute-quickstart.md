@@ -4,6 +4,8 @@ This tutorial starts from a fresh terminal and ends with your first AgentScript
 agent. You do not need an API key for the first run because we will use
 `--mock`.
 
+<img src="../assets/tutorial-1.png" alt="5-Minute Quickstart tutorial overview" width="900">
+
 ## 1. Check Node
 
 AgentScript requires Node.js 22.13 or newer:

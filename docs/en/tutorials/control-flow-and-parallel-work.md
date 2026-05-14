@@ -8,6 +8,8 @@ agent patterns:
 - `parallel for` for independent work
 - `loop until` for bounded retry or refinement
 
+<img src="../assets/tutorial-5.png" alt="Control Flow and Parallel Work tutorial overview" width="900">
+
 The example is a small batch coordinator. It splits urgent and regular items,
 classifies every item independently, checks whether the batch is ready, and then
 summarizes the result.

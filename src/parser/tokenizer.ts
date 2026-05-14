@@ -1,7 +1,7 @@
 import type { SourceLocation, SourceRange } from "../ast/types.js";
 import { ParseError } from "./errors.js";
 
-export type TokenKind = "identifier" | "keyword" | "string" | "number" | "symbol" | "eof";
+type TokenKind = "identifier" | "keyword" | "string" | "number" | "symbol" | "eof";
 
 export interface Token {
   kind: TokenKind;

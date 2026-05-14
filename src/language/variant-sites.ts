@@ -3,7 +3,7 @@ import { ANONYMOUS_MAIN_AGENT, ANONYMOUS_MAIN_FUNC } from "./anonymous.js";
 import { buildSiteId, type SiteIdContext } from "./site-id.js";
 import { getNodeSourcePath } from "./source-map.js";
 
-export interface VariantCandidateMetadata {
+interface VariantCandidateMetadata {
   node: UseOneOfCandidate;
   name: string;
   empty: boolean;

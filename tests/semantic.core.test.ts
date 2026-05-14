@@ -5,8 +5,8 @@ import { analyze, assertSemanticallyValid } from "../src/semantic/analyzer.js";
 import { SemanticError } from "../src/semantic/diagnostics.js";
 
 describe("semantic core", () => {
-  it("accepts the V0 regression fixture", () => {
-    const source = readFileSync("fixtures/v0.as", "utf8");
+  it("accepts the research regression fixture", () => {
+    const source = readFileSync("tests/fixtures/regression-research.as", "utf8");
     const result = analyze(parse(source));
 
     expect(result.diagnostics).toEqual([]);

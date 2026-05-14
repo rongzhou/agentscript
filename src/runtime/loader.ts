@@ -58,7 +58,7 @@ export function loadProgramSource(source: string, options: LoadProgramOptions = 
   return loadProgramSourceGraph(source, options).program;
 }
 
-export function loadProgramSourceGraph(source: string, options: LoadProgramOptions = {}): LoadedProgramGraph {
+function loadProgramSourceGraph(source: string, options: LoadProgramOptions = {}): LoadedProgramGraph {
   const sourcePath = options.sourcePath ? resolve(options.sourcePath) : undefined;
   const state = createLoadState();
   const program = parseSource(source, sourcePath);

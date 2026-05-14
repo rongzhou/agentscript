@@ -1,6 +1,6 @@
 import { RuntimeError } from "./errors.js";
 import { CONTINUE_JSON_WALK, mapJsonLikeValue, type JsonWalkPolicy } from "./json-walk.js";
-import type { JsonObject, JsonValue, RuntimeValue } from "./types.js";
+import type { JsonValue, RuntimeValue } from "./types.js";
 
 interface MarshalContext {
   label: string;
@@ -12,13 +12,6 @@ export function toJsonArg(value: RuntimeValue, context: MarshalContext): JsonVal
 
 export function fromHostValue(value: unknown, context: MarshalContext): RuntimeValue {
   return mapJsonLikeValue(value, "result", fromHostPolicy(context.label)) as RuntimeValue;
-}
-
-export function requireJsonObject(value: unknown, label: string): JsonObject {
-  if (!isPlainObject(value)) {
-    throw new RuntimeError(`${label} must be an object`);
-  }
-  return value as JsonObject;
 }
 
 function toJsonArgPolicy(label: string): JsonWalkPolicy {

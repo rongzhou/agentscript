@@ -131,7 +131,7 @@ schema                  title, summary, key_points, action_items
 validation              ok
 ```
 
-Use `--mock` when you want deterministic local output. Without `--mock` or `--dry-run`, AgentScript calls the configured real model.
+Use `--mock` when you want deterministic local output without real model, tool, or memory calls. Without `--mock` or `--dry-run`, AgentScript calls the configured real model.
 
 The optional block after `generate` is an output schema, not ordinary object construction.
 
@@ -405,7 +405,7 @@ agentscript recipes/code-review.as --quiet
 | `--function <name>` | Select a specific entry function |
 | `--check` | Parse + semantic analysis (no execution) |
 | `--parse` | Parse and output AST as JSON |
-| `--mock` | Use deterministic mock providers instead of real model calls |
+| `--mock` | Use deterministic mock providers instead of real model, tool, or memory calls |
 | `--dry-run` | Build prompts and trace without model calls |
 | `--concurrency <n>` | Set the runtime concurrency limit for `parallel for` |
 | `--trace` | Print human-readable trace |

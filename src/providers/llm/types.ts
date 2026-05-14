@@ -24,7 +24,7 @@ export interface LlmAdapter {
   call(request: GenerateRequest, context: LlmAdapterContext): Promise<RuntimeValue>;
 }
 
-export interface LlmAdapterContext {
+interface LlmAdapterContext {
   parsed: ParsedLlmUri;
   fetchImpl: FetchLike;
   options: ProtocolLlmProviderOptions;

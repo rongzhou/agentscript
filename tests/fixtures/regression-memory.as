@@ -1,7 +1,7 @@
 import llm Qwen from "ollama://localhost:11434/qwen3.6"
 import memory Lessons from "file://./.agentscript/lessons.jsonl"
 
-main agent Learner {
+main agent MemoryRegression {
     model Qwen
     role "Learning Agent"
     description "Use explicit memory to improve future answers."

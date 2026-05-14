@@ -4,8 +4,8 @@ import { ParseError } from "../src/parser/errors.js";
 import { parse } from "../src/parser/parser.js";
 
 describe("parser core", () => {
-  it("parses the V0 regression fixture", () => {
-    const source = readFileSync("fixtures/v0.as", "utf8");
+  it("parses the research regression fixture", () => {
+    const source = readFileSync("tests/fixtures/regression-research.as", "utf8");
     const ast = parse(source);
 
     expect(ast.imports).toHaveLength(2);

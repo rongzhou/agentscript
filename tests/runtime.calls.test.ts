@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { MockToolProvider } from "../src/providers/mock/provider.js";
+import { MockToolProvider } from "../src/providers/mock/tool.js";
 import { parse } from "../src/parser/parser.js";
 import { executeAgent } from "../src/runtime/interpreter.js";
 import { formatTrace } from "../src/runtime/trace.js";

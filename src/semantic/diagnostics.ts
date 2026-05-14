@@ -1,7 +1,7 @@
 import type { SourceRange } from "../ast/types.js";
 import { formatSourceRangeStart } from "../utils/location.js";
 
-export type DiagnosticSeverity = "error" | "warning";
+type DiagnosticSeverity = "error" | "warning";
 
 export interface SemanticDiagnostic {
   severity: DiagnosticSeverity;

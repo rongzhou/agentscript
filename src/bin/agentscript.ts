@@ -8,10 +8,12 @@ import type { Program } from "../ast/types.js";
 import { executeAgent } from "../runtime/interpreter.js";
 import { loadProgram } from "../runtime/loader.js";
 import { ProtocolLlmProvider } from "../providers/llm/protocol.js";
-import { MockLlmProvider } from "../providers/mock/provider.js";
+import { MockLlmProvider } from "../providers/mock/llm.js";
+import { MockMemoryProvider } from "../providers/mock/memory.js";
+import { MockToolProvider } from "../providers/mock/tool.js";
 import { sanitizeForJson } from "../runtime/json.js";
 import { formatTrace } from "../runtime/trace.js";
-import type { InputProvider, JsonObject, LlmProvider } from "../runtime/types.js";
+import type { InputProvider, JsonObject, LlmProvider, MemoryProvider, ToolProvider } from "../runtime/types.js";
 import type { GenerateRequest, RuntimeValue } from "../runtime/types.js";
 import { formatSemanticDiagnostics } from "../semantic/diagnostics.js";
 import { createDryRunToolProvider } from "../providers/dry-run/tool.js";
@@ -77,6 +79,7 @@ async function runOptimizer(options: CliOptions): Promise<number> {
     maxSeconds: options.maxSeconds ?? 1800,
   });
   const llmProvider = new BudgetedLlmProvider(createCliLlmProvider(options), budget);
+  const memoryProvider = createCliMemoryProvider(options);
   const input = {
     ...options.optimizerArgs,
     target: options.targetFile!,
@@ -88,11 +91,14 @@ async function runOptimizer(options: CliOptions): Promise<number> {
     functionName: options.functionName,
     inputProvider,
     llmProvider,
+    memoryProvider,
     sourcePath: options.file,
     workspaceRoot: process.cwd(),
     artifactsDir: runDir,
     agentscript: {
       budget,
+      memoryProvider,
+      toolProvider: options.mock ? new MockToolProvider() : undefined,
     },
   }).finally(() => inputProvider?.close?.());
 
@@ -190,8 +196,9 @@ async function runAgent(options: CliOptions): Promise<number> {
     functionName: options.functionName,
     inputProvider,
     llmProvider: createCliLlmProvider(options),
+    memoryProvider: createCliMemoryProvider(options),
     sourcePath: options.file,
-    toolProvider: options.dryRun ? createDryRunToolProvider(process.cwd()) : createDefaultToolProvider(process.cwd()),
+    toolProvider: createCliToolProvider(options),
   }).finally(() => inputProvider?.close?.());
 
   if (options.traceFile) {
@@ -215,6 +222,17 @@ function createCliLlmProvider(options: CliOptions): LlmProvider {
     return new MockLlmProvider();
   }
   return new ProtocolLlmProvider();
+}
+
+function createCliToolProvider(options: CliOptions): ToolProvider {
+  if (options.mock) {
+    return new MockToolProvider();
+  }
+  return options.dryRun ? createDryRunToolProvider(process.cwd()) : createDefaultToolProvider(process.cwd());
+}
+
+function createCliMemoryProvider(options: CliOptions): MemoryProvider | undefined {
+  return options.mock ? new MockMemoryProvider() : undefined;
 }
 
 function loadCliProgram(options: CliOptions): Program {

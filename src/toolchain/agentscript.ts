@@ -45,7 +45,7 @@ export interface AgentscriptToolContext {
   memoryProvider?: MemoryProvider;
 }
 
-export interface AgentscriptBudgetCounter {
+interface AgentscriptBudgetCounter {
   incrementTrial(): void;
   incrementLlm(): void;
   checkDeadline(): void;

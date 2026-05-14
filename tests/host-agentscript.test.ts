@@ -8,7 +8,7 @@ import type { RuntimeValue } from "../src/runtime/types.js";
 
 describe("host://agentscript", () => {
   it("inspects use one of sites across imported agents", async () => {
-    const dir = mkdtempSync(join(tmpdir(), "agentscript-v6-"));
+    const dir = mkdtempSync(join(tmpdir(), "agentscript-toolchain-"));
     const target = writeTargetGraph(dir);
     const optimizer = join(dir, "optimizer.as");
     writeFileSync(
@@ -39,7 +39,7 @@ describe("host://agentscript", () => {
   });
 
   it("warns about effectful target tools during inspect", async () => {
-    const dir = mkdtempSync(join(tmpdir(), "agentscript-v6-"));
+    const dir = mkdtempSync(join(tmpdir(), "agentscript-toolchain-"));
     const target = join(dir, "target.as");
     writeFileSync(
       target,
@@ -73,7 +73,7 @@ describe("host://agentscript", () => {
   });
 
   it("runs trial selections against imported agent sites", async () => {
-    const dir = mkdtempSync(join(tmpdir(), "agentscript-v6-"));
+    const dir = mkdtempSync(join(tmpdir(), "agentscript-toolchain-"));
     const target = writeTargetGraph(dir);
     const optimizer = join(dir, "optimizer.as");
     writeFileSync(
@@ -115,7 +115,7 @@ describe("host://agentscript", () => {
   });
 
   it("returns soft errors for invalid trial variants", async () => {
-    const dir = mkdtempSync(join(tmpdir(), "agentscript-v6-"));
+    const dir = mkdtempSync(join(tmpdir(), "agentscript-toolchain-"));
     const target = writeTargetGraph(dir);
 
     const result = await runTool(dir, "trial", {
@@ -136,7 +136,7 @@ describe("host://agentscript", () => {
   });
 
   it("continues trial with a warning when the snapshot changed", async () => {
-    const dir = mkdtempSync(join(tmpdir(), "agentscript-v6-"));
+    const dir = mkdtempSync(join(tmpdir(), "agentscript-toolchain-"));
     const target = writeTargetGraph(dir);
     const inspected = await runTool(dir, "inspect", { target });
     writeFileSync(join(dir, "worker.as"), readFileSync(join(dir, "worker.as"), "utf8").replace("formal", "strict"));
@@ -159,7 +159,7 @@ describe("host://agentscript", () => {
   });
 
   it("specializes selected candidates without overwriting the source by default", async () => {
-    const dir = mkdtempSync(join(tmpdir(), "agentscript-v6-"));
+    const dir = mkdtempSync(join(tmpdir(), "agentscript-toolchain-"));
     const target = writeTargetGraph(dir);
     const optimizer = join(dir, "optimizer.as");
     const output = join(dir, "optimized");
@@ -194,7 +194,7 @@ describe("host://agentscript", () => {
   });
 
   it("returns soft errors for invalid specialize selections without writing", async () => {
-    const dir = mkdtempSync(join(tmpdir(), "agentscript-v6-"));
+    const dir = mkdtempSync(join(tmpdir(), "agentscript-toolchain-"));
     const target = writeTargetGraph(dir);
     const output = join(dir, "optimized");
     const result = await runTool(dir, "specialize", {
@@ -212,7 +212,7 @@ describe("host://agentscript", () => {
   });
 
   it("rejects specialize when the target snapshot changed", async () => {
-    const dir = mkdtempSync(join(tmpdir(), "agentscript-v6-"));
+    const dir = mkdtempSync(join(tmpdir(), "agentscript-toolchain-"));
     const target = writeTargetGraph(dir);
     const inspected = await runTool(dir, "inspect", { target });
     writeFileSync(join(dir, "worker.as"), readFileSync(join(dir, "worker.as"), "utf8").replace("formal", "strict"));
@@ -233,7 +233,7 @@ describe("host://agentscript", () => {
   });
 
   it("supports flatten mode with empty winners", async () => {
-    const dir = mkdtempSync(join(tmpdir(), "agentscript-v6-"));
+    const dir = mkdtempSync(join(tmpdir(), "agentscript-toolchain-"));
     const target = join(dir, "target.as");
     writeFileSync(
       target,
@@ -265,7 +265,7 @@ describe("host://agentscript", () => {
   });
 
   it("returns focused preview diff hunks", async () => {
-    const dir = mkdtempSync(join(tmpdir(), "agentscript-v6-"));
+    const dir = mkdtempSync(join(tmpdir(), "agentscript-toolchain-"));
     const target = writeTargetGraph(dir);
 
     const result = await runTool(dir, "specialize", {
@@ -285,7 +285,7 @@ describe("host://agentscript", () => {
   });
 
   it("preserves indentation when adding specialize comments", async () => {
-    const dir = mkdtempSync(join(tmpdir(), "agentscript-v6-"));
+    const dir = mkdtempSync(join(tmpdir(), "agentscript-toolchain-"));
     const target = writeTargetGraph(dir);
 
     const result = await runTool(dir, "specialize", {
@@ -303,7 +303,7 @@ describe("host://agentscript", () => {
   });
 
   it("reports no-op specialize selections as unchanged", async () => {
-    const dir = mkdtempSync(join(tmpdir(), "agentscript-v6-"));
+    const dir = mkdtempSync(join(tmpdir(), "agentscript-toolchain-"));
     const target = writeTargetGraph(dir);
     const output = join(dir, "optimized");
 

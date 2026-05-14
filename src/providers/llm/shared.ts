@@ -57,7 +57,7 @@ export function finalizeLlmResponse(text: string, request: GenerateRequest): Run
  * Parses LLM text as JSON for structured generate responses.
  * Candidate order is: the entire text, fenced markdown blocks, then the first balanced JSON object.
  */
-export function parseJsonText(text: string): RuntimeValue {
+function parseJsonText(text: string): RuntimeValue {
   const candidates = [text, ...extractJsonCandidates(text)];
   try {
     return JSON.parse(candidates[0]!) as RuntimeValue;

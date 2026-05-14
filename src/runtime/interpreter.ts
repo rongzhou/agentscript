@@ -15,7 +15,7 @@ import { buildTraceEvent } from "./trace-event.js";
 import { isTruthy } from "./truth.js";
 import { pickUseOneOfCandidate } from "./use-one-of.js";
 import { createDefaultMemoryProvider } from "../providers/memory/host.js";
-import { MockLlmProvider } from "../providers/mock/provider.js";
+import { MockLlmProvider } from "../providers/mock/llm.js";
 import { createDefaultToolProvider } from "../providers/tools/host.js";
 import { isDisposable } from "./disposable.js";
 import type { InputProvider, LlmProvider, MemoryProvider, RuntimeValue, ToolProvider, TraceEvent } from "./types.js";

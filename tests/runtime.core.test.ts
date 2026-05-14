@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { MockToolProvider } from "../src/providers/mock/provider.js";
+import { MockToolProvider } from "../src/providers/mock/tool.js";
 import { parse } from "../src/parser/parser.js";
 import { executeAgent } from "../src/runtime/interpreter.js";
 import type {
@@ -13,8 +13,8 @@ import type {
 } from "../src/runtime/types.js";
 
 describe("runtime core", () => {
-  it("executes the V0 regression fixture with mock providers", async () => {
-    const source = readFileSync("fixtures/v0.as", "utf8");
+  it("executes the research regression fixture with mock providers", async () => {
+    const source = readFileSync("tests/fixtures/regression-research.as", "utf8");
     const result = await executeAgent(
       parse(source),
       {

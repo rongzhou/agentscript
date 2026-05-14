@@ -14,9 +14,9 @@ npm run build
 ## Local CLI usage
 
 ```bash
-npm run execute -- examples/review.as --input '{"path":"src"}'
-npm run check -- examples/review.as
-npm run parse -- examples/review.as
+npm run execute -- examples/react.as --input '{"question":"Which environment variable identifies my shell user?"}' --mock
+npm run check -- examples/react.as
+npm run parse -- examples/react.as
 ```
 
 ## Pull request checklist

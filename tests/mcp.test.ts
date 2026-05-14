@@ -1,14 +1,13 @@
 import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
+import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { parse } from "../src/parser/parser.js";
 import { executeAgent } from "../src/runtime/interpreter.js";
 import { analyze } from "../src/semantic/analyzer.js";
 
-const fixtureDir = dirname(fileURLToPath(import.meta.url));
-const echoServer = join(fixtureDir, "fixtures", "mcp-echo-server.mjs");
+const echoServer = fileURLToPath(new URL("./fixtures/mcp-echo-server.mjs", import.meta.url));
 
 describe("MCP stdio tools", () => {
   it("calls MCP tools through generic call and normalizes results", async () => {

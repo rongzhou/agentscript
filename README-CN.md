@@ -121,7 +121,7 @@ main agent FileSummarizer {
 }
 ```
 
-需要确定性的本地输出时使用 `--mock`。不加 `--mock` 或 `--dry-run` 时，AgentScript 会调用配置的真实模型。
+需要确定性的本地输出且不调用真实模型、工具或内存后端时使用 `--mock`。不加 `--mock` 或 `--dry-run` 时，AgentScript 会调用配置的真实模型。
 
 `generate` 后面的 block 是返回结构 schema，不是普通对象构造。
 
@@ -389,11 +389,11 @@ agentscript recipes/code-review.as --quiet
 | `--function <名称>` | 选择入口函数 |
 | `--check` | 解析 + 语义分析（不执行） |
 | `--parse` | 解析并输出 AST 为 JSON |
-| `--mock` | 使用确定性的 mock provider，不调用真实模型 |
+| `--mock` | 使用确定性的 mock provider，不调用真实模型、工具或内存后端 |
 | `--dry-run` | 构建 prompt 和 trace，但不调用模型 |
 | `--concurrency <n>` | 设置 `parallel for` 的运行时并发上限 |
-| `--trace <文件>` | 将 trace 写入文件 |
 | `--trace` | 打印可读的 trace |
+| `--trace-file <路径>` | 将执行 trace 写入 JSON 文件 |
 | `--verbose` | 打印详细 trace |
 | `--quiet` | 仅输出最终结果 |
 

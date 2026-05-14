@@ -8,7 +8,7 @@ export function parseJsonObjectInput(source: string, label: string): JsonObject 
   return value as JsonObject;
 }
 
-export function parseInteractiveInputValue(value: string): RuntimeValue {
+function parseInteractiveInputValue(value: string): RuntimeValue {
   const trimmed = value.trim();
   if (trimmed.length === 0) {
     return "";

@@ -47,7 +47,7 @@ npm run parse -- examples/react.as
 
 ## Real LLM providers
 
-By default, `agentscript` calls the configured real LLM provider. Use `--mock` for deterministic local flow checks, or `--dry-run` to inspect prompts and trace without model calls.
+By default, `agentscript` calls the configured real LLM provider. Use `--mock` for deterministic local flow checks without real model, tool, or memory calls, or `--dry-run` to inspect prompts and trace without model calls.
 
 ### OpenAI
 

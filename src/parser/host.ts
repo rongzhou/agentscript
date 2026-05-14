@@ -2,7 +2,7 @@ import type { Budget, ConfigDecl, Expr, SourceLocation, SourceRange, Stmt, UseDe
 import type { ParseError } from "./errors.js";
 import type { Token } from "./tokenizer.js";
 
-export interface TokenParserHost {
+interface TokenParserHost {
   check(value: string): boolean;
   consume(value: string): Token;
   consumeIdentifier(message: string): Token;

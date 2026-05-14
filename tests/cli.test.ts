@@ -1,4 +1,4 @@
-import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { PassThrough, Writable } from "node:stream";
@@ -6,8 +6,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { main } from "../src/bin/agentscript.js";
 import { runRepl } from "../src/bin/repl.js";
 
-const fixture = "fixtures/v1.as";
-const fixtureInput = '{"goal":"Ship V1"}';
+const fixture = "tests/fixtures/regression-multifile.as";
+const fixtureInput = '{"goal":"Ship regression"}';
 
 describe("agentscript CLI", () => {
   let logSpy: ReturnType<typeof vi.spyOn>;
@@ -322,6 +322,46 @@ describe("agentscript CLI", () => {
     const output = JSON.parse(logSpy.mock.calls[0]![0] as string);
     expect(output.value).toHaveLength(1);
     expect(readFileSync(join(dir, ".agentscript", "notes.jsonl"), "utf8")).toContain("memory");
+  });
+
+  it("uses mock tool and memory providers with --mock", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "agentscript-mock-cli-"));
+    const scriptFile = join(dir, "agent.as");
+    writeFileSync(
+      scriptFile,
+      `
+      import tool Workspace from "file://workspace"
+      import memory Notes from "file://./.agentscript/notes.jsonl"
+
+      main agent A {
+        main func(input) {
+          file = Workspace.read({ path: "missing.txt" })
+          saved = Notes.add({
+            kind: "note",
+            text: input.topic
+          })
+          notes = Notes.query({ limit: 1 })
+          return {
+            file: file,
+            saved: saved,
+            notes: notes
+          }
+        }
+      }
+    `,
+    );
+
+    const code = await main([scriptFile, "--mock", "--input", '{"topic":"memory"}']);
+
+    if (code !== 0) {
+      throw new Error(String(errorSpy.mock.calls[0]?.[0]));
+    }
+    expect(code).toBe(0);
+    const output = JSON.parse(logSpy.mock.calls[0]![0] as string);
+    expect(output.value.file.content).toBe("mock file content from file://workspace");
+    expect(output.value.saved.record.text).toBe("memory");
+    expect(output.value.notes).toHaveLength(1);
+    expect(existsSync(join(dir, ".agentscript", "notes.jsonl"))).toBe(false);
   });
 
   it("runs a script with an imported agent", async () => {

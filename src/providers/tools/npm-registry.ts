@@ -63,7 +63,7 @@ export function checkNodeImport(uri: string, registry: NpmRegistry): string {
   return moduleName;
 }
 
-export function readNpmTarget(uri: string): string {
+function readNpmTarget(uri: string): string {
   if (!uri.startsWith("npm:")) {
     throw new RuntimeError(`Expected npm: URI, got '${uri}'`);
   }
@@ -74,7 +74,7 @@ export function readNpmTarget(uri: string): string {
   return target;
 }
 
-export function readNodeTarget(uri: string): string {
+function readNodeTarget(uri: string): string {
   if (!uri.startsWith("node:")) {
     throw new RuntimeError(`Expected node: URI, got '${uri}'`);
   }

@@ -1,7 +1,7 @@
-import file Plan from "./v1-data.json"
-import agent Worker from "./v1-worker.as"
+import file Plan from "./regression-multifile-data.json"
+import agent Worker from "./regression-multifile-worker.as"
 
-main agent V1Regression {
+main agent RegressionMultifile {
     main func(input {
         goal: string
     }) {

@@ -15,7 +15,7 @@ export interface ContextBuildInput {
   maxOutput?: Budget;
 }
 
-export interface BuiltContextItem {
+interface BuiltContextItem {
   index: number;
   source?: string;
   label?: string;

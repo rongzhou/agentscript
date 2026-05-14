@@ -2,6 +2,19 @@
 
 All notable changes to AgentScript will be documented in this file.
 
+## 0.1.19 - 2026-05-14
+
+### Changed
+
+- Updated `--mock` CLI mode to use deterministic mock LLM, tool, and memory providers.
+- Synchronized README-CN CLI trace option documentation with the English README.
+- Tightened internal module exports reported by `knip`.
+- Moved root regression fixtures into descriptively named `tests/fixtures/` files and split mock providers by capability.
+
+### Fixed
+
+- Replaced stale CONTRIBUTING example commands with an existing example.
+
 ## 0.1.18 - 2026-05-13
 
 ### Added
@@ -112,6 +125,8 @@ All notable changes to AgentScript will be documented in this file.
 - Updated README, examples, and language references for labeled context usage.
 
 ## 1.0.0 - 2026-05-07
+
+Note: this early tag was followed by the 0.1.x release line while the package API was still stabilizing.
 
 ### Added
 

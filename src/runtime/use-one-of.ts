@@ -9,7 +9,7 @@ export interface RuntimeUseOneOfCandidate {
   selected: boolean;
 }
 
-export type UseOneOfSelectionReason = "trial" | "selected" | "first";
+type UseOneOfSelectionReason = "trial" | "selected" | "first";
 
 export interface UseOneOfSelection {
   candidate: RuntimeUseOneOfCandidate;

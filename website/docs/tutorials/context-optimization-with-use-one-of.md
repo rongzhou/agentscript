@@ -3,7 +3,7 @@
 By now, every tutorial has used `use` to decide what the model can see. `use one
 of` makes that decision explicit as a set of named alternatives.
 
-<img src="/img/tutorial-10.png" alt="Context Optimization with use one of tutorial overview" width="900" />
+<img src="/agentscript/img/tutorial-10.png" alt="Context Optimization with use one of tutorial overview" width="900" />
 
 This is useful when you know a context slot matters, but you want to compare
 different policies:

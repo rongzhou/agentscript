@@ -8,7 +8,7 @@
 2. 多个 `Reviewer` agent 从不同角度审阅同一个 draft。
 3. `Editor` 把审阅结果合并成最终修改建议。
 
-<img src="/img/tutorial-8.png" alt="多智能体审阅模式教程概览" width="900" />
+<img src="/agentscript/img/tutorial-8.png" alt="多智能体审阅模式教程概览" width="900" />
 
 完整源码：[`../../../tutorials/multi-agent-review.as`](https://github.com/rongzhou/agentscript/blob/main/tutorials/multi-agent-review.as)
 

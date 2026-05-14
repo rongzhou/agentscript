@@ -2,7 +2,7 @@
 
 完成 quickstart 后，下一步最好先学会如何在终端运行、检查和调试 AgentScript 程序。
 
-<img src="/img/tutorial-2.png" alt="CLI 和 REPL 工作流教程概览" width="900" />
+<img src="/agentscript/img/tutorial-2.png" alt="CLI 和 REPL 工作流教程概览" width="900" />
 
 这篇教程使用两个小文件：
 

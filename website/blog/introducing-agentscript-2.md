@@ -56,7 +56,7 @@ This post is about a different optimization target:
 > Optimize what the model sees.
 
 <p align="center">
-  <img src="/img/selectable-context.png" alt="Selectable context slots make context optimization a source-level decision" width="900" />
+  <img src="/agentscript/img/selectable-context.png" alt="Selectable context slots make context optimization a source-level decision" width="900" />
 </p>
 
 ## The Prompt Is Not the Unit of an Agent

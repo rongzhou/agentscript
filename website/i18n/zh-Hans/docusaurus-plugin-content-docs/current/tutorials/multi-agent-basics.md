@@ -9,7 +9,7 @@ Multi-agent 程序把一个 workflow 拆成多个有名字的 agent，每个 age
 3. `Writer` 起草答案。
 4. `Reviewer` 检查草稿。
 
-<img src="/img/tutorial-7.png" alt="多智能体基础教程概览" width="900" />
+<img src="/agentscript/img/tutorial-7.png" alt="多智能体基础教程概览" width="900" />
 
 完整源码：[`../../../tutorials/multi-agent.as`](https://github.com/rongzhou/agentscript/blob/main/tutorials/multi-agent.as)
 

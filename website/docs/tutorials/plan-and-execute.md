@@ -7,7 +7,7 @@ The shape is simple:
 2. Execute the independent steps.
 3. Synthesize the step results.
 
-<img src="/img/tutorial-6.png" alt="Plan-and-Execute tutorial overview" width="900" />
+<img src="/agentscript/img/tutorial-6.png" alt="Plan-and-Execute tutorial overview" width="900" />
 
 This version uses one agent with helper functions. Multi-agent Plan-and-Execute
 comes later, after the multi-agent tutorial.

@@ -2,7 +2,7 @@
 
 ReAct 指的是 **Reason → Act → Observe**：Agent 先判断下一步要做什么，调用工具，把工具结果整理成 observation，然后基于 observation 回答。
 
-<img src="/img/tutorial-4.png" alt="编写一个最基本的 ReAct Agent 教程概览" width="900" />
+<img src="/agentscript/img/tutorial-4.png" alt="编写一个最基本的 ReAct Agent 教程概览" width="900" />
 
 这篇教程故意使用一个很简单的工具：通过 `env://process` 读取一个环境变量。这样不需要 MCP 或网络配置，也可以直接运行示例。
 

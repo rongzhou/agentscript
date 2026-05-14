@@ -8,7 +8,7 @@ This is the longest tutorial in the series. It connects the previous ideas:
   `inspect`, `trial`, and `specialize`.
 - The optimizer output is still normal `.as` source.
 
-<img src="/img/tutorial-11.png" alt="Optimizer Toolchain tutorial overview" width="900" />
+<img src="/agentscript/img/tutorial-11.png" alt="Optimizer Toolchain tutorial overview" width="900" />
 
 The tutorial uses the runnable example in
 [`../../../examples/optimizer/`](https://github.com/rongzhou/agentscript/tree/main/examples/optimizer/).

@@ -11,7 +11,7 @@ This tutorial builds a small writing workflow:
 3. `Writer` drafts an answer.
 4. `Reviewer` checks the draft.
 
-<img src="/img/tutorial-7.png" alt="Multi-Agent Basics tutorial overview" width="900" />
+<img src="/agentscript/img/tutorial-7.png" alt="Multi-Agent Basics tutorial overview" width="900" />
 
 Full source: [`../../../tutorials/multi-agent.as`](https://github.com/rongzhou/agentscript/blob/main/tutorials/multi-agent.as)
 

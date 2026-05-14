@@ -7,7 +7,7 @@
 - `host://agentscript` 给 optimizer 三个工具：`inspect`、`trial` 和 `specialize`。
 - optimizer 的产物仍然是普通 `.as` 源码。
 
-<img src="/img/tutorial-11.png" alt="优化器工具链教程概览" width="900" />
+<img src="/agentscript/img/tutorial-11.png" alt="优化器工具链教程概览" width="900" />
 
 这篇使用可运行示例：[`../../../examples/optimizer/`](https://github.com/rongzhou/agentscript/tree/main/examples/optimizer/)。
 

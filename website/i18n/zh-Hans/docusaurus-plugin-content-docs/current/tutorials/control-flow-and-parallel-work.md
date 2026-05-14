@@ -7,7 +7,7 @@
 - `parallel for`：并发处理互相独立的任务
 - `loop until`：有上限的重试或迭代
 
-<img src="/img/tutorial-5.png" alt="流程控制与并行工作教程概览" width="900" />
+<img src="/agentscript/img/tutorial-5.png" alt="流程控制与并行工作教程概览" width="900" />
 
 示例是一个小型批处理 coordinator：把 urgent 和 regular item 分开，对每个 item 独立分类，检查这批结果是否足够，然后生成总结。
 

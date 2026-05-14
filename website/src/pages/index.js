@@ -1,6 +1,7 @@
 import clsx from "clsx";
 import Link from "@docusaurus/Link";
 import Translate from "@docusaurus/Translate";
+import useBaseUrl from "@docusaurus/useBaseUrl";
 import Layout from "@theme/Layout";
 import Heading from "@theme/Heading";
 import styles from "./index.module.css";
@@ -48,6 +49,8 @@ const features = [
 ];
 
 export default function Home() {
+  const previewImage = useBaseUrl("/img/context-boundaries.png");
+
   return (
     <Layout title="AgentScript" description="Explicit, scoped, auditable LLM context">
       <main>
@@ -77,7 +80,7 @@ export default function Home() {
             </div>
             <div className={styles.preview}>
               <img
-                src="/img/context-boundaries.png"
+                src={previewImage}
                 alt="Traditional append-only chat versus AgentScript scoped context boundaries"
               />
             </div>

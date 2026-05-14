@@ -9,7 +9,7 @@ Memory 让 agent 能在多次运行之间保留有用信息。Reflection 则是�
 3. 对本次运行做 reflection。
 4. 保存一条新的 lesson。
 
-<img src="/img/tutorial-9.png" alt="记忆与反思教程概览" width="900" />
+<img src="/agentscript/img/tutorial-9.png" alt="记忆与反思教程概览" width="900" />
 
 完整源码：[`../../../tutorials/memory-reflection.as`](https://github.com/rongzhou/agentscript/blob/main/tutorials/memory-reflection.as)
 

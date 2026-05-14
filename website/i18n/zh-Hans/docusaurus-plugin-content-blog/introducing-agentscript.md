@@ -27,7 +27,7 @@ tags: [agentscript, context-engineering, llm-agents]
 这套方式在小型 Demo 中尚可，但放到真实业务流程里，会变得极度脆弱。
 
 <p align="center">
-  <img src="/img/context-boundaries.png" alt="传统追加式 chat 与 AgentScript scoped context boundaries 的对比" width="900" />
+  <img src="/agentscript/img/context-boundaries.png" alt="传统追加式 chat 与 AgentScript scoped context boundaries 的对比" width="900" />
 </p>
 
 模型到底看到了什么？

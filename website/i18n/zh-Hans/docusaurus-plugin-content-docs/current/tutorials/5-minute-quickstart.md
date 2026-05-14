@@ -7,7 +7,7 @@ slug: /tutorials/5-minute-quickstart
 
 这篇教程从一个全新的终端开始，到写出并运行第一个 AgentScript agent 结束。第一次运行不需要 API key，因为我们会使用 `--mock`。
 
-<img src="/img/tutorial-1.png" alt="5 分钟上手 AgentScript 教程概览" width="900" />
+<img src="/agentscript/img/tutorial-1.png" alt="5 分钟上手 AgentScript 教程概览" width="900" />
 
 ## 1. 检查 Node
 

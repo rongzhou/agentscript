@@ -34,7 +34,7 @@ tags: [agentscript, context-optimization, llm-agents]
 > 不要只优化你对模型说了什么，更要优化**模型能看到什么**。
 
 <p align="center">
-  <img src="/img/selectable-context.png" alt="可选择的 context slot 让 context optimization 成为源码层面的决策" width="900" />
+  <img src="/agentscript/img/selectable-context.png" alt="可选择的 context slot 让 context optimization 成为源码层面的决策" width="900" />
 </p>
 
 ## 提示词，不是智能体的最小单元

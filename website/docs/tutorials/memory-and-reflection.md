@@ -10,7 +10,7 @@ This tutorial builds a simple loop:
 3. Reflect on the run.
 4. Store one new lesson.
 
-<img src="/img/tutorial-9.png" alt="Memory and Reflection tutorial overview" width="900" />
+<img src="/agentscript/img/tutorial-9.png" alt="Memory and Reflection tutorial overview" width="900" />
 
 Full source: [`../../../tutorials/memory-reflection.as`](https://github.com/rongzhou/agentscript/blob/main/tutorials/memory-reflection.as)
 

@@ -8,4 +8,10 @@ coverage/
 .DS_Store
 npm-debug.log*
 
+# Editor / agent-tool local config (per-developer)
+.windsurf/
+.codex/
+.agents/
+.kiro/
+
 *.tgz

@@ -1,4 +1,4 @@
-# TypeScript 与 Node 互操作
+# TypeScript 与 Node 交互
 
 AgentScript 的重点是描述 agent workflow 和模型上下文，而不是替代 JavaScript /
 TypeScript 生态。遇到普通编程任务时，可以通过 `import tool` 调用显式授权的
@@ -54,7 +54,7 @@ main agent TypeScriptInterop {
 }
 ```
 
-这里没有 `generate`。这是刻意的：互操作能力在调用模型之前也有价值。你可以先
+这里没有 `generate`。这是刻意的：交互能力在调用模型之前也有价值。你可以先
 做数据标准化、生成 ID、读取文件，或者调用一个 JSON-friendly 的库，然后在后续
 agent 中决定哪些结果要通过 `use` 进入模型上下文。
 

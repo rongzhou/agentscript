@@ -1,4 +1,4 @@
-# Multi-Agent 基础
+# 多智能体基础
 
 Multi-agent 程序把一个 workflow 拆成多个有名字的 agent，每个 agent 有自己的角色和上下文边界。目的不是让程序变复杂，而是让职责更清楚。
 

@@ -155,4 +155,4 @@ agentscript tutorials/control-flow.as --mock --trace --input '{"goal":"Triage su
 
 ## 下一步
 
-下一种模式是 Plan-and-Execute。它会继续使用这些概念，只是把批处理 item 换成 planned steps。
+下一种模式是计划与执行。它会继续使用这些概念，只是把批处理 item 换成 planned steps。

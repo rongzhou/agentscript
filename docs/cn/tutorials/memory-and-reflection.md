@@ -1,4 +1,4 @@
-# Memory and Reflection
+# 记忆与反思
 
 Memory 让 agent 能在多次运行之间保留有用信息。Reflection 则是在一次运行结束后，判断什么经验值得保存。
 

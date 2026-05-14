@@ -1,6 +1,6 @@
-# Plan-and-Execute
+# 计划与执行
 
-Plan-and-Execute 是学习流程控制后的第一个应用模式。它的形状很简单：
+计划与执行是学习流程控制后的第一个应用模式。它的形状很简单：
 
 1. 生成一个短计划。
 2. 执行互相独立的步骤。
@@ -136,4 +136,4 @@ agentscript tutorials/plan-execute.as --mock --trace --input '{"goal":"Prepare a
 
 ## 下一步
 
-下一篇教程会介绍 multi-agent 程序。同样的 Plan-and-Execute 形状，之后可以拆成 planner、executor 和 reviewer 等多个 agent。
+下一篇教程会介绍多智能体程序。同样的计划与执行形状，之后可以拆成 planner、executor 和 reviewer 等多个 agent。

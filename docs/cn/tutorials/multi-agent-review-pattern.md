@@ -1,4 +1,4 @@
-# Multi-Agent Review Pattern
+# 多智能体审阅模式
 
 上一篇教程介绍了 agent 边界。这篇把这些边界用到一个具体应用模式里：并行 specialist review。
 
@@ -171,4 +171,4 @@ agentscript tutorials/multi-agent-review.as --mock --trace --input '{"audience":
 
 ## 下一步
 
-现在你已经有了主要结构工具：ReAct、流程控制、Plan-and-Execute 和 multi-agent review。下一步可以进入 memory 和 reflection，让 agent 在多次运行之间保存经验。
+现在你已经有了主要结构工具：ReAct、流程控制、计划与执行和多智能体审阅。下一步可以进入记忆与反思，让 agent 在多次运行之间保存经验。

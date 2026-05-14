@@ -79,10 +79,7 @@ export default function Home() {
               </div>
             </div>
             <div className={styles.preview}>
-              <img
-                src={previewImage}
-                alt="Traditional append-only chat versus AgentScript scoped context boundaries"
-              />
+              <img src={previewImage} alt="Traditional append-only chat versus AgentScript scoped context boundaries" />
             </div>
           </div>
         </section>

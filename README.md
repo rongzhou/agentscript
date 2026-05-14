@@ -21,15 +21,10 @@ generate({
 
 [中文版](./README-CN.md)
 
-Documentation website: https://rongzhou.github.io/agentscript/
-
-Essays: [What Did the Model Actually See?](./docs/en/blogs/introducing-agentscript.md) ·
-[Why You Should Optimize Context, Not Prompts](./docs/en/blogs/introducing-agentscript-2.md)
-
-Tutorials: [Start with the tutorial index](./docs/en/tutorials/index.md)
+Documentation website: [https://rongzhou.github.io/agentscript/](https://rongzhou.github.io/agentscript/)
 
 <p align="center">
-  <img src="docs/en/assets/context-boundaries.png" alt="Traditional append-only chat versus AgentScript scoped context boundaries" width="900">
+  <img src="https://rongzhou.github.io/agentscript/img/context-boundaries.png" alt="Traditional append-only chat versus AgentScript scoped context boundaries" width="900">
 </p>
 
 Traditional chat lets context grow and mix until important signals get buried.
@@ -361,8 +356,7 @@ Enable the capability in `agentscript.npm.json`:
 ```
 
 For a hands-on walkthrough, see
-[TypeScript and Node Interop](docs/en/tutorials/typescript-interop.md). For the
-full reference, see [npm and node tools](docs/en/npm-tools.md).
+[TypeScript and Node Interop](https://rongzhou.github.io/agentscript/docs/tutorials/typescript-interop).
 
 ## TypeScript API
 
@@ -417,15 +411,7 @@ agentscript recipes/code-review.as --quiet
 
 ## Documentation
 
-[Language Reference](docs/en/language.md) ·
-[Context Engineering](docs/en/context-engineering.md) ·
-[`use ... as ...`](docs/en/use-as.md) ·
-[`generate`](docs/en/generate.md) ·
-[`parallel for`](docs/en/parallel-for.md) ·
-[Final Expression Return](docs/en/final-expression-return.md) ·
-[TypeScript and Node Interop](docs/en/tutorials/typescript-interop.md) ·
-[npm and node tools](docs/en/npm-tools.md) ·
-[Design History](docs/design-history/)
+Documentation website: [https://rongzhou.github.io/agentscript/](https://rongzhou.github.io/agentscript/)
 
 ### Design principles
 

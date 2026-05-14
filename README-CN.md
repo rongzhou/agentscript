@@ -21,13 +21,10 @@ generate({
 
 [English](./README.md)
 
-文章：[模型到底看到了什么？](./docs/cn/blogs/introducing-agentscript.md) ·
-[别再死磕提示词优化，真正该优化的是上下文](./docs/cn/blogs/introducing-agentscript-2.md)
-
-教程：[从教程索引开始](./docs/cn/tutorials/index.md)
+文档网站：[https://rongzhou.github.io/agentscript/zh-Hans/](https://rongzhou.github.io/agentscript/zh-Hans/)
 
 <p align="center">
-  <img src="docs/cn/assets/context-boundaries.png" alt="传统追加式 chat 与 AgentScript scoped context boundaries 的对比" width="900">
+  <img src="https://rongzhou.github.io/agentscript/img/context-boundaries.png" alt="传统追加式 chat 与 AgentScript scoped context boundaries 的对比" width="900">
 </p>
 
 传统 chat 会让 context 不断增长、混在一起，直到重要信号被埋没。
@@ -346,7 +343,7 @@ main agent NodeCryptoExample {
 }
 ```
 
-动手教程见 [TypeScript 与 Node 互操作](docs/cn/tutorials/typescript-interop.md)。完整规则见 [npm 和 node tools](docs/cn/npm-tools.md)。
+动手教程见 [TypeScript 与 Node 互操作](https://rongzhou.github.io/agentscript/zh-Hans/docs/tutorials/typescript-interop)。
 
 ## TypeScript API
 
@@ -399,14 +396,7 @@ agentscript recipes/code-review.as --quiet
 
 ## 文档
 
-[语言参考](docs/cn/language.md) ·
-[Context Engineering](docs/cn/context-engineering.md) ·
-[`use ... as ...`](docs/cn/use-as.md) ·
-[`generate`](docs/cn/generate.md) ·
-[`parallel for`](docs/cn/parallel-for.md) ·
-[Final Expression Return](docs/cn/final-expression-return.md) ·
-[TypeScript 与 Node 互操作](docs/cn/tutorials/typescript-interop.md) ·
-[npm 和 node tools](docs/cn/npm-tools.md)
+文档网站：[https://rongzhou.github.io/agentscript/zh-Hans/](https://rongzhou.github.io/agentscript/zh-Hans/)
 
 ### 设计原则
 

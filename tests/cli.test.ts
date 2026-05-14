@@ -60,6 +60,27 @@ describe("agentscript CLI", () => {
     expect(output.trace.some((event: { kind: string }) => event.kind === "agent")).toBe(true);
   });
 
+  it("uses the current workspace registry for node tools in subdirectory programs", async () => {
+    const code = await main([
+      "tutorials/typescript-interop.as",
+      "--quiet",
+      "--input",
+      '{"label":"release-notes","payload":{"version":"0.1.19","kind":"patch"}}',
+    ]);
+
+    expect(code).toBe(0);
+    const output = JSON.parse(logSpy.mock.calls[0]![0] as string);
+    expect(output).toMatchObject({
+      label: "release-notes",
+      payload: {
+        version: "0.1.19",
+        kind: "patch",
+      },
+    });
+    expect(output.run_id).toEqual(expect.any(String));
+    expect(output.digest).toHaveLength(64);
+  });
+
   it("uses real LLM mode by default and allows explicit mock override", async () => {
     vi.stubEnv("OPENAI_API_KEY", "");
     const dir = mkdtempSync(join(tmpdir(), "agentscript-cli-"));

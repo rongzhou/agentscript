@@ -358,8 +358,9 @@ Enable the capability in `agentscript.npm.json`:
 }
 ```
 
-See [npm and node tools](docs/en/npm-tools.md) for registry, marshalling, and
-safety rules.
+For a hands-on walkthrough, see
+[TypeScript and Node Interop](docs/en/tutorials/typescript-interop.md). For the
+full reference, see [npm and node tools](docs/en/npm-tools.md).
 
 ## TypeScript API
 
@@ -414,10 +415,15 @@ agentscript recipes/code-review.as --quiet
 
 ## Documentation
 
-| Language | Links |
-|----------|-------|
-| English | [Language Reference](docs/en/language.md) · [Context Engineering](docs/en/context-engineering.md) · [`use ... as ...`](docs/en/use-as.md) · [`generate`](docs/en/generate.md) · [`parallel for`](docs/en/parallel-for.md) · [Final Expression Return](docs/en/final-expression-return.md) · [npm and node tools](docs/en/npm-tools.md) · [Design History](docs/design-history/) |
-| 中文 | [README-CN](./README-CN.md) · [语言参考](docs/cn/language.md) · [Context Engineering](docs/cn/context-engineering.md) · [`use ... as ...`](docs/cn/use-as.md) · [`generate`](docs/cn/generate.md) · [`parallel for`](docs/cn/parallel-for.md) · [Final Expression Return](docs/cn/final-expression-return.md) · [npm 和 node tools](docs/cn/npm-tools.md) |
+[Language Reference](docs/en/language.md) ·
+[Context Engineering](docs/en/context-engineering.md) ·
+[`use ... as ...`](docs/en/use-as.md) ·
+[`generate`](docs/en/generate.md) ·
+[`parallel for`](docs/en/parallel-for.md) ·
+[Final Expression Return](docs/en/final-expression-return.md) ·
+[TypeScript and Node Interop](docs/en/tutorials/typescript-interop.md) ·
+[npm and node tools](docs/en/npm-tools.md) ·
+[Design History](docs/design-history/)
 
 ### Design principles
 

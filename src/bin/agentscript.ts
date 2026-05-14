@@ -15,6 +15,7 @@ import type { InputProvider, JsonObject, LlmProvider } from "../runtime/types.js
 import type { GenerateRequest, RuntimeValue } from "../runtime/types.js";
 import { formatSemanticDiagnostics } from "../semantic/diagnostics.js";
 import { createDryRunToolProvider } from "../providers/dry-run/tool.js";
+import { createDefaultToolProvider } from "../providers/tools/host.js";
 import { RuntimeError } from "../runtime/errors.js";
 import { parseArgs, printUsage, type CliOptions } from "./args.js";
 import { createReadlineInputProvider, parseJsonObjectInput } from "./input.js";
@@ -190,7 +191,7 @@ async function runAgent(options: CliOptions): Promise<number> {
     inputProvider,
     llmProvider: createCliLlmProvider(options),
     sourcePath: options.file,
-    toolProvider: options.dryRun ? createDryRunToolProvider(process.cwd()) : undefined,
+    toolProvider: options.dryRun ? createDryRunToolProvider(process.cwd()) : createDefaultToolProvider(process.cwd()),
   }).finally(() => inputProvider?.close?.());
 
   if (options.traceFile) {

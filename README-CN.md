@@ -314,6 +314,40 @@ main agent Researcher {
 
 MCP 返回值只是普通数据。只有通过 `use` 显式选择后，它才会进入模型 context。
 
+## npm 和 node tools
+
+AgentScript 也可以通过 `node:` 和 `npm:` tool import 调用显式授权的 Node 内置模块和已安装 npm 包。
+
+```agentscript
+import tool Crypto from "node:crypto"
+
+main agent NodeCryptoExample {
+    main func(input { label: string }) {
+        run_id = Crypto.randomUUID()
+        digest = Crypto.hash("sha256", input.label, "hex")
+
+        return {
+            label: input.label,
+            run_id: run_id,
+            digest: digest
+        }
+    }
+}
+```
+
+在 `agentscript.npm.json` 中授权 capability：
+
+```json
+{
+  "allow": {
+    "node": ["crypto"],
+    "npm": {}
+  }
+}
+```
+
+动手教程见 [TypeScript 与 Node 互操作](docs/cn/tutorials/typescript-interop.md)。完整规则见 [npm 和 node tools](docs/cn/npm-tools.md)。
+
 ## TypeScript API
 
 Package 根入口只导出稳定的 runtime 入口。嵌入场景需要的 public type 通过明确的 subpath 暴露：
@@ -365,10 +399,14 @@ agentscript recipes/code-review.as --quiet
 
 ## 文档
 
-| 语言 | 链接 |
-|------|------|
-| 中文 | [README-CN](./README-CN.md) · [语言参考](docs/cn/language.md) · [Context Engineering](docs/cn/context-engineering.md) · [`use ... as ...`](docs/cn/use-as.md) · [`generate`](docs/cn/generate.md) · [`parallel for`](docs/cn/parallel-for.md) · [Final Expression Return](docs/cn/final-expression-return.md) · [npm 和 node tools](docs/cn/npm-tools.md) |
-| English | [Language Reference](docs/en/language.md) · [Context Engineering](docs/en/context-engineering.md) · [`use ... as ...`](docs/en/use-as.md) · [`generate`](docs/en/generate.md) · [`parallel for`](docs/en/parallel-for.md) · [Final Expression Return](docs/en/final-expression-return.md) · [npm and node tools](docs/en/npm-tools.md) · [Design History](docs/design-history/) |
+[语言参考](docs/cn/language.md) ·
+[Context Engineering](docs/cn/context-engineering.md) ·
+[`use ... as ...`](docs/cn/use-as.md) ·
+[`generate`](docs/cn/generate.md) ·
+[`parallel for`](docs/cn/parallel-for.md) ·
+[Final Expression Return](docs/cn/final-expression-return.md) ·
+[TypeScript 与 Node 互操作](docs/cn/tutorials/typescript-interop.md) ·
+[npm 和 node tools](docs/cn/npm-tools.md)
 
 ### 设计原则
 

@@ -102,6 +102,14 @@ function inputFor(file: string): JsonObject {
         path: "docs",
         target_language: "English",
       };
+    case "typescript-interop.as":
+      return {
+        label: "release-notes",
+        payload: {
+          version: "0.1.19",
+          kind: "patch",
+        },
+      };
     case "use-one-of.as":
       return {
         request: "Checkout is failing for a customer",

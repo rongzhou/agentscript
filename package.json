@@ -1,6 +1,6 @@
 {
   "name": "@rong/agentscript",
-  "version": "0.1.19",
+  "version": "0.1.20",
   "description": "A DSL for explicit, scoped, auditable LLM context",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

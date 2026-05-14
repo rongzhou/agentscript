@@ -2,6 +2,18 @@
 
 All notable changes to AgentScript will be documented in this file.
 
+## 0.1.20 - 2026-05-14
+
+### Added
+
+- Added a Docusaurus website under `website/` with English and Simplified Chinese locale support.
+- Added GitHub Pages deployment through GitHub Actions.
+- Added website pages for the existing tutorial series and introductory blog posts.
+
+### Changed
+
+- Cleaned Docusaurus i18n metadata, website build ignores, and project tooling configuration for the new website workspace.
+
 ## 0.1.19 - 2026-05-14
 
 ### Changed

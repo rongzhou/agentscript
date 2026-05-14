@@ -15,3 +15,7 @@ npm-debug.log*
 .kiro/
 
 *.tgz
+
+# Docusaurus website build artifacts
+website/build/
+website/.docusaurus/

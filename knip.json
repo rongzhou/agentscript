@@ -1,0 +1,3 @@
+{
+  "ignore": ["website/docusaurus.config.js", "website/sidebars.js", "website/src/pages/index.js"]
+}

@@ -21,10 +21,10 @@ generate({
 
 [中文版](./README-CN.md)
 
-Essays: [What Did the Model Actually See?](./docs/en/introducing-agentscript.md) ·
-[Why You Should Optimize Context, Not Prompts](./docs/en/introducing-agentscript-2.md) ·
-[中文一](./docs/cn/introducing-agentscript.md) ·
-[中文二](./docs/cn/introducing-agentscript-2.md)
+Essays: [What Did the Model Actually See?](./docs/en/blogs/introducing-agentscript.md) ·
+[Why You Should Optimize Context, Not Prompts](./docs/en/blogs/introducing-agentscript-2.md)
+
+Tutorials: [Start with the tutorial index](./docs/en/tutorials/index.md)
 
 <p align="center">
   <img src="docs/en/assets/context-boundaries.png" alt="Traditional append-only chat versus AgentScript scoped context boundaries" width="900">
@@ -216,10 +216,11 @@ AgentScript doesn't hardcode agent patterns as keywords. You compose them from t
 
 | Pattern | Tutorial | What it demonstrates |
 |---------|----------|---------------------|
-| **ReAct** | `tutorials/react.as` | Reason → Act → Observe loop with explicit context |
-| **Plan-and-Execute** | `tutorials/plan-execute.as` | Generate plan, execute steps, verify, re-plan on failure |
-| **Reflection / Self-Improvement** | `tutorials/self-improve.as` | Query past lessons → generate → reflect → persist new lessons |
-| **Multi-Agent** | `tutorials/plan-execute.as` | Independent agents with isolated context boundaries |
+| **ReAct** | [`tutorials/react.as`](./tutorials/react.as) | Reason → Act → Observe loop with explicit context |
+| **Plan-and-Execute** | [`tutorials/plan-execute.as`](./tutorials/plan-execute.as) | Generate a plan, execute independent steps, synthesize results |
+| **Multi-Agent** | [`tutorials/multi-agent.as`](./tutorials/multi-agent.as) | Independent agents with isolated context boundaries |
+| **Multi-Agent Review** | [`tutorials/multi-agent-review.as`](./tutorials/multi-agent-review.as) | Run specialist reviewers in parallel, then consolidate feedback |
+| **Reflection / Self-Improvement** | [`tutorials/memory-reflection.as`](./tutorials/memory-reflection.as) | Query past lessons → generate → reflect → persist new lessons |
 
 Every pattern is explicit — which data enters the prompt, which tools each agent can use, and which output contract each LLM call must satisfy when one is declared.
 

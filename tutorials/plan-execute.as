@@ -1,21 +1,14 @@
 import llm Qwen from "ollama://localhost:11434/qwen3.6"
-import tool Search from "mcp://tools/search"
 
 main agent PlanAndExecute {
     model Qwen
-    role "Controller"
-    description "Coordinate planning, execution, verification, and final synthesis."
+    role "Project coordinator"
+    description "Create a short plan, execute independent steps, and synthesize the result."
 
     main func(input {
         goal: string
     }) {
-        plan = Planner({
-            goal: input.goal,
-            problem: "",
-            previous: []
-        })
-        results = []
-
+        plan = plan_steps(input.goal)
         steps = [
             {
                 id: "step-1",
@@ -31,117 +24,43 @@ main agent PlanAndExecute {
             }
         ]
 
-        for step in steps max 6 {
-            outcome = run_step(input.goal, step, results)
-            results.add(outcome.result)
-
-            if not outcome.ok {
-                plan = Planner({
-                    goal: input.goal,
-                    problem: outcome.reason,
-                    previous: results.summary
-                })
-            }
+        results = parallel for step in steps max 3 {
+            execute_step(input.goal, step)
         }
 
-        finish(input.goal, results)
+        synthesize(input.goal, steps, results)
     }
 
-    func run_step(goal, step, previous) {
-        result = Executor({
-            goal: goal,
-            step: step,
-            previous: previous.summary
-        })
+    func plan_steps(goal) {
+        use goal as "goal"
 
-        verdict = Verifier({
-            goal: goal,
-            step: step,
-            result: result
-        })
-
-        {
-            ok: verdict.ok,
-            reason: verdict.reason,
-            result: {
-                step: step.id,
-                task: step.task,
-                output: result.output
-            }
-        }
-    }
-
-    func finish(goal, results) {
-        use goal
-        use results.summary max 2k
-
-        generate({ input: "Create the final answer from executed steps", max_output: 800 }) -> {
-            ok: boolean
-            text
-            error
-        }
-    }
-}
-
-agent Planner {
-    model Qwen
-    role "Planner"
-    description "Create or revise a short executable plan."
-
-    main func(input) {
-        use input.goal
-        use input.problem
-        use input.previous max 1k
-
-        generate({ input: "Create a three step plan", max_output: 600 }) -> {
+        generate({ input: "Create a three step plan", max_output: 500 }) -> {
             step1
             step2
             step3
         }
     }
-}
 
-agent Executor {
-    model Qwen
-    role "Executor"
-    description "Execute one plan step with available tools."
+    func execute_step(goal, step) {
+        use goal as "goal"
+        use step as "plan step"
 
-    main func(input) {
-        use input.goal
-        use input.step
-        use input.previous max 1k
-
-        query = Search.query(input.goal, input.step, input.previous)
-        raw = Search.search(query)
-
-        observation = {
-            summary: raw.summary,
-            source: raw.source
-        }
-
-        use observation
-
-        generate({ input: "Report the result of this step", max_output: 500 }) -> {
+        generate({ input: "Execute this plan step", max_output: 400 }) -> {
             ok: boolean
-            output: json
-            error
+            output
+            risk
         }
     }
-}
 
-agent Verifier {
-    model Qwen
-    role "Verifier"
-    description "Check whether one executed step satisfies the plan."
+    func synthesize(goal, steps, results) {
+        use goal as "goal"
+        use steps.summary max 1k as "planned steps"
+        use results.summary max 2k as "step results"
 
-    main func(input) {
-        use input.goal
-        use input.step
-        use input.result
-
-        generate({ input: "Verify this step result", max_output: 300 }) -> {
-            ok: boolean
-            reason
+        generate({ input: "Synthesize the executed steps into a final answer", max_output: 700 }) -> {
+            answer
+            completed_steps: list[string]
+            open_risks: list[string]
         }
     }
 }

@@ -21,10 +21,10 @@ generate({
 
 [English](./README.md)
 
-文章：[模型到底看到了什么？](./docs/cn/introducing-agentscript.md) ·
-[别再死磕提示词优化，真正该优化的是上下文](./docs/cn/introducing-agentscript-2.md) ·
-[English Part 1](./docs/en/introducing-agentscript.md) ·
-[English Part 2](./docs/en/introducing-agentscript-2.md)
+文章：[模型到底看到了什么？](./docs/cn/blogs/introducing-agentscript.md) ·
+[别再死磕提示词优化，真正该优化的是上下文](./docs/cn/blogs/introducing-agentscript-2.md)
+
+教程：[从教程索引开始](./docs/cn/tutorials/index.md)
 
 <p align="center">
   <img src="docs/cn/assets/context-boundaries.png" alt="传统追加式 chat 与 AgentScript scoped context boundaries 的对比" width="900">
@@ -206,10 +206,11 @@ AgentScript 不把 agent 模式硬编码为关键词。你用相同的基础原�
 
 | 模式 | 教程 | 演示内容 |
 |------|------|----------|
-| **ReAct** | `tutorials/react.as` | 思考→行动→观察循环，上下文显式传递 |
-| **Plan-and-Execute** | `tutorials/plan-execute.as` | 生成计划、逐步执行、验证、失败后重新规划 |
-| **Reflection / Self-Improvement** | `tutorials/self-improve.as` | 查询历史经验→生成→反思→持久化新经验 |
-| **Multi-Agent** | `tutorials/plan-execute.as` | 独立 Agent 调用，上下文边界完全隔离 |
+| **ReAct** | [`tutorials/react.as`](./tutorials/react.as) | 思考→行动→观察循环，上下文显式传递 |
+| **Plan-and-Execute** | [`tutorials/plan-execute.as`](./tutorials/plan-execute.as) | 生成计划、并行执行独立步骤、汇总结果 |
+| **Multi-Agent** | [`tutorials/multi-agent.as`](./tutorials/multi-agent.as) | 独立 Agent 调用，上下文边界完全隔离 |
+| **Multi-Agent Review** | [`tutorials/multi-agent-review.as`](./tutorials/multi-agent-review.as) | 并行运行 specialist reviewers，再汇总反馈 |
+| **Reflection / Self-Improvement** | [`tutorials/memory-reflection.as`](./tutorials/memory-reflection.as) | 查询历史经验→生成→反思→持久化新经验 |
 
 每种模式都显式声明：哪些数据进入 prompt、每个 Agent 可用什么工具、每次 LLM 调用必须满足的输出结构。
 

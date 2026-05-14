@@ -1,90 +1,53 @@
 import llm Qwen from "ollama://localhost:11434/qwen3.6"
-import tool Search from "mcp://tools/search"
+import tool Env from "env://process"
 
-main agent ResearchAgent {
+main agent BasicReAct {
     model Qwen
-    role "Researcher"
-    description "Answer questions with a small reason-act-observe loop."
+    role "Diagnostic assistant"
+    description "Answer one question with a minimal Reason-Act-Observe flow."
 
     main func(input {
         question: string
     }) {
-        use input.question
+        env_name = "USER"
+        thought = reason(input.question, env_name)
+        action = Env.get({
+            name: env_name
+        })
+        observation = observe(input.question, env_name, action)
 
-        scratch = []
-        use scratch.summary max 2k
-
-        done = false
-
-        loop until done max 4 {
-            thought = reason(input.question, scratch)
-            action = act(input.question, thought)
-            observation = observe(action)
-
-            scratch.add(observation)
-            done = enough(input.question, scratch)
-        }
-
-        answer(input.question, scratch)
+        answer(input.question, thought, observation)
     }
 
-    func reason(question, scratch) {
-        use question
-        use scratch.summary max 1k
+    func reason(question, env_name) {
+        use question as "question"
+        use env_name as "planned tool input"
 
-        generate({ input: "Choose the next search focus", max_output: 300 }) -> {
-            focus
+        generate({ input: "Explain why this environment variable may help answer the question", max_output: 300 }) -> {
             why
         }
     }
 
-    func act(question, thought) {
-        raw_query = Search.query(question, thought)
-        raw_result = Search.search(raw_query)
+    func observe(question, env_name, action) {
+        use question as "question"
+        use env_name as "environment variable"
+        use action.value as "environment value"
 
-        {
-            query: raw_query.summary,
-            result: {
-                summary: raw_result.summary,
-                source: raw_result.source
-            }
-        }
-    }
-
-    func observe(action) {
-        raw = {
-            query: action.query,
-            summary: action.result.summary,
-            source: action.result.source
-        }
-
-        use raw
-
-        generate({ input: "Summarize the useful observation", max_output: 400 }) -> {
+        generate({ input: "Turn the tool result into a useful observation", max_output: 400 }) -> {
             facts: list[string]
-            source
+            value_found: boolean
         }
     }
 
-    func enough(question, scratch) {
-        use question
-        use scratch.summary max 1k
+    func answer(question, thought, observation) {
+        use question as "question"
+        use thought.why as "reasoning note"
+        use observation.facts max 1k as "observed facts"
+        use observation.value_found as "value found"
 
-        verdict = generate({ input: "Decide whether the observations are enough", max_output: 200 }) -> {
-            done: boolean
-        }
-
-        verdict.done
-    }
-
-    func answer(question, scratch) {
-        use question
-        use scratch.summary max 2k
-
-        generate({ input: "Answer using only the observations", max_output: 800 }) -> {
-            ok: boolean
-            text
-            error
+        generate({ input: "Answer using only the observation", max_output: 500 }) -> {
+            answer
+            confidence
         }
     }
 }

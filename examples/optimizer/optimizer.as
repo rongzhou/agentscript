@@ -7,6 +7,8 @@ main agent Optimizer {
         selection: json
         write: string
         trial_trace: string
+        output: string
+        dry_run: boolean
     }) {
         inspected = AgentScript.inspect({
             target: input.target
@@ -21,10 +23,16 @@ main agent Optimizer {
             trace: input.trial_trace
         })
 
+        write_mode = input.write
+        if input.dry_run {
+            write_mode = "preview"
+        }
+
         specialized = AgentScript.specialize({
             target: input.target,
             selection: input.selection,
-            write: input.write
+            write: write_mode,
+            output: input.output
         })
 
         {

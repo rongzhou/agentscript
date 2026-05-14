@@ -12,8 +12,9 @@ npm run agentscript -- examples/optimizer/optimizer.as examples/optimizer/triage
   --request "Checkout is failing with 500 errors in production" \
   --selection '{"examples/optimizer/triage.as#Triage.main[style]":"detailed"}' \
   --write preview \
+  --output /tmp/triage.optimized.as \
   --trial-trace none
 ```
 
-Switch `--write preview` to `--write copy --output /tmp/triage.optimized.as` to
-write an optimized copy without touching the target.
+Switch `--write preview` to `--write copy` to write an optimized copy without
+touching the target. `--dry-run` always forces preview mode.

@@ -40,6 +40,25 @@ function inputFor(file: string): JsonObject {
         name: "Rong",
         request: "Say hello from AgentScript",
       };
+    case "control-flow.as":
+      return {
+        goal: "Triage support requests",
+        items: [
+          {
+            title: "Checkout is down",
+            urgent: true,
+          },
+          {
+            title: "Rename workspace",
+            urgent: false,
+          },
+        ],
+      };
+    case "hello.as":
+      return {
+        name: "Rong",
+        request: "Help me learn AgentScript",
+      };
     case "extract-api-data.as":
       return {
         url: "/users/1",
@@ -83,6 +102,11 @@ function inputFor(file: string): JsonObject {
         path: "docs",
         target_language: "English",
       };
+    case "use-one-of.as":
+      return {
+        request: "Checkout is failing for a customer",
+        customer_tier: "vip",
+      };
     case "plan-execute.as":
       return {
         goal: "Research AgentScript and summarize the result",
@@ -91,13 +115,23 @@ function inputFor(file: string): JsonObject {
       return {
         topic: "AgentScript memory",
       };
+    case "memory-reflection.as":
+      return {
+        goal: "Explain explicit context boundaries",
+      };
+    case "multi-agent.as":
+      return {
+        topic: "AgentScript context boundaries",
+        audience: "new users",
+      };
+    case "multi-agent-review.as":
+      return {
+        audience: "new users",
+        draft: "AgentScript lets you choose exactly what context enters each model call.",
+      };
     case "node-crypto.as":
       return {
         label: "AgentScript V4",
-      };
-    case "self-improve.as":
-      return {
-        goal: "Use memory safely",
       };
     default:
       return {};

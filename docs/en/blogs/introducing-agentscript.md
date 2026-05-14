@@ -32,7 +32,7 @@ most Python or TypeScript agents, that boundary is maintained by convention.
 That works for small demos. It becomes fragile in real workflows.
 
 <p align="center">
-  <img src="assets/context-boundaries.png" alt="Traditional append-only chat versus AgentScript scoped context boundaries" width="900">
+  <img src="../assets/context-boundaries.png" alt="Traditional append-only chat versus AgentScript scoped context boundaries" width="900">
 </p>
 
 What did the model actually see? Which tool result was included in the prompt,

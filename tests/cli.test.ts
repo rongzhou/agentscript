@@ -569,7 +569,7 @@ describe("agentscript CLI", () => {
     });
 
     const running = runRepl({ input, output });
-    for (const line of [":load tutorials/helloworld.as", ":check", ":exit"]) {
+    for (const line of [":load tutorials/hello.as", ":check", ":exit"]) {
       input.write(`${line}\n`);
       await new Promise((resolve) => setImmediate(resolve));
     }

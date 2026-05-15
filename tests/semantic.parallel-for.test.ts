@@ -148,18 +148,18 @@ describe("semantic parallel-for", () => {
   it("allows AgentScript trial but rejects specialize inside parallel for", () => {
     const result = analyze(
       parse(`
-        import tool AgentScript from "host://agentscript"
+        import tool Optimizer from "host://optimizer"
 
         main agent A {
           main func(input) {
             return parallel for candidate in input.candidates max 2 {
-              inspected = AgentScript.inspect({ target: input.target })
-              trial = AgentScript.trial({
+              inspected = Optimizer.inspect({ target: input.target })
+              trial = Optimizer.trial({
                 target: input.target,
                 input: {},
                 selection: candidate
               })
-              patch = AgentScript.specialize({
+              patch = Optimizer.specialize({
                 target: input.target,
                 selection: candidate
               })
@@ -172,7 +172,7 @@ describe("semantic parallel-for", () => {
 
     expect(result.diagnostics.filter((diagnostic) => diagnostic.code === "PARALLEL_FOR_EFFECTFUL_CALL")).toEqual([
       expect.objectContaining({
-        message: expect.stringContaining("AgentScript.specialize"),
+        message: expect.stringContaining("Optimizer.specialize"),
       }),
     ]);
   });

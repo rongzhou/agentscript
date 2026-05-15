@@ -15,18 +15,18 @@ for the runner and are not passed into input.
 Import the built-in toolchain with:
 
 ```agentscript
-import tool AgentScript from "host://agentscript"
+import tool Optimizer from "host://optimizer"
 ```
 
 ## Methods
 
-- `AgentScript.inspect({ target })` parses and analyzes the target without
+- `Optimizer.inspect({ target })` parses and analyzes the target without
   executing it. It returns variant sites, baseline selection, a snapshot id, and
   warnings.
-- `AgentScript.trial({ target, input, selection, snapshot_id, trace })` runs the
+- `Optimizer.trial({ target, input, selection, snapshot_id, trace })` runs the
   target through normal `executeAgent` and reports the result, picked variants,
   unreached selections, usage, warnings, and optional trace data.
-- `AgentScript.specialize({ target, selection, snapshot_id, write, output })`
+- `Optimizer.specialize({ target, selection, snapshot_id, write, output })`
   rewrites source selections. `write: "preview"` returns a diff only,
   `"copy"` writes an optimized copy, and `"in_place"` updates changed files.
 

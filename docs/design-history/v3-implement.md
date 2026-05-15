@@ -231,7 +231,7 @@ class McpToolProvider implements ToolProvider {
 
 - 根据 `request.uri` 解析 registry key。
 - 懒加载或复用对应 `McpClient`。
-- 将 AgentScript method 映射到 MCP tool name。
+- 将 host tool method 映射到 MCP tool name。
 - 规范化 MCP result 为 `RuntimeValue`。
 
 URI 解析：

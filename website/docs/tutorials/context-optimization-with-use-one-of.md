@@ -112,5 +112,5 @@ For an end-to-end optimizer example, see:
 - [`../../../examples/optimizer/`](https://github.com/rongzhou/agentscript/tree/main/examples/optimizer/)
 - [`../optimizer.md`](https://github.com/rongzhou/agentscript/blob/main/docs/en/optimizer.md)
 
-That example uses `host://agentscript` to inspect variant sites, run trials, and
+That example uses `host://optimizer` to inspect variant sites, run trials, and
 preview a specialization.

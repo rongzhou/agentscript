@@ -187,7 +187,7 @@ hostTools.search.web_search({ query: "agentscript" }, context)
 
 规则：
 
-- AgentScript method name 必须是 `HostToolImpl` 的一个键。
+- Host tool method name 必须是 `HostToolImpl` 的一个键。
 - 允许 0 或 1 个参数。0 参数时 `args` 为 `{}`。
 - 如果存在第 1 个参数，它必须是 object；否则 runtime 报错。
 - 调用前 runtime 已经处理 identifier 与 call 语义。

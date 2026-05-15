@@ -21,7 +21,8 @@ This language reference is the compact syntax and feature map. Detailed design d
 - [`parallel for`](./parallel-for.md): structured parallelism for independent bounded list work.
 - [Final Expression Return](./final-expression-return.md): implicit return from the final top-level expression in a function body.
 - [npm and node tools](./npm-tools.md): calling npm packages and Node built-in modules from AgentScript.
-- [Optimizer Toolchain](./optimizer.md): `host://agentscript` tools for inspecting, trialing, and specializing `use one of` variants.
+- [Optimizer Toolchain](./optimizer.md): `host://optimizer` tools for inspecting, trialing, and specializing `use one of` variants.
+- [AgentSpec](./agent-spec.md): JSON blueprint format that compiles deterministically into AgentScript source.
 
 ## Program structure
 
@@ -85,7 +86,7 @@ Tools use URI schemes for dispatch:
 | `env://` | Environment variables | `env://process` |
 | `http://` / `https://` | HTTP requests | `https://api.example.com` |
 | `mcp://` | External MCP tools | `mcp://tools/search` |
-| `host://agentscript` | Built-in optimizer toolchain | `host://agentscript` |
+| `host://optimizer` | Built-in optimizer toolchain | `host://optimizer` |
 | `node:` | Node built-in modules (requires `agentscript.npm.json`) | `node:path`, `node:fs/promises` |
 | `npm:` | Installed npm packages (requires `agentscript.npm.json`) | `npm:yaml`, `npm:@scope/util` |
 

@@ -7,11 +7,11 @@ import {
   NODE_SCHEME,
   NPM_SCHEME,
   SHELL_SCHEME,
-  AGENTSCRIPT_SCHEME,
+  OPTIMIZER_SCHEME,
 } from "../../language/schemes.js";
 import type { ToolProvider } from "../../runtime/types.js";
 import { RuntimeError } from "../../runtime/errors.js";
-import { AgentscriptToolProvider, type AgentscriptToolContext } from "../../toolchain/agentscript.js";
+import { OptimizerToolProvider, type OptimizerToolContext } from "../../toolchain/optimizer.js";
 import { EnvToolProvider } from "./env.js";
 import { FileToolProvider } from "./file.js";
 import { HttpToolProvider } from "./http.js";
@@ -24,7 +24,7 @@ import { ShellToolProvider } from "./shell.js";
 import { Workspace } from "../shared/workspace.js";
 
 export class HostToolProvider extends SchemeToolProvider {
-  constructor(workspaceRoot = process.cwd(), agentscript?: Partial<AgentscriptToolContext>) {
+  constructor(workspaceRoot = process.cwd(), optimizer?: Partial<OptimizerToolContext>) {
     const workspace = new Workspace(workspaceRoot);
     const http = new HttpToolProvider();
     const mcp = new McpToolProvider(workspaceRoot);
@@ -32,9 +32,9 @@ export class HostToolProvider extends SchemeToolProvider {
     super(
       {
         host: new HostNamespaceProvider({
-          [AGENTSCRIPT_SCHEME]: new AgentscriptToolProvider({
+          [OPTIMIZER_SCHEME]: new OptimizerToolProvider({
             workspaceRoot,
-            ...agentscript,
+            ...optimizer,
           }),
         }),
         [ENV_SCHEME]: new EnvToolProvider(),
@@ -66,7 +66,7 @@ class HostNamespaceProvider implements ToolProvider {
 
 export function createDefaultToolProvider(
   workspaceRoot = process.cwd(),
-  agentscript?: Partial<AgentscriptToolContext>,
+  optimizer?: Partial<OptimizerToolContext>,
 ): ToolProvider {
-  return new HostToolProvider(workspaceRoot, agentscript);
+  return new HostToolProvider(workspaceRoot, optimizer);
 }

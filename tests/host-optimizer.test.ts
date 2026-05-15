@@ -6,7 +6,7 @@ import { executeAgent } from "../src/runtime/interpreter.js";
 import { loadProgram } from "../src/runtime/loader.js";
 import type { RuntimeValue } from "../src/runtime/types.js";
 
-describe("host://agentscript", () => {
+describe("host://optimizer", () => {
   it("inspects use one of sites across imported agents", async () => {
     const dir = mkdtempSync(join(tmpdir(), "agentscript-toolchain-"));
     const target = writeTargetGraph(dir);
@@ -14,11 +14,11 @@ describe("host://agentscript", () => {
     writeFileSync(
       optimizer,
       `
-      import tool AgentScript from "host://agentscript"
+      import tool Optimizer from "host://optimizer"
 
-      main agent Optimizer {
+      main agent OptimizerAgent {
         main func(input) {
-          return AgentScript.inspect({ target: input.target })
+          return Optimizer.inspect({ target: input.target })
         }
       }
     `,
@@ -79,11 +79,11 @@ describe("host://agentscript", () => {
     writeFileSync(
       optimizer,
       `
-      import tool AgentScript from "host://agentscript"
+      import tool Optimizer from "host://optimizer"
 
-      main agent Optimizer {
+      main agent OptimizerAgent {
         main func(input) {
-          return AgentScript.trial({
+          return Optimizer.trial({
             target: input.target,
             input: {},
             selection: {
@@ -166,11 +166,11 @@ describe("host://agentscript", () => {
     writeFileSync(
       optimizer,
       `
-      import tool AgentScript from "host://agentscript"
+      import tool Optimizer from "host://optimizer"
 
-      main agent Optimizer {
+      main agent OptimizerAgent {
         main func(input) {
-          return AgentScript.specialize({
+          return Optimizer.specialize({
             target: input.target,
             output: input.output,
             selection: {
@@ -331,11 +331,11 @@ async function runTool(dir: string, method: string, args: Record<string, Runtime
   writeFileSync(
     optimizer,
     `
-    import tool AgentScript from "host://agentscript"
+    import tool Optimizer from "host://optimizer"
 
-    main agent Optimizer {
+    main agent OptimizerAgent {
       main func(input) {
-        return AgentScript.${method}(input)
+        return Optimizer.${method}(input)
       }
     }
   `,

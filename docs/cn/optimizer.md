@@ -14,17 +14,17 @@ agentscript optimizer.as target.as --mock --trace-level none
 内置工具链这样导入：
 
 ```agentscript
-import tool AgentScript from "host://agentscript"
+import tool Optimizer from "host://optimizer"
 ```
 
 ## 方法
 
-- `AgentScript.inspect({ target })` 只解析和分析 target，不执行 target。返回
+- `Optimizer.inspect({ target })` 只解析和分析 target，不执行 target。返回
   variant sites、baseline selection、snapshot id 和 warnings。
-- `AgentScript.trial({ target, input, selection, snapshot_id, trace })` 通过标准
+- `Optimizer.trial({ target, input, selection, snapshot_id, trace })` 通过标准
   `executeAgent` 运行 target，返回 result、picked variants、未命中的 selection、
   usage、warnings 和可选 trace。
-- `AgentScript.specialize({ target, selection, snapshot_id, write, output })`
+- `Optimizer.specialize({ target, selection, snapshot_id, write, output })`
   改写源码选择。`write: "preview"` 只返回 diff，`"copy"` 写优化副本，
   `"in_place"` 更新变更文件。
 

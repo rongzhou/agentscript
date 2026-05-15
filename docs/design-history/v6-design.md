@@ -6,7 +6,7 @@ optimizer，对目标 `.as` 程序里的 `use one of` 选择点做实验，并�
 "移动 `selected`"的形式写回到另一份普通 `.as` 源码。
 
 V6 不引入新的语言原语。语言核心仍然只有 `use` 和 `generate`。V6 只把一条
-host scheme `host://agentscript` 的 toolchain 加进 provider 层，让 `.as`
+host scheme `host://optimizer` 的 toolchain 加进 provider 层，让 `.as`
 程序能够把另一份 `.as` 源码当作**源码工件**来 inspect / trial / specialize。
 
 V6 的立场来自已有的 `use one of` 设计：
@@ -26,7 +26,7 @@ V6 不是一个通用优化框架，也不试图覆盖所有搜索算法。它�
 核心哲学：
 
 - **显式 capability**：optimizer 访问目标源码必须经过显式
-  `import tool AgentScript from "host://agentscript"`。
+  `import tool Optimizer from "host://optimizer"`。
 - **显式 prompt context**：toolchain 返回的 inspection / trial 结果是普通
   数据；它们是否进 prompt 由 optimizer.as 自己的 `use` 决定。
 - **策略属于用户**：toolchain 只提供三个确定性原语
@@ -44,12 +44,12 @@ V6 不是一个通用优化框架，也不试图覆盖所有搜索算法。它�
 
 V6 Phase 1 支持：
 
-- 新的 host tool scheme `host://agentscript`，暴露三个原语方法：
-  - `AgentScript.inspect({ target })` — 解析目标源码，返回所有 `use one of`
+- 新的 host tool scheme `host://optimizer`，暴露三个原语方法：
+  - `Optimizer.inspect({ target })` — 解析目标源码，返回所有 `use one of`
     位点及其候选。
-  - `AgentScript.trial({ target, input, selection, ... })` — 以指定 variant
+  - `Optimizer.trial({ target, input, selection, ... })` — 以指定 variant
     selection 运行目标 agent 一次，返回值、trace、usage、picked。
-  - `AgentScript.specialize({ target, selection, output, mode, write })` —
+  - `Optimizer.specialize({ target, selection, output, mode, write })` —
     根据 selection 把 `selected` 移到胜出候选，产出 specialized `.as` 源码。
 - CLI `agentscript optimizer.as [<target>] [--<key> <value> ...]` 的位置参数
   和 flag 参数映射到 optimizer 的 `main func(input)` contract。
@@ -84,7 +84,7 @@ V6 Phase 1 不支持：
   工件，必须经 toolchain；`import agent` 是 runtime capability，不在此路径上。
 - Prompt 文本的自动 rewriting：V6 从不改 generate 的 instruction。
 - 把 `import agent` 当作 optimizer toolchain 的替代入口。Target 仍然必须经
-  `AgentScript.inspect` / `trial` / `specialize` 作为源码工件处理；不过
+  `Optimizer.inspect` / `trial` / `specialize` 作为源码工件处理；不过
   Phase 1 会把 target 的 `import agent` 依赖图纳入同一次 inspect / trial /
   specialize 范围。
 - 策略 helper 的 host tool 封装（例如 `Stats.max_by`）。Helper 全部是 `.as`。
@@ -102,7 +102,7 @@ V6 Phase 1 不支持：
 V6 语法不变。optimizer.as 本身是一个普通 AgentScript 程序：
 
 ```agentscript
-import tool  AgentScript from "host://agentscript"
+import tool  Optimizer from "host://optimizer"
 import tool  Fs          from "host://fs"
 import agent Grid        from "./stdlib/grid.as"
 import agent Stats       from "./stdlib/stats.as"
@@ -119,7 +119,7 @@ main agent GridSearchOptimizer {
         output:  string
         dry_run: boolean
     }) {
-        inspection = AgentScript.inspect({ target: input.target })
+        inspection = Optimizer.inspect({ target: input.target })
         if not inspection.ok { return inspection }
 
         // `Fs.read_jsonl` 只是 evalset 加载的 placeholder；evalset 如何读入
@@ -149,7 +149,7 @@ main agent GridSearchOptimizer {
             min_improvement: 0.03
         })
 
-        patch = AgentScript.specialize({
+        patch = Optimizer.specialize({
             target:      input.target,
             selection:   best.selection,
             snapshot_id: inspection.snapshot_id,
@@ -172,7 +172,7 @@ main agent GridSearchOptimizer {
 关键点：
 
 - optimizer 是一个普通 agent；入口还是 `main agent` / `main func`。
-- `AgentScript.*` 是 host tool 调用，与 `Search.search` 同构。
+- `Optimizer.*` 是 host tool 调用，与 `Search.search` 同构。
 - trial 并发由现有 `parallel for` 原语承担。toolchain 不引入额外并发编排。
 - `generate` 在 optimizer.as 里用于 LLM judge。它只是个 generate，和业务
   agent 没有结构差别。
@@ -203,7 +203,7 @@ CLI 同时接受一组**工程兜底**的运行时标志，这些标志不进入
 进程级硬约束：
 
 ```text
---max-trials <N>        上限：对 AgentScript.trial 的累计调用次数
+--max-trials <N>        上限：对 Optimizer.trial 的累计调用次数
 --max-llm-calls <N>     上限：所有 generate 调用次数（含 target 与 optimizer）
 --max-seconds <N>       上限：整个进程墙钟时间
 --allow-target-tool <x> 显式放行 target 里的特定 host tool；可重复，或用逗号
@@ -243,7 +243,7 @@ Target 是**源码工件**。入口 `target` 文件及其递归 `import agent` �
 
 ## Toolchain 三原语
 
-全部方法位于 `host://agentscript` 这一个 host tool binding。方法签名采用与
+全部方法位于 `host://optimizer` 这一个 host tool binding。方法签名采用与
 现有 host tool 一致的"JSON object 入参、JSON-safe 返回值"约定，不引入新
 marshal 规则。
 
@@ -570,7 +570,7 @@ optimizer 先 `inspect` 整个 target，再按 `variant_sites[*].scope` 过滤�
 import agent Selection from "./stdlib/selection.as"
 import agent Grid      from "./stdlib/grid.as"
 
-inspection = AgentScript.inspect({ target: input.target })
+inspection = Optimizer.inspect({ target: input.target })
 
 sites = Selection.filter_sites({
     sites:  inspection.variant_sites,
@@ -665,7 +665,7 @@ toolchain 不发明新的 trace kind。host tool 调用保持现有 `tool` kind�
     "tool": "AgentScript",
     "method": "trial",
     "scheme": "host",
-    "uri": "host://agentscript",
+    "uri": "host://optimizer",
     "args": [ { "selection": {...}, "..." } ],
     "result": {
       "ok": true,
@@ -774,7 +774,7 @@ CI 工具或外层编排脚本能按字段读取结果，不必 parse report。
 
 V6 不改变 capability 模型：
 
-- `import tool AgentScript from "host://agentscript"` 是显式 capability。
+- `import tool Optimizer from "host://optimizer"` 是显式 capability。
 - 宿主可以通过 registry 决定是否授予这个 tool；CLI 默认授予，嵌入式
   `executeAgent` 不默认授予。
 - host tool 返回值不自动进入 prompt；任何 inspection / trial 结果要进

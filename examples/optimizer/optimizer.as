@@ -1,6 +1,6 @@
-import tool AgentScript from "host://agentscript"
+import tool Optimizer from "host://optimizer"
 
-main agent Optimizer {
+main agent OptimizerAgent {
     main func(input {
         target: string
         request: string
@@ -10,11 +10,11 @@ main agent Optimizer {
         output: string
         dry_run: boolean
     }) {
-        inspected = AgentScript.inspect({
+        inspected = Optimizer.inspect({
             target: input.target
         })
 
-        trial = AgentScript.trial({
+        trial = Optimizer.trial({
             target: input.target,
             input: {
                 request: input.request
@@ -28,7 +28,7 @@ main agent Optimizer {
             write_mode = "preview"
         }
 
-        specialized = AgentScript.specialize({
+        specialized = Optimizer.specialize({
             target: input.target,
             selection: input.selection,
             write: write_mode,

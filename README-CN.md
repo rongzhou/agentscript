@@ -125,7 +125,7 @@ main agent FileSummarizer {
 ## Examples、Tutorials 和 Recipes
 
 - `examples/` 放最小化示例，每个文件只演示一个语言特性或 agent pattern。
-- `examples/optimizer/` 放一个可用 `--mock` 跑通的 V6 optimizer workflow，演示 `host://agentscript`。
+- `examples/optimizer/` 放一个可用 `--mock` 跑通的 V6 optimizer workflow，演示 `host://optimizer`。
 - `tutorials/` 放更完整的 walkthrough 程序，用于学习端到端的多步骤 agent pattern。
 - `recipes/` 放可直接复制改造的实际工作流，例如 repo review、code review、changelog、文件摘要、文档翻译、API 数据抽取和 research brief。
 

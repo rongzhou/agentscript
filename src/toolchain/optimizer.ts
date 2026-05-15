@@ -9,7 +9,7 @@ import { budgetToJson, sanitizeForJson } from "../runtime/json.js";
 import { loadProgramGraph, type LoadedProgramGraph } from "../runtime/loader.js";
 import { normalizeTargetPath } from "../language/site-id.js";
 import {
-  AGENTSCRIPT_SCHEME,
+  OPTIMIZER_SCHEME,
   ENV_SCHEME,
   FILE_SCHEME,
   HTTP_SCHEME,
@@ -36,29 +36,29 @@ import { collectVariantSites, type VariantSiteMetadata } from "../language/varia
 import { expectObject, readOptionalString, readRequiredString } from "../providers/tools/shared.js";
 import { outputTarget, rewriteGraph, writeRewrite } from "./source-rewrite.js";
 
-export interface AgentscriptToolContext {
+export interface OptimizerToolContext {
   workspaceRoot: string;
   artifactsDir?: string;
-  budget?: AgentscriptBudgetCounter;
+  budget?: OptimizerBudgetCounter;
   llmProvider?: LlmProvider;
   toolProvider?: ToolProvider;
   memoryProvider?: MemoryProvider;
 }
 
-interface AgentscriptBudgetCounter {
+interface OptimizerBudgetCounter {
   incrementTrial(): void;
   incrementLlm(): void;
   checkDeadline(): void;
 }
 
-export class AgentscriptToolProvider implements ToolProvider {
+export class OptimizerToolProvider implements ToolProvider {
   private trialCounter = 0;
 
-  constructor(private readonly ctx: AgentscriptToolContext) {}
+  constructor(private readonly ctx: OptimizerToolContext) {}
 
   async call(request: ToolCallRequest): Promise<RuntimeValue> {
     if (new URL(request.uri).pathname.replace(/^\/$/, "") !== "") {
-      return softError("invalid_uri", "host://agentscript does not accept a path");
+      return softError("invalid_uri", "host://optimizer does not accept a path");
     }
     switch (request.method) {
       case "inspect":
@@ -68,12 +68,12 @@ export class AgentscriptToolProvider implements ToolProvider {
       case "specialize":
         return this.specialize(request);
       default:
-        throw new RuntimeError(`Unknown AgentScript method '${request.method}'`);
+        throw new RuntimeError(`Unknown Optimizer method '${request.method}'`);
     }
   }
 
   private inspect(request: ToolCallRequest): RuntimeValue {
-    const args = expectObject(request.args[0], "AgentScript.inspect");
+    const args = expectObject(request.args[0], "Optimizer.inspect");
     const graph = readTargetGraph(readRequiredString(args.target, "target"));
     const diagnostics = semanticErrors(graph);
     if (diagnostics.length > 0) {
@@ -100,7 +100,7 @@ export class AgentscriptToolProvider implements ToolProvider {
   }
 
   private async trial(request: ToolCallRequest): Promise<RuntimeValue> {
-    const args = expectObject(request.args[0], "AgentScript.trial");
+    const args = expectObject(request.args[0], "Optimizer.trial");
     const target = readRequiredString(args.target, "target");
     const graph = readTargetGraph(target);
     const warnings: JsonValue[] = [];
@@ -169,7 +169,7 @@ export class AgentscriptToolProvider implements ToolProvider {
   }
 
   private specialize(request: ToolCallRequest): RuntimeValue {
-    const args = expectObject(request.args[0], "AgentScript.specialize");
+    const args = expectObject(request.args[0], "Optimizer.specialize");
     const target = readRequiredString(args.target, "target");
     const graph = readTargetGraph(target);
     const expectedSnapshot = readOptionalString(args.snapshot_id);
@@ -252,7 +252,7 @@ function semanticErrors(graph: LoadedProgramGraph): SemanticDiagnostic[] {
   return analyze(graph.program).diagnostics.filter((diagnostic) => diagnostic.severity === "error");
 }
 
-function collectGraphSites(graph: LoadedProgramGraph, ctx: AgentscriptToolContext): VariantSiteMetadata[] {
+function collectGraphSites(graph: LoadedProgramGraph, ctx: OptimizerToolContext): VariantSiteMetadata[] {
   return collectVariantSites(graph.program, { sourcePath: graph.entryPath, workspaceRoot: ctx.workspaceRoot });
 }
 
@@ -277,7 +277,7 @@ function isTargetEffectfulToolImport(uri: string): boolean {
   const scheme = uriScheme(uri);
   if (scheme === "host") {
     try {
-      return new URL(uri).hostname !== AGENTSCRIPT_SCHEME;
+      return new URL(uri).hostname !== OPTIMIZER_SCHEME;
     } catch {
       return true;
     }
@@ -319,7 +319,7 @@ function baselineSelection(sites: VariantSiteMetadata[]): JsonObject {
   return selection;
 }
 
-function snapshotGraph(graph: LoadedProgramGraph, ctx: AgentscriptToolContext): string {
+function snapshotGraph(graph: LoadedProgramGraph, ctx: OptimizerToolContext): string {
   const hash = createHash("sha256");
   for (const file of [...graph.files].sort((a, b) =>
     normalizePath(a.path, ctx).localeCompare(normalizePath(b.path, ctx)),
@@ -339,7 +339,7 @@ function normalizeSource(source: string): string {
     .normalize("NFC");
 }
 
-function normalizePath(path: string | undefined, ctx: AgentscriptToolContext): string {
+function normalizePath(path: string | undefined, ctx: OptimizerToolContext): string {
   return normalizeTargetPath(path, ctx.workspaceRoot);
 }
 

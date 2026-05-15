@@ -4,7 +4,7 @@
 
 - `use one of` 创建有名字的 context choices。
 - optimizer 本身是一个普通 AgentScript 程序。
-- `host://agentscript` 给 optimizer 三个工具：`inspect`、`trial` 和 `specialize`。
+- `host://optimizer` 给 optimizer 三个工具：`inspect`、`trial` 和 `specialize`。
 - optimizer 的产物仍然是普通 `.as` 源码。
 
 <img src="../assets/tutorial-11.png" alt="优化器工具链教程概览" width="900">
@@ -58,9 +58,9 @@ use one of {
 optimizer 是 [`../../../examples/optimizer/optimizer.as`](../../../examples/optimizer/optimizer.as)：
 
 ```agentscript
-import tool AgentScript from "host://agentscript"
+import tool Optimizer from "host://optimizer"
 
-main agent Optimizer {
+main agent OptimizerAgent {
     main func(input {
         target: string
         request: string
@@ -70,11 +70,11 @@ main agent Optimizer {
         output: string
         dry_run: boolean
     }) {
-        inspected = AgentScript.inspect({
+        inspected = Optimizer.inspect({
             target: input.target
         })
 
-        trial = AgentScript.trial({
+        trial = Optimizer.trial({
             target: input.target,
             input: {
                 request: input.request
@@ -88,7 +88,7 @@ main agent Optimizer {
             write_mode = "preview"
         }
 
-        specialized = AgentScript.specialize({
+        specialized = Optimizer.specialize({
             target: input.target,
             selection: input.selection,
             write: write_mode,
@@ -141,7 +141,7 @@ npm run agentscript -- examples/optimizer/optimizer.as examples/optimizer/triage
 
 ## 5. 阅读 `inspect`
 
-`AgentScript.inspect` 会解析 target，但不会执行 target。它的结果包括 target files、snapshot id、variant sites、baseline selection 和 warnings。
+`Optimizer.inspect` 会解析 target，但不会执行 target。它的结果包括 target files、snapshot id、variant sites、baseline selection 和 warnings。
 
 最重要的字段是 `variant_sites`。这个例子里你会看到类似这样的 site id：
 
@@ -159,7 +159,7 @@ path#Agent.func[label]
 
 ## 6. 阅读 `trial`
 
-`AgentScript.trial` 用指定 selection 运行 target：
+`Optimizer.trial` 用指定 selection 运行 target：
 
 ```json
 {
@@ -179,7 +179,7 @@ path#Agent.func[label]
 
 ## 7. 阅读 `specialize`
 
-`AgentScript.specialize` 会改写源码选择。preview 模式不会写文件，只返回 diff：
+`Optimizer.specialize` 会改写源码选择。preview 模式不会写文件，只返回 diff：
 
 ```diff
 -            concise: "Use a concise one-paragraph triage style." selected

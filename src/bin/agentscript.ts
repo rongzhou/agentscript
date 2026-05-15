@@ -95,7 +95,7 @@ async function runOptimizer(options: CliOptions): Promise<number> {
     sourcePath: options.file,
     workspaceRoot: process.cwd(),
     artifactsDir: runDir,
-    agentscript: {
+    optimizer: {
       budget,
       memoryProvider,
       toolProvider: options.mock ? new MockToolProvider() : undefined,

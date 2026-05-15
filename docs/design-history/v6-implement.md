@@ -4,7 +4,7 @@
 
 V6 Phase 1 的实现目标是让 AgentScript 在语言生态内部完成优化闭环：
 `agentscript optimizer.as ./target.as ...` 一条命令能运行一个纯 `.as` 写的
-optimizer，通过 `host://agentscript` toolchain 对 target `.as` 的 `use one of`
+optimizer，通过 `host://optimizer` toolchain 对 target `.as` 的 `use one of`
 做 inspect / trial / specialize，并把胜出候选以移动 `selected` 的形式写回
 普通 `.as` 源码。这里的 target 是单入口源码工件：入口 `.as` 文件及其递归
 `import agent` 依赖构成一个 target dependency graph。Phase 1 必须把这个
@@ -13,7 +13,7 @@ graph 作为 inspect / trial / specialize 的共同边界。
 V6 Phase 1 不改变语言语法，不引入新的语言关键字，不引入 runtime dependency。
 所有工作集中在：
 
-- 一条新 host tool `host://agentscript`（内置 provider）；
+- 一条新 host tool `host://optimizer`（内置 provider）；
 - source-to-source 的 `selected` splicer；
 - `ExecuteOptions.variant` 的 site_id 格式升级；
 - CLI 的 optimizer argv 映射和进程级 budget 守护；
@@ -22,7 +22,7 @@ V6 Phase 1 不改变语言语法，不引入新的语言关键字，不引入 ru
 ## 原则
 
 - optimizer 是一个普通 AgentScript 程序；语言核心只有 `use` 和 `generate`。
-- `host://agentscript` 是内置 host tool scheme；它不是 user-registered host
+- `host://optimizer` 是内置 host tool scheme；它不是 user-registered host
   provider，也不是新语言原语。嵌入式宿主默认不授予该 tool，CLI optimizer
   模式默认授予。
 - 三原语 `inspect` / `trial` / `specialize` 的对外契约（入参 schema、返回
@@ -64,7 +64,7 @@ src/runtime/use-one-of.ts               // 共享 variant 选择逻辑
 src/language/site-id.ts                 // site_id builder + path 规范化
 src/language/source-map.ts              // AST node origin source metadata
 src/language/variant-sites.ts           // AST walker：收集 use-one-of site metadata
-src/toolchain/agentscript.ts            // provider 层 JSON 化包装
+src/toolchain/optimizer.ts            // provider 层 JSON 化包装
 ```
 
 实现要点：
@@ -169,32 +169,32 @@ src/semantic/use.ts           // 继续沿用已有诊断；不读取 ordinal
 - 现有 semantic 诊断（`DUPLICATE_USE_ONE_OF_CANDIDATE`、`RESERVED_CONTEXT_LABEL`
   等）不变。
 
-## 阶段 2：`host://agentscript` scheme sub-provider
+## 阶段 2：`host://optimizer` scheme sub-provider
 
 状态：计划中。
 
-目标：在现有 `HostToolProvider` 里注册 `agentscript` scheme，三个方法
+目标：在现有 `HostToolProvider` 里注册 `optimizer` scheme，三个方法
 `inspect` / `trial` / `specialize` 路由到新模块。
 
 新增模块：
 
 ```text
-src/toolchain/agentscript.ts                  // AgentscriptToolProvider + 三原语实现
-src/providers/tools/host.ts                   // host://agentscript 薄路由
+src/toolchain/optimizer.ts                  // OptimizerToolProvider + 三原语实现
+src/providers/tools/host.ts                   // host://optimizer 薄路由
 ```
 
 修改：
 
 ```text
-src/language/schemes.ts                 // 新增 AGENTSCRIPT_SCHEME = "agentscript"
-src/providers/tools/host.ts             // 将 AgentscriptToolProvider 注册进去
+src/language/schemes.ts                 // 新增 OPTIMIZER_SCHEME = "optimizer"
+src/providers/tools/host.ts             // 将 OptimizerToolProvider 注册进去
 src/semantic/walker.ts / analyzer.ts    // parallel-for 内 effectful 列表包含
                                         // `agentscript`（见阶段 6）
 ```
 
 实现要点：
 
-- `AgentscriptToolProvider implements ToolProvider`：
+- `OptimizerToolProvider implements ToolProvider`：
   ```ts
   async call(request: ToolCallRequest): Promise<RuntimeValue> {
       switch (request.method) {
@@ -202,7 +202,7 @@ src/semantic/walker.ts / analyzer.ts    // parallel-for 内 effectful 列表包�
           case "trial":      return trial(request, this.ctx);
           case "specialize": return specialize(request, this.ctx);
           default: throw new RuntimeError(
-              `Unknown AgentScript method '${request.method}'`,
+              `Unknown Optimizer method '${request.method}'`,
           );
       }
   }
@@ -210,7 +210,7 @@ src/semantic/walker.ts / analyzer.ts    // parallel-for 内 effectful 列表包�
 - `ctx` 内含：runtime options（workspaceRoot、sourcePath base）、budget 计数
   器句柄、artifacts 目录句柄、外层 trace 的写入能力。由 interpreter 在
   构造 `HostToolProvider` 时注入（见阶段 7）。
-- `host://agentscript` URI 不允许带 path 段；`host://agentscript/foo` 统一
+- `host://optimizer` URI 不允许带 path 段；`host://optimizer/foo` 统一
   返回 `{ ok: false, code: "invalid_uri", message }`。
 - 每个方法的入参类型用 TypeScript interface 声明并做 runtime 校验；任何
   tool schema 违反（非 object、字段缺失、类型错误）抛 `RuntimeError`
@@ -218,8 +218,8 @@ src/semantic/walker.ts / analyzer.ts    // parallel-for 内 effectful 列表包�
 
 验收：
 
-- `.as` 中 `AgentScript.inspect({ target: "..." })` 调用成功到达 `inspect.ts`。
-- `AgentScript.unknown_method(...)` 返回 hard error 消息带 method 名与 URI。
+- `.as` 中 `Optimizer.inspect({ target: "..." })` 调用成功到达 `inspect.ts`。
+- `Optimizer.unknown_method(...)` 返回 hard error 消息带 method 名与 URI。
 
 ## 阶段 3：inspect 实现
 
@@ -231,7 +231,7 @@ src/semantic/walker.ts / analyzer.ts    // parallel-for 内 effectful 列表包�
 新增 / 修改：
 
 ```text
-src/toolchain/agentscript.ts
+src/toolchain/optimizer.ts
 ```
 
 实现要点：
@@ -337,7 +337,7 @@ soft error 条件（返回 `{ok: false, code, ...}`）：
 新增 / 修改：
 
 ```text
-src/toolchain/agentscript.ts
+src/toolchain/optimizer.ts
 src/runtime/interpreter.ts          // 若需暴露一个纯 executeAgent-with-provider
                                     // variant 的内部 API
 ```
@@ -383,8 +383,8 @@ src/runtime/interpreter.ts          // 若需暴露一个纯 executeAgent-with-p
   具体做法——trial 创建一个**新的** `executeAgent` 调用，使用 outer 的
   `llmProvider` / `toolProvider` / `memoryProvider` 作为默认。这样 target
   内 `openai://` / `npm:` / `host://search` 等仍然 live。
-  - 如果 outer 的 `toolProvider` 是 V6 加入 `host://agentscript` 的版本，那
-    target 里也能看到 `host://agentscript`。Phase 1 这是允许的（对应"递归
+  - 如果 outer 的 `toolProvider` 是 V6 加入 `host://optimizer` 的版本，那
+    target 里也能看到 `host://optimizer`。Phase 1 这是允许的（对应"递归
     自优化"场景，文档不推荐但不堵死）。
   - trial 不提供 `llm_override`（v6-design 已决定字段不暴露）。
 - 运行前配额检查：
@@ -445,7 +445,7 @@ src/runtime/interpreter.ts          // 若需暴露一个纯 executeAgent-with-p
 新增模块：
 
 ```text
-src/toolchain/agentscript.ts              // Phase 1 可先单文件实现，后续再拆模块
+src/toolchain/optimizer.ts              // Phase 1 可先单文件实现，后续再拆模块
 src/toolchain/source-rewrite.ts           // 纯源码文本操作（可选拆分）
 ```
 
@@ -543,7 +543,7 @@ src/toolchain/source-rewrite.ts           // 纯源码文本操作（可选拆�
 状态：计划中。
 
 目标：集中定义 effectful tool scheme / method，供 parallel-for semantic
-检查与 inspect warning 复用；同时保持 `AgentScript.trial` 可在
+检查与 inspect warning 复用；同时保持 `Optimizer.trial` 可在
 `parallel for` 中并发调用。
 
 修改：
@@ -551,7 +551,7 @@ src/toolchain/source-rewrite.ts           // 纯源码文本操作（可选拆�
 ```text
 src/semantic/parallel-for.ts       // parallel-for body 的 effectful call 规则
 src/language/tools.ts              // 抽出 method-aware tool effect 判断
-src/language/schemes.ts            // AGENTSCRIPT_SCHEME 常量
+src/language/schemes.ts            // OPTIMIZER_SCHEME 常量
 ```
 
 实现要点：
@@ -559,10 +559,10 @@ src/language/schemes.ts            // AGENTSCRIPT_SCHEME 常量
 - 若 semantic 层已经维护过 effectful scheme 列表（例如 V3/V4/V5 中已存在），
   不要简单地把 `agentscript` 整个 scheme 加入"parallel 中禁止"集合。V6 的
   设计目标正是让 optimizer 用 `parallel for` 并发 trial，因此
-  `AgentScript.trial(...)` 必须允许出现在 parallel body 中。
+  `Optimizer.trial(...)` 必须允许出现在 parallel body 中。
 - 抽出两组判断：
   ```ts
-  export const AGENTSCRIPT_SCHEME = "agentscript";
+  export const OPTIMIZER_SCHEME = "optimizer";
   export const PARALLEL_FORBIDDEN_TOOL_SCHEMES = new Set([
       MCP_SCHEME, SHELL_SCHEME, HTTP_SCHEME, HTTPS_SCHEME,
       NPM_SCHEME, NODE_SCHEME, ENV_SCHEME, FILE_SCHEME,
@@ -570,20 +570,20 @@ src/language/schemes.ts            // AGENTSCRIPT_SCHEME 常量
   export function isParallelForbiddenToolCall(method: string, uri?: string): boolean;
   export function isTargetEffectfulToolImport(uri: string): boolean;
   ```
-- `isParallelForbiddenToolCall` 对 `host://agentscript` 做 method-aware 判断：
+- `isParallelForbiddenToolCall` 对 `host://optimizer` 做 method-aware 判断：
   - `inspect`：允许。只读 target 源码。
   - `trial`：允许。它会写 artifacts / 消耗 budget，但这是 V6 显式支持的并发
     trial 路径；BudgetCounter 和 artifacts writer 必须保证并发安全。
   - `specialize`：禁止在 `parallel for` body 中直接调用。它写源码工件，应由
     optimizer 在选择 winner 后串行执行。
 - `isTargetEffectfulToolImport` 用于 inspect warning。它可以把 `host://`（除
-  agentscript 自身）、`npm:`、`node:`、`mcp:`、`sh:` 等视为 effectful，
+  optimizer 自身）、`npm:`、`node:`、`mcp:`、`sh:` 等视为 effectful，
   与 parallel 禁止集合不必完全相同。
 
 验收：
 
-- `parallel for` body 中 `AgentScript.trial(...)` 允许通过 semantic check。
-- `parallel for` body 中 `AgentScript.specialize(...)` 被 semantic check 拒绝。
+- `parallel for` body 中 `Optimizer.trial(...)` 允许通过 semantic check。
+- `parallel for` body 中 `Optimizer.specialize(...)` 被 semantic check 拒绝。
 - `parallel for` body 中现有 npm / node / mcp 等 effectful tool call 仍被拒绝。
 - 现有 effectful tool 场景行为不变。
 
@@ -591,7 +591,7 @@ src/language/schemes.ts            // AGENTSCRIPT_SCHEME 常量
 
 状态：计划中。
 
-目标：让 `host://agentscript` provider 能拿到 outer runtime 的 provider、
+目标：让 `host://optimizer` provider 能拿到 outer runtime 的 provider、
 budget counter 和 artifacts 目录句柄。
 
 新增 / 修改：
@@ -601,7 +601,7 @@ src/runtime/interpreter.ts              // ExecuteOptions 新增 budget / artifa
                                         // 向 tool provider 注入上下文
 src/runtime/types.ts                    // 类型导出
 src/providers/tools/host.ts             // HostToolProvider 构造支持 ctx
-src/toolchain/agentscript.ts            // 接收 ctx
+src/toolchain/optimizer.ts            // 接收 ctx
 ```
 
 实现要点：
@@ -731,7 +731,7 @@ export async function runOptimizer(opts: OptimizerCliOptions): Promise<number> {
             budget,
             toolProvider: createCliToolProvider({
                 workspaceRoot: process.cwd(),
-                agentscript: {
+                optimizer: {
                     artifactsDir: runDir,
                     budget,
                     allowTargetTools: opts.allowTargetTools,
@@ -775,10 +775,10 @@ export async function runOptimizer(opts: OptimizerCliOptions): Promise<number> {
 新增测试文件：
 
 ```text
-tests/host-agentscript.inspect.test.ts
-tests/host-agentscript.trial.test.ts
-tests/host-agentscript.specialize.test.ts
-tests/host-agentscript.site-id.test.ts
+tests/host-optimizer.inspect.test.ts
+tests/host-optimizer.trial.test.ts
+tests/host-optimizer.specialize.test.ts
+tests/host-optimizer.site-id.test.ts
 tests/cli.optimizer.test.ts
 tests/fixtures/v6/target-single.as
 tests/fixtures/v6/target-multi-agent.as
@@ -837,7 +837,7 @@ tests/fixtures/v6/evalset.jsonl
 - `docs/cn/optimizer.md` / `docs/en/optimizer.md`：新增一页，面向用户的
   optimizer 快速教程 + toolchain API 速查。
 - `docs/cn/language.md` / `docs/en/language.md`：在 host tool URI scheme
-  列表中增加 `host://agentscript` 条目，链接到 optimizer 文档。
+  列表中增加 `host://optimizer` 条目，链接到 optimizer 文档。
 - README：在 feature list 追加一条"自带 optimizer toolchain"。
 - CHANGELOG：V6 条目。
 
@@ -968,15 +968,15 @@ Phase 1 处理：
 
 V6 Phase 1 完成时应满足：
 
-- `host://agentscript` toolchain 可用，三原语契约稳定。
+- `host://optimizer` toolchain 可用，三原语契约稳定。
 - `ExecuteOptions.variant` 使用 label-based site_id；trace `variant.site_id`
   一致。
 - `inspect` 不执行 target；`specialize` 纯源码操作；`trial` 走标准
   `executeAgent`。
 - soft / hard error 边界符合设计。
 - CLI `agentscript optimizer.as ./target.as --...` 可用；budget flag 生效。
-- `parallel for` body 允许 `AgentScript.trial(...)` 并发执行，但拒绝
-  `AgentScript.specialize(...)` 这类源码写回操作。
+- `parallel for` body 允许 `Optimizer.trial(...)` 并发执行，但拒绝
+  `Optimizer.specialize(...)` 这类源码写回操作。
 - `--check` 不触发 host 回调。`--dry-run` 会正常运行 optimizer.as，因此会触发
   optimizer 显式调用的 inspect / trial / specialize；它只通过 `input.dry_run`
   约定让 optimizer 把 specialize 切到 `write: "preview"`。

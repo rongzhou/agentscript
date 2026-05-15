@@ -181,7 +181,7 @@ Search.web_search({
 
 规则：
 
-- AgentScript method name 直接作为 MCP tool name。
+- Host tool method name 直接作为 MCP tool name。
 - 参数必须是 0 或 1 个。
 - 如果有 1 个参数，必须是 JSON object。
 - 如果有 0 个参数，arguments 使用 `{}`。

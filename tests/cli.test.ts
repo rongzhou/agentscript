@@ -425,11 +425,11 @@ describe("agentscript CLI", () => {
     writeFileSync(
       optimizer,
       `
-      import tool AgentScript from "host://agentscript"
+      import tool Optimizer from "host://optimizer"
 
-      main agent Optimizer {
+      main agent OptimizerAgent {
         main func(input) {
-          return AgentScript.inspect({ target: input.target })
+          return Optimizer.inspect({ target: input.target })
         }
       }
     `,
@@ -461,7 +461,7 @@ describe("agentscript CLI", () => {
     writeFileSync(
       optimizer,
       `
-      main agent Optimizer {
+      main agent OptimizerAgent {
         main func(input) {
           use input.run_id as "run id"
           return {
@@ -523,16 +523,16 @@ describe("agentscript CLI", () => {
     writeFileSync(
       optimizer,
       `
-      import tool AgentScript from "host://agentscript"
+      import tool Optimizer from "host://optimizer"
 
-      main agent Optimizer {
+      main agent OptimizerAgent {
         main func(input) {
-          first = AgentScript.trial({
+          first = Optimizer.trial({
             target: input.target,
             input: {},
             trace: "none"
           })
-          second = AgentScript.trial({
+          second = Optimizer.trial({
             target: input.target,
             input: {},
             trace: "none"

@@ -19,7 +19,7 @@ import { MockLlmProvider } from "../providers/mock/llm.js";
 import { createDefaultToolProvider } from "../providers/tools/host.js";
 import { isDisposable } from "./disposable.js";
 import type { InputProvider, LlmProvider, MemoryProvider, RuntimeValue, ToolProvider, TraceEvent } from "./types.js";
-import type { AgentscriptToolContext } from "../toolchain/agentscript.js";
+import type { OptimizerToolContext } from "../toolchain/optimizer.js";
 
 export interface ExecuteOptions {
   agentName?: string;
@@ -35,7 +35,7 @@ export interface ExecuteOptions {
   variant?: Record<string, string>;
   closeProviders?: boolean;
   artifactsDir?: string;
-  agentscript?: Partial<AgentscriptToolContext>;
+  optimizer?: Partial<OptimizerToolContext>;
 }
 
 export interface ExecuteResult {
@@ -95,7 +95,7 @@ class Interpreter {
         memoryProvider: this.memoryProvider,
         workspaceRoot: paths.workspaceRoot,
         artifactsDir: options.artifactsDir,
-        ...options.agentscript,
+        ...options.optimizer,
       });
     this.agents = createAgentMap(program);
     this.agent = resolveEntryAgent(program, options.agentName);

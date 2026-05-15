@@ -135,7 +135,7 @@ The optional block after `generate` is an output schema, not ordinary object con
 ## Examples, tutorials, and recipes
 
 - `examples/` contains minimal examples. Each file demonstrates one language feature or agent pattern.
-- `examples/optimizer/` contains a mockable V6 optimizer workflow using `host://agentscript`.
+- `examples/optimizer/` contains a mockable V6 optimizer workflow using `host://optimizer`.
 - `tutorials/` contains longer walkthrough programs for learning multi-step agent patterns end to end.
 - `recipes/` contains practical workflows you can copy and adapt, such as repo review, code review, changelog drafting, file summarization, document translation, API extraction, and research briefs.
 

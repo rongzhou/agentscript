@@ -4,7 +4,7 @@ This is the longest tutorial in the series. It connects the previous ideas:
 
 - `use one of` creates named context choices.
 - An optimizer is an ordinary AgentScript program.
-- `host://agentscript` gives that optimizer three tools:
+- `host://optimizer` gives that optimizer three tools:
   `inspect`, `trial`, and `specialize`.
 - The optimizer output is still normal `.as` source.
 
@@ -62,9 +62,9 @@ The optimizer is
 [`../../../examples/optimizer/optimizer.as`](https://github.com/rongzhou/agentscript/blob/main/examples/optimizer/optimizer.as):
 
 ```agentscript
-import tool AgentScript from "host://agentscript"
+import tool Optimizer from "host://optimizer"
 
-main agent Optimizer {
+main agent OptimizerAgent {
     main func(input {
         target: string
         request: string
@@ -74,11 +74,11 @@ main agent Optimizer {
         output: string
         dry_run: boolean
     }) {
-        inspected = AgentScript.inspect({
+        inspected = Optimizer.inspect({
             target: input.target
         })
 
-        trial = AgentScript.trial({
+        trial = Optimizer.trial({
             target: input.target,
             input: {
                 request: input.request
@@ -92,7 +92,7 @@ main agent Optimizer {
             write_mode = "preview"
         }
 
-        specialized = AgentScript.specialize({
+        specialized = Optimizer.specialize({
             target: input.target,
             selection: input.selection,
             write: write_mode,
@@ -150,7 +150,7 @@ workflow shape, output fields, source diff, and CLI flag mapping.
 
 ## 5. Read `inspect`
 
-`AgentScript.inspect` parses the target without executing it. Its result includes
+`Optimizer.inspect` parses the target without executing it. Its result includes
 the target files, snapshot id, variant sites, baseline selection, and warnings.
 
 The important field is `variant_sites`. For this example you should see a site id
@@ -170,7 +170,7 @@ That stable id is what `selection` uses.
 
 ## 6. Read `trial`
 
-`AgentScript.trial` runs the target with a proposed selection:
+`Optimizer.trial` runs the target with a proposed selection:
 
 ```json
 {
@@ -191,7 +191,7 @@ an evaluator, an LLM judge, or downstream metrics.
 
 ## 7. Read `specialize`
 
-`AgentScript.specialize` rewrites source selection. In preview mode it does not
+`Optimizer.specialize` rewrites source selection. In preview mode it does not
 write files; it returns a diff:
 
 ```diff

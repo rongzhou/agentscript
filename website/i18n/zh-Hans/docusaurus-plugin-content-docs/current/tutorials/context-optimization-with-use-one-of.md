@@ -106,4 +106,4 @@ agentscript tutorials/use-one-of.as --mock --trace --input '{"request":"Checkout
 - [`../../../examples/optimizer/`](https://github.com/rongzhou/agentscript/tree/main/examples/optimizer/)
 - [`../optimizer.md`](https://github.com/rongzhou/agentscript/blob/main/docs/cn/optimizer.md)
 
-那个示例使用 `host://agentscript` inspect variant sites、运行 trials，并 preview specialization。
+那个示例使用 `host://optimizer` inspect variant sites、运行 trials，并 preview specialization。

@@ -16,9 +16,6 @@ npm-debug.log*
 
 *.tgz
 
-# Local review notes
-CODE-REVIEW*.md
-
 # Docusaurus website build artifacts
 website/build/
 website/.docusaurus/

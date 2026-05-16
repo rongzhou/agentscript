@@ -51,6 +51,77 @@ describe("agentscript CLI", () => {
     expect(errorSpy).not.toHaveBeenCalled();
   });
 
+  it("checks and compiles AgentSpec with architect CLI", async () => {
+    const check = await main(["architect", "--check", "fixtures/architect/docs-assistant.spec.json"]);
+    expect(check).toBe(0);
+    expect(JSON.parse(logSpy.mock.calls[0]![0] as string)).toEqual({ ok: true, diagnostics: [] });
+
+    logSpy.mockClear();
+    const dir = mkdtempSync(join(tmpdir(), "agentscript-architect-"));
+    const outputFile = join(dir, "docs-assistant.as");
+    const compile = await main(["architect", "--spec", "fixtures/architect/docs-assistant.spec.json", outputFile]);
+    expect(compile).toBe(0);
+    expect(existsSync(outputFile)).toBe(true);
+    expect(readFileSync(outputFile, "utf8")).toContain("main agent DocsAssistant");
+  });
+
+  it("reports invalid AgentSpec from architect CLI", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "agentscript-architect-"));
+    const specFile = join(dir, "bad.spec.json");
+    writeFileSync(specFile, '{"version":"0.2"}');
+
+    const code = await main(["architect", "--check", specFile]);
+    expect(code).toBe(1);
+    expect(errorSpy.mock.calls.flat().join("\n")).toContain("INVALID_VERSION");
+  });
+
+  it("runs architect natural-language CLI in mock mode without crashing", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "agentscript-architect-"));
+    const outputFile = join(dir, "mock-agent.as");
+    const code = await main([
+      "architect",
+      "build a docs assistant",
+      outputFile,
+      "--mock",
+      "--model",
+      "openai://gpt-4.1-mini",
+    ]);
+
+    expect(code).toBe(1);
+    expect(existsSync(outputFile)).toBe(false);
+    expect(errorSpy.mock.calls.flat().join("\n")).toContain("did not produce analyzable source");
+  });
+
+  it("passes host tools through in --mock mode", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "agentscript-cli-"));
+    const scriptFile = join(dir, "host-tool.as");
+    writeFileSync(
+      scriptFile,
+      `
+      import tool Architect from "host://architect"
+
+      main agent A {
+        main func(input) {
+          return Architect.validateSpec({
+            spec: {
+              version: "0.2"
+            }
+          })
+        }
+      }
+    `,
+    );
+
+    const code = await main([scriptFile, "--mock"]);
+
+    expect(code).toBe(0);
+    const output = JSON.parse(logSpy.mock.calls[0]![0] as string);
+    expect(output.value.ok).toBe(false);
+    expect(output.value.diagnostics).toEqual(
+      expect.arrayContaining([expect.objectContaining({ code: "INVALID_VERSION" })]),
+    );
+  });
+
   it("runs a file with --input", async () => {
     const code = await main([fixture, "--input", fixtureInput]);
 

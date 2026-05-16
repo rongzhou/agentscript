@@ -87,6 +87,7 @@ import llm Local from "ollama://localhost:11434/qwen3.6"
 | `http://` / `https://` | HTTP 请求 | `https://api.example.com` |
 | `mcp://` | 外部 MCP 工具 | `mcp://tools/search` |
 | `host://optimizer` | 内置 optimizer toolchain | `host://optimizer` |
+| `host://architect` | 内置 AgentSpec compiler toolchain | `host://architect` |
 | `node:` | Node 内置模块（需 `agentscript.npm.json`） | `node:path`, `node:fs/promises` |
 | `npm:` | npm 包（需 `agentscript.npm.json`） | `npm:yaml`, `npm:@scope/util` |
 

@@ -2,6 +2,20 @@
 
 All notable changes to AgentScript will be documented in this file.
 
+## 0.1.21 - 2026-05-15
+
+### Added
+
+- Added AgentSpec JSON for structured agent design with `linear` and `react` patterns.
+- Added `host://architect` with `Architect.validateSpec`, `Architect.compileSpec`, and `Architect.analyzeSource`.
+- Added `agentscript architect` CLI modes for natural-language generation, `--spec` compilation, and `--check` validation.
+- Added `examples/meta/architect.as` for self-hosted AgentScript generation.
+- Added four AgentSpec fixtures: docs-assistant, support-agent, research-agent, and react-research-agent.
+
+### Changed
+
+- Updated `--mock` CLI mode to pass `host://` tools through to the built-in toolchain while keeping external tools mocked.
+
 ## 0.1.20 - 2026-05-14
 
 ### Added
@@ -31,14 +45,14 @@ All notable changes to AgentScript will be documented in this file.
 
 ### Added
 
-- Added the V6 `host://agentscript` optimizer toolchain with `inspect`, `trial`, and `specialize`.
+- Added the V6 `host://optimizer` optimizer toolchain with `inspect`, `trial`, and `specialize`.
 - Added optimizer CLI mode: `agentscript optimizer.as target.as --...`.
 - Added label-based `use one of` site ids for runtime variants and trace output.
 - Added `examples/optimizer/` and English/Chinese optimizer documentation.
 
 ### Changed
 
-- Allowed `AgentScript.trial(...)` inside `parallel for` while keeping source-writing `AgentScript.specialize(...)` effectful.
+- Allowed `Optimizer.trial(...)` inside `parallel for` while keeping source-writing `Optimizer.specialize(...)` effectful.
 
 ## 0.1.11 - 2026-05-10
 

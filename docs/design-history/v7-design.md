@@ -240,6 +240,7 @@ validator/compiler/analyzer，但承担文件读写、自然语言入口和进�
 
 ```bash
 agentscript architect "build a docs assistant..." my_first_agent.as
+agentscript architect "build a docs assistant..." my_first_agent.as --model ollama://localhost:11434/qwen3.6
 agentscript architect --spec agent.spec.json my_first_agent.as
 agentscript architect --check agent.spec.json
 ```
@@ -250,6 +251,8 @@ agentscript architect --check agent.spec.json
   - 运行内置 meta-agent 或等价流程，将自然语言 request 转成 AgentSpec draft。
   - validate → repair（可选）→ compile → analyze。
   - analyze 成功后写出 `<output.as>`。
+  - 可用 `--model <uri>` 指定传给 meta-agent 的 preferred model URI；默认
+    `ollama://localhost:11434/qwen3.6`。
 - `agentscript architect --spec <spec.json> <output.as>`：
   - 读取 JSON AgentSpec。
   - validate → compile → analyze。
@@ -402,18 +405,25 @@ main agent AgentScriptArchitect {
         use compiled as "compile result"
         use analysis as "source analysis result"
 
-        generate({
+        review = generate({
             input: "Summarize the generated agent. Explain what it does, what enters model context, the output contract, and any assumptions.",
             max_output: 1200
         }) -> {
             summary: string
-            source: string
-            validation_ok: boolean
-            compile_ok: boolean
-            analysis_ok: boolean
-            assumptions: list[string]
             model_context_summary: list[string]
             output_fields: list[string]
+        }
+
+        return {
+            summary: review.summary,
+            source: source,
+            validation_ok: validation.ok,
+            compile_ok: compiled.ok,
+            analysis_ok: analysis.ok,
+            assumptions: draft.assumptions,
+            model_context_summary: review.model_context_summary,
+            output_fields: review.output_fields,
+            repair_summary: repair_summary
         }
     }
 }

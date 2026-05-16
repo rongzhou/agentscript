@@ -1,0 +1,69 @@
+{
+  "version": "0.1",
+  "pattern": "linear",
+  "agent": {
+    "name": "ResearchAgent",
+    "role": "Research synthesis assistant",
+    "description": "Search, extract evidence, and synthesize a concise research answer."
+  },
+  "model": {
+    "import_name": "Claude",
+    "uri": "anthropic://claude-sonnet-4-5"
+  },
+  "inputs": {
+    "question": { "type": "string", "required": true }
+  },
+  "tools": [
+    {
+      "import_name": "Search",
+      "uri": "mcp://search",
+      "methods": [{ "name": "query", "purpose": "Search public sources." }]
+    },
+    {
+      "import_name": "Extract",
+      "uri": "mcp://extract",
+      "methods": [{ "name": "evidence", "purpose": "Extract evidence from search results." }]
+    }
+  ],
+  "locals": [
+    {
+      "name": "search_results",
+      "source": {
+        "kind": "tool_call",
+        "tool": "Search",
+        "method": "query",
+        "args": {
+          "q": "input.question"
+        }
+      }
+    },
+    {
+      "name": "evidence",
+      "source": {
+        "kind": "tool_call",
+        "tool": "Extract",
+        "method": "evidence",
+        "args": {
+          "results": "local.search_results"
+        }
+      }
+    }
+  ],
+  "model_context": [
+    { "source": "input.question", "label": "research question" },
+    { "source": "local.search_results", "label": "search results", "max": "4k" },
+    { "source": "local.evidence", "label": "extracted evidence", "max": "6k" }
+  ],
+  "generation": {
+    "input": "Synthesize an answer from the extracted evidence. Call out uncertainty and useful follow-up questions.",
+    "max_output": 1400
+  },
+  "output": {
+    "fields": {
+      "answer": { "type": "string" },
+      "uncertainty": { "type": "string" },
+      "citations": { "type": "list[json]" },
+      "followups": { "type": "list[string]" }
+    }
+  }
+}

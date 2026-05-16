@@ -1,0 +1,61 @@
+{
+  "version": "0.1",
+  "pattern": "react",
+  "agent": {
+    "name": "ReactResearchAgent",
+    "role": "Research assistant",
+    "description": "Iteratively gather evidence and answer a research question."
+  },
+  "model": {
+    "import_name": "Qwen",
+    "uri": "ollama://localhost:11434/qwen3.6"
+  },
+  "inputs": {
+    "question": { "type": "string", "required": true }
+  },
+  "tools": [
+    {
+      "import_name": "Search",
+      "uri": "mcp://search",
+      "methods": [{ "name": "query", "purpose": "Search for evidence related to a focused query." }]
+    }
+  ],
+  "locals": [],
+  "model_context": [{ "source": "input.question", "label": "research question" }],
+  "react": {
+    "max_iterations": 6,
+    "scratch": {
+      "label": "observations",
+      "max": "4k"
+    },
+    "reason": {
+      "input": "Look at the observations so far. Pick the next focused query, or set done=true if you can answer.",
+      "max_output": 400,
+      "output": {
+        "fields": {
+          "focus": { "type": "string" },
+          "done": { "type": "boolean" }
+        }
+      }
+    },
+    "act": {
+      "tool": "Search",
+      "method": "query",
+      "args": {
+        "q": "thought.focus"
+      }
+    },
+    "stop_when": "thought.done"
+  },
+  "generation": {
+    "input": "Answer the research question using only the observations.",
+    "max_output": 1500
+  },
+  "output": {
+    "fields": {
+      "answer": { "type": "string" },
+      "citations": { "type": "list[json]" },
+      "confidence": { "type": "number" }
+    }
+  }
+}

@@ -11,6 +11,7 @@ import { ProtocolLlmProvider } from "../providers/llm/protocol.js";
 import { MockLlmProvider } from "../providers/mock/llm.js";
 import { MockMemoryProvider } from "../providers/mock/memory.js";
 import { MockToolProvider } from "../providers/mock/tool.js";
+import { HostPassthroughToolProvider } from "../providers/mock/host-passthrough.js";
 import { sanitizeForJson } from "../runtime/json.js";
 import { formatTrace } from "../runtime/trace.js";
 import type { InputProvider, JsonObject, LlmProvider, MemoryProvider, ToolProvider } from "../runtime/types.js";
@@ -20,6 +21,7 @@ import { createDryRunToolProvider } from "../providers/dry-run/tool.js";
 import { createDefaultToolProvider } from "../providers/tools/host.js";
 import { RuntimeError } from "../runtime/errors.js";
 import { parseArgs, printUsage, type CliOptions } from "./args.js";
+import { runArchitect } from "./architect.js";
 import { createReadlineInputProvider, parseJsonObjectInput } from "./input.js";
 import { runRepl } from "./repl.js";
 import { analyzeCliProgram, assertCliProgramSemanticallyValid } from "./semantic.js";
@@ -30,6 +32,9 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
       return runRepl();
     }
     const options = parseArgs(argv);
+    if (options.command === "architect") {
+      return await runArchitect(options.architect!);
+    }
     if (options.help) {
       printUsage(console.log);
       return 0;
@@ -226,7 +231,7 @@ function createCliLlmProvider(options: CliOptions): LlmProvider {
 
 function createCliToolProvider(options: CliOptions): ToolProvider {
   if (options.mock) {
-    return new MockToolProvider();
+    return new HostPassthroughToolProvider(createDefaultToolProvider(process.cwd()));
   }
   return options.dryRun ? createDryRunToolProvider(process.cwd()) : createDefaultToolProvider(process.cwd());
 }

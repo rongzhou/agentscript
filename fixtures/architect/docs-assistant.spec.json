@@ -1,0 +1,52 @@
+{
+  "version": "0.1",
+  "agent": {
+    "name": "DocsAssistant",
+    "role": "Documentation assistant",
+    "description": "Answer documentation questions with grounded citations."
+  },
+  "model": {
+    "import_name": "Qwen",
+    "uri": "ollama://localhost:11434/qwen3.6"
+  },
+  "inputs": {
+    "question": { "type": "string", "required": true }
+  },
+  "tools": [
+    {
+      "import_name": "Docs",
+      "uri": "mcp://support-docs",
+      "methods": [{ "name": "search", "purpose": "Search product documentation." }]
+    }
+  ],
+  "locals": [
+    {
+      "name": "relevant_docs",
+      "source": {
+        "kind": "tool_call",
+        "tool": "Docs",
+        "method": "search",
+        "args": {
+          "query": "input.question"
+        }
+      }
+    }
+  ],
+  "model_context": [
+    { "source": "input.question", "label": "user question" },
+    { "source": "local.relevant_docs", "label": "documentation search results", "max": "8k" }
+  ],
+  "generation": {
+    "input": "Answer the user's question using only the documentation search results. Cite sources when available.",
+    "max_output": 1200
+  },
+  "output": {
+    "fields": {
+      "answer": { "type": "string" },
+      "citations": { "type": "list[json]" },
+      "confidence": { "type": "number" },
+      "missing_information": { "type": "list[string]" }
+    }
+  },
+  "assumptions": ["Documentation search returns citation metadata when available."]
+}

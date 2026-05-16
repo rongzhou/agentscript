@@ -276,9 +276,10 @@ check 报告其它问题。但一个 spec 的 pattern 若是未知值
 
 | 模块 | 覆盖 `agent-spec.md` 中的规则 | 错误码 |
 |------|--------------------------------|--------|
-| schema-check.ts | "Schema check" 全部条目 | `MISSING_FIELD`、`INVALID_VERSION`、`INVALID_IDENTIFIER`、`EMPTY_VALUE` |
+| schema-check.ts | "Schema check" 全部条目 | `MISSING_FIELD`、`INVALID_VERSION`、`INVALID_IDENTIFIER`、`EMPTY_VALUE`、`INVALID_TYPE`、`INVALID_VALUE`、`UNSUPPORTED_KIND`、`INVALID_SHAPE` |
 | pattern-check.ts | "Pattern check" | `UNSUPPORTED_PATTERN`、`MISSING_PATTERN_BLOCK`、`UNEXPECTED_PATTERN_BLOCK` |
 | type-check.ts | "Type check" | `UNSUPPORTED_TYPE` |
+| binding-check.ts | "Binding uniqueness check" | `DUPLICATE_BINDING` |
 | reference-check.ts | "Tool reference check" + "Reference check" | `UNKNOWN_TOOL`、`UNKNOWN_TOOL_METHOD`、`UNKNOWN_INPUT_REF`、`UNKNOWN_LOCAL_REF`、`FORWARD_LOCAL_REF` |
 | context-check.ts | "Model context check" | `EMPTY_MODEL_CONTEXT`、`INVALID_CONTEXT_SOURCE`、`INVALID_BUDGET_FORMAT` |
 | react-check.ts | "React 专项检查" | `UNKNOWN_THOUGHT_REF`、`INVALID_STOP_WHEN`、`STOP_WHEN_NOT_BOOLEAN`、`RESERVED_IDENTIFIER`、`INVALID_BUDGET_FORMAT`、`UNSUPPORTED_TYPE`、`UNKNOWN_TOOL`、`UNKNOWN_TOOL_METHOD`、`UNKNOWN_INPUT_REF`、`UNKNOWN_LOCAL_REF` |
@@ -336,6 +337,9 @@ check 报告其它问题。但一个 spec 的 pattern 若是未知值
     类型是 `string`。
   - `RESERVED_IDENTIFIER`：在 ReAct spec 中把 `inputs.thought` 或
     `locals[*].name = "scratch"` 等保留名作为标识符使用。
+  - `RESERVED_IDENTIFIER`：`output.fields.thought` 或
+    `react.reason.output.fields.scratch` 这类 contract field 使用 ReAct 保留名
+    （`done` 除外）。
 - 多个错误同时存在时，diagnostics 包含所有错误（不短路）。
 - draft 结构层面错误（缺顶层字段、字段类型错）不会让后续 check 抛 runtime
   exception，仍能聚合诊断返回。
@@ -906,6 +910,7 @@ Mock 模式下：
 
 ```bash
 agentscript architect "build a docs assistant..." my_first_agent.as
+agentscript architect "build a docs assistant..." my_first_agent.as --model ollama://localhost:11434/qwen3.6
 agentscript architect --spec agent.spec.json my_first_agent.as
 agentscript architect --check agent.spec.json
 ```
@@ -925,6 +930,8 @@ tests/cli.test.ts            — architect CLI 覆盖
   - 使用内置 meta-agent 或等价流程将自然语言 request 转成 AgentSpec draft。
   - validate → repair（可选）→ compile → analyze。
   - analyze 成功后写出 `<output.as>`。
+  - 支持 `--model <uri>`，作为 meta-agent 生成 AgentSpec 时传入的 preferred
+    model URI。默认值为 `ollama://localhost:11434/qwen3.6`。
   - 支持 `--mock`，但 `--mock` 只证明流程结构，不保证生成可用 agent。
 - `agentscript architect --spec <spec.json> <output.as>`：
   - 读取 JSON 文件。
@@ -1026,6 +1033,8 @@ examples/meta/README.md         — meta-agent 使用说明（阶段 7 已建）
   agent generation across both patterns.
 - `agentscript architect` CLI for natural-language generation, spec
   compilation, and spec checking.
+- `agentscript architect --model <uri>` to choose the model URI passed to the
+  meta-agent.
 - Four AgentSpec fixture examples: docs-assistant, support-agent,
   research-agent (linear), and react-research-agent (react).
 ```
@@ -1039,6 +1048,8 @@ examples/meta/README.md         — meta-agent 使用说明（阶段 7 已建）
   supports linear RAG and ReAct patterns)
 - `agentscript architect` CLI for compiling/checking AgentSpec and generating
   agents from natural-language requirements
+- `--mock` keeps built-in `host://` tools live while mocking external tools,
+  so architect/optimizer workflows can validate their toolchain path locally.
 ```
 
 在 examples 介绍处追加：
@@ -1122,9 +1133,10 @@ emitter 跑通（阶段 4 端到端验证），再上 react emitter（阶段 5 �
 
 处理：
 
-- validator 在 schema check 阶段对 ReAct spec 显式禁用这四个名字作为
-  `inputs` key、`locals[*].name`、`output.fields` key 与
-  `react.reason.output.fields` key。错误码 `RESERVED_IDENTIFIER`。
+- validator 对 ReAct spec 显式禁用这四个名字作为 `inputs` key 和
+  `locals[*].name`，因为它们会成为 runtime binding。contract field name
+  不能是 `thought`、`obs` 或 `scratch`；`done` 允许出现，因此
+  `thought.done` 作为 `stop_when` 是合法形态。错误码 `RESERVED_IDENTIFIER`。
 - 错误信息明确给出冲突原因和建议替换。
 - linear pattern 不受此限制（不会进入 ReAct lowering）。
 

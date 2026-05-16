@@ -455,7 +455,7 @@ reason → act → observe loop.
 | anything else | JSON string literal |
 
 `thought` is the name the compiler uses for the reason output binding inside
-the loop body. Other identifiers (`scratch`, `done`, `obs`) are reserved
+the loop body. Other generated bindings (`scratch`, `done`, `obs`) are reserved
 inside the loop scope and may not appear as expression roots.
 
 ### Lowering
@@ -555,6 +555,11 @@ covers:
 - `inputs`, `tools[*].methods`, and `output.fields` are non-empty.
 - `locals[*].source.kind` is `"tool_call"`.
 - `args` and `output.fields` keys match identifier patterns.
+- Boolean fields, integer fields, and expression-string fields have the
+  expected JSON types. Error code: `INVALID_TYPE`.
+- Positive integer values such as `max_output` and `react.max_iterations`
+  must be greater than zero. Error code: `INVALID_VALUE`.
+- Unsupported source kinds return `UNSUPPORTED_KIND`.
 
 ### Pattern check
 
@@ -580,6 +585,14 @@ Every `"input.<field>"` reference (in `args`, `model_context`, and
 reference resolves to a declared local. Forward references inside `locals`
 are rejected.
 
+### Binding uniqueness check
+
+Generated AgentScript bindings must not collide. The agent name,
+`model.import_name`, every `tools[*].import_name`, and every `locals[*].name`
+must be unique within the scopes where the compiler emits them. Local names
+also may not be `input`, because `input` is the entry function parameter.
+Error code: `DUPLICATE_BINDING`.
+
 ### React-specific checks
 
 When `pattern == "react"`:
@@ -597,10 +610,12 @@ When `pattern == "react"`:
   codes: `INVALID_STOP_WHEN`, `UNKNOWN_THOUGHT_REF`,
   `STOP_WHEN_NOT_BOOLEAN`.
 - The identifiers `thought`, `obs`, `scratch`, and `done` are reserved by
-  the ReAct lowering. They may not appear as keys in `inputs`, names in
-  `locals`, keys in `output.fields`, or keys in
-  `react.reason.output.fields`. Error code: `RESERVED_IDENTIFIER`. Linear
-  specs are not subject to this restriction.
+  the ReAct lowering. They may not appear as keys in `inputs` or names in
+  `locals`, because those names become runtime bindings. Contract field names
+  may not be `thought`, `obs`, or `scratch`; `done` is allowed so
+  `thought.done` remains valid and is the usual `stop_when` shape. Error
+  code: `RESERVED_IDENTIFIER`. Linear specs are not subject to this
+  restriction.
 
 ### Model context check
 

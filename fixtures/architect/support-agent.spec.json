@@ -1,0 +1,103 @@
+{
+  "version": "0.1",
+  "pattern": "linear",
+  "agent": {
+    "name": "SupportAgent",
+    "role": "Customer support triage agent",
+    "description": "Classify customer issues, retrieve policy context, and recommend next steps."
+  },
+  "model": {
+    "import_name": "Qwen",
+    "uri": "ollama://localhost:11434/qwen3.6"
+  },
+  "inputs": {
+    "message": { "type": "string", "required": true },
+    "customer_id": { "type": "string", "required": true },
+    "order_id": { "type": "string", "required": true }
+  },
+  "tools": [
+    {
+      "import_name": "Docs",
+      "uri": "mcp://support-docs",
+      "methods": [{ "name": "search", "purpose": "Search policy documentation." }]
+    },
+    {
+      "import_name": "Orders",
+      "uri": "mcp://orders",
+      "methods": [{ "name": "lookup", "purpose": "Look up order details." }]
+    },
+    {
+      "import_name": "CRM",
+      "uri": "mcp://crm",
+      "methods": [
+        { "name": "notes", "purpose": "Fetch internal customer notes." },
+        { "name": "risk", "purpose": "Classify escalation risk from notes." }
+      ]
+    }
+  ],
+  "locals": [
+    {
+      "name": "refund_docs",
+      "source": {
+        "kind": "tool_call",
+        "tool": "Docs",
+        "method": "search",
+        "args": {
+          "query": "refund and replacement policy"
+        }
+      }
+    },
+    {
+      "name": "order_summary",
+      "source": {
+        "kind": "tool_call",
+        "tool": "Orders",
+        "method": "lookup",
+        "args": {
+          "order_id": "input.order_id"
+        }
+      }
+    },
+    {
+      "name": "internal_notes",
+      "source": {
+        "kind": "tool_call",
+        "tool": "CRM",
+        "method": "notes",
+        "args": {
+          "customer_id": "input.customer_id"
+        }
+      }
+    },
+    {
+      "name": "escalation_signal",
+      "source": {
+        "kind": "tool_call",
+        "tool": "CRM",
+        "method": "risk",
+        "args": {
+          "notes": "local.internal_notes"
+        }
+      }
+    }
+  ],
+  "model_context": [
+    { "source": "input.message", "label": "customer message" },
+    { "source": "local.refund_docs", "label": "refund policy", "max": "4k" },
+    { "source": "local.order_summary", "label": "order summary", "max": "2k" },
+    { "source": "local.escalation_signal", "label": "escalation signal" }
+  ],
+  "generation": {
+    "input": "Triage the customer message. Use the policy, order summary, and escalation signal to recommend a response.",
+    "max_output": 1000
+  },
+  "output": {
+    "fields": {
+      "priority": { "type": "string" },
+      "summary": { "type": "string" },
+      "response": { "type": "string" },
+      "next_steps": { "type": "list[string]" },
+      "escalate": { "type": "boolean" }
+    }
+  }
+}

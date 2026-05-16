@@ -443,7 +443,7 @@ return generate({
 | 其它 | JSON 字符串字面量 |
 
 `thought` 是 compiler 在循环体内为 reason 输出绑定的名字。循环 scope 内
-其他标识符（`scratch`、`done`、`obs`）是保留名，不允许作为表达式 root
+其他生成绑定（`scratch`、`done`、`obs`）是保留名，不允许作为表达式 root
 出现。
 
 ### Lowering
@@ -540,6 +540,11 @@ validator 必须在 compile 之前对每个 spec 做检查。Phase 1 覆盖：
 - `inputs`、`tools[*].methods`、`output.fields` 非空。
 - `locals[*].source.kind` 是 `"tool_call"`。
 - `args` 和 `output.fields` 的 key 匹配标识符模式。
+- boolean 字段、integer 字段和表达式字符串字段必须使用预期 JSON 类型。
+  错误码：`INVALID_TYPE`。
+- `max_output`、`react.max_iterations` 这类正整数值必须大于 0。错误码：
+  `INVALID_VALUE`。
+- 不支持的 source kind 返回 `UNSUPPORTED_KIND`。
 
 ### Pattern check
 
@@ -564,6 +569,13 @@ validator 必须在 compile 之前对每个 spec 做检查。Phase 1 覆盖：
 `react.act.args` 中）命中已声明的 input。每个 `"local.<name>"` 引用命中
 已声明的 local。`locals` 内的前向引用被拒绝。
 
+### Binding uniqueness check
+
+生成出的 AgentScript binding 不能冲突。agent name、`model.import_name`、
+每个 `tools[*].import_name`、每个 `locals[*].name` 在 compiler 生成的作用域
+内必须唯一。local name 也不能是 `input`，因为 `input` 是入口函数参数。
+错误码：`DUPLICATE_BINDING`。
+
 ### React 专项检查
 
 `pattern == "react"` 时：
@@ -579,9 +591,10 @@ validator 必须在 compile 之前对每个 spec 做检查。Phase 1 覆盖：
   `react.reason.output.fields` 中声明的 boolean 字段。错误码：
   `INVALID_STOP_WHEN`、`UNKNOWN_THOUGHT_REF`、`STOP_WHEN_NOT_BOOLEAN`。
 - 标识符 `thought`、`obs`、`scratch`、`done` 是 ReAct lowering 保留名。
-  它们不允许作为 `inputs` 的 key、`locals` 中的 name、`output.fields`
-  的 key 或 `react.reason.output.fields` 的 key 出现。错误码：
-  `RESERVED_IDENTIFIER`。linear spec 不受此限制。
+  它们不允许作为 `inputs` 的 key 或 `locals` 中的 name 出现，因为这些
+  名字会成为运行时绑定。contract field name 不能是 `thought`、`obs` 或
+  `scratch`；`done` 允许出现，因此 `thought.done` 仍然合法，也是常见的
+  `stop_when` 形态。错误码：`RESERVED_IDENTIFIER`。linear spec 不受此限制。
 
 ### Model context check
 

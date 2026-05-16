@@ -8,6 +8,7 @@ export const HTTP_SCHEME = "http";
 export const HTTPS_SCHEME = "https";
 export const SHELL_SCHEME = "sh";
 export const OPTIMIZER_SCHEME = "optimizer";
+export const ARCHITECT_SCHEME = "architect";
 
 export function schemePrefix(scheme: string): `${string}://` {
   return `${scheme}://`;

@@ -118,7 +118,7 @@ main agent FileSummarizer {
 }
 ```
 
-需要确定性的本地输出且不调用真实模型、工具或内存后端时使用 `--mock`。不加 `--mock` 或 `--dry-run` 时，AgentScript 会调用配置的真实模型。
+需要确定性的本地输出且不调用真实模型、外部工具或内存后端时使用 `--mock`。内置的 `host://` 工具在 mock 模式下仍会真实执行，因此使用 `host://optimizer` 或 `host://architect` 的 workflow 可以验证结构。不加 `--mock` 或 `--dry-run` 时，AgentScript 会调用配置的真实模型。
 
 `generate` 后面的 block 是返回结构 schema，不是普通对象构造。
 
@@ -126,6 +126,7 @@ main agent FileSummarizer {
 
 - `examples/` 放最小化示例，每个文件只演示一个语言特性或 agent pattern。
 - `examples/optimizer/` 放一个可用 `--mock` 跑通的 V6 optimizer workflow，演示 `host://optimizer`。
+- `examples/meta/` 放一个通过 `host://architect` 生成 AgentScript agent 的 meta-agent。
 - `tutorials/` 放更完整的 walkthrough 程序，用于学习端到端的多步骤 agent pattern。
 - `recipes/` 放可直接复制改造的实际工作流，例如 repo review、code review、changelog、文件摘要、文档翻译、API 数据抽取和 research brief。
 
@@ -386,7 +387,7 @@ agentscript recipes/code-review.as --quiet
 | `--function <名称>` | 选择入口函数 |
 | `--check` | 解析 + 语义分析（不执行） |
 | `--parse` | 解析并输出 AST 为 JSON |
-| `--mock` | 使用确定性的 mock provider，不调用真实模型、工具或内存后端 |
+| `--mock` | 对模型、外部工具和内存调用使用确定性 mock provider；内置 `host://` 工具仍会执行 |
 | `--dry-run` | 构建 prompt 和 trace，但不调用模型 |
 | `--concurrency <n>` | 设置 `parallel for` 的运行时并发上限 |
 | `--trace` | 打印可读的 trace |

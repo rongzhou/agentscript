@@ -70,6 +70,13 @@ agentscript examples/optimizer/optimizer.as examples/optimizer/triage.as --mock 
   --selection '{"examples/optimizer/triage.as#Triage.main[style]":"detailed"}' \
   --write preview \
   --trial-trace none
+
+# Compile a structured AgentSpec into AgentScript source
+agentscript architect --spec fixtures/architect/docs-assistant.spec.json /tmp/docs-assistant.as
+
+# Ask the meta-agent to generate a source file from a requirement
+agentscript architect "build a docs assistant with citations" /tmp/docs-assistant.as \
+  --model ollama://localhost:11434/qwen3.6
 ```
 
 The `recipes/summarize-file.as` recipe reads a local file, includes it in the LLM context, and returns a structured summary:
@@ -128,7 +135,7 @@ schema                  title, summary, key_points, action_items
 validation              ok
 ```
 
-Use `--mock` when you want deterministic local output without real model, tool, or memory calls. Without `--mock` or `--dry-run`, AgentScript calls the configured real model.
+Use `--mock` when you want deterministic local output without real model, external tool, or memory calls. Built-in `host://` tools still run in mock mode so workflows using `host://optimizer` or `host://architect` can validate their structure. Without `--mock` or `--dry-run`, AgentScript calls the configured real model.
 
 The optional block after `generate` is an output schema, not ordinary object construction.
 
@@ -136,6 +143,7 @@ The optional block after `generate` is an output schema, not ordinary object con
 
 - `examples/` contains minimal examples. Each file demonstrates one language feature or agent pattern.
 - `examples/optimizer/` contains a mockable V6 optimizer workflow using `host://optimizer`.
+- `examples/meta/` contains a meta-agent that generates AgentScript agents through `host://architect`.
 - `tutorials/` contains longer walkthrough programs for learning multi-step agent patterns end to end.
 - `recipes/` contains practical workflows you can copy and adapt, such as repo review, code review, changelog drafting, file summarization, document translation, API extraction, and research briefs.
 
@@ -199,6 +207,9 @@ Currently implemented:
 - MCP stdio tool provider
 - JSONL and SQLite memory backends
 - trace output
+- `host://optimizer` source optimization toolchain
+- AgentSpec → AgentScript compiler through `host://architect`
+- `agentscript architect --check` / `--spec` / natural-language CLI entry
 
 Planned:
 
@@ -401,7 +412,7 @@ agentscript recipes/code-review.as --quiet
 | `--function <name>` | Select a specific entry function |
 | `--check` | Parse + semantic analysis (no execution) |
 | `--parse` | Parse and output AST as JSON |
-| `--mock` | Use deterministic mock providers instead of real model, tool, or memory calls |
+| `--mock` | Use deterministic mock providers for model, external tool, and memory calls; built-in `host://` tools still run |
 | `--dry-run` | Build prompts and trace without model calls |
 | `--concurrency <n>` | Set the runtime concurrency limit for `parallel for` |
 | `--trace` | Print human-readable trace |

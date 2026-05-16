@@ -8,10 +8,12 @@ import {
   NPM_SCHEME,
   SHELL_SCHEME,
   OPTIMIZER_SCHEME,
+  ARCHITECT_SCHEME,
 } from "../../language/schemes.js";
 import type { ToolProvider } from "../../runtime/types.js";
 import { RuntimeError } from "../../runtime/errors.js";
 import { OptimizerToolProvider, type OptimizerToolContext } from "../../toolchain/optimizer.js";
+import { ArchitectToolProvider } from "../../architect/tool/provider.js";
 import { EnvToolProvider } from "./env.js";
 import { FileToolProvider } from "./file.js";
 import { HttpToolProvider } from "./http.js";
@@ -36,6 +38,7 @@ export class HostToolProvider extends SchemeToolProvider {
             workspaceRoot,
             ...optimizer,
           }),
+          [ARCHITECT_SCHEME]: new ArchitectToolProvider(),
         }),
         [ENV_SCHEME]: new EnvToolProvider(),
         [FILE_SCHEME]: new FileToolProvider(workspace),

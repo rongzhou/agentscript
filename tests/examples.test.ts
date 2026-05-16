@@ -3,7 +3,9 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { executeAgent } from "../src/runtime/interpreter.js";
 import { loadProgram } from "../src/runtime/loader.js";
+import { MockLlmProvider } from "../src/providers/mock/llm.js";
 import { MockMemoryProvider } from "../src/providers/mock/memory.js";
+import { HostPassthroughToolProvider } from "../src/providers/mock/host-passthrough.js";
 import { MockToolProvider } from "../src/providers/mock/tool.js";
 import { createDefaultToolProvider } from "../src/providers/tools/host.js";
 import type { JsonObject } from "../src/runtime/types.js";
@@ -11,16 +13,14 @@ import { analyze } from "../src/semantic/analyzer.js";
 
 describe("sample programs", () => {
   for (const dir of ["examples", "tutorials", "recipes"]) {
-    for (const file of readdirSync(dir)
-      .filter((item) => item.endsWith(".as"))
-      .sort()) {
+    for (const file of sampleFiles(dir)) {
       it(`parses, checks, and executes ${join(dir, file)}`, async () => {
         const program = loadProgram(join(dir, file));
         const semantic = analyze(program);
 
         expect(semantic.diagnostics).toEqual([]);
         await expect(
-          executeAgent(program, inputFor(file), {
+          executeAgent(program, inputFor(join(dir, file)), {
             toolProvider: toolProviderFor(dir, file),
             memoryProvider: new MockMemoryProvider(),
           }),
@@ -30,7 +30,45 @@ describe("sample programs", () => {
   }
 });
 
-function inputFor(file: string): JsonObject {
+function sampleFiles(dir: string): string[] {
+  const files: string[] = [];
+  for (const item of readdirSync(dir, { withFileTypes: true })) {
+    if (item.isFile() && item.name.endsWith(".as")) files.push(item.name);
+    if (dir === "examples" && item.isDirectory()) {
+      for (const nested of readdirSync(join(dir, item.name))) {
+        if (nested.endsWith(".as")) files.push(join(item.name, nested));
+      }
+    }
+  }
+  return files.sort();
+}
+
+function inputFor(path: string): JsonObject {
+  switch (path) {
+    case "examples/meta/architect.as":
+      return {
+        request: "Build a docs assistant that searches documentation and returns answers with citations",
+        target_name: "DocsAssistant",
+        model_uri: "ollama://localhost:11434/qwen3.6",
+      };
+    case "examples/optimizer/optimizer.as":
+      return {
+        target: "examples/optimizer/triage.as",
+        request: "Checkout is failing with 500 errors in production",
+        selection: {
+          "examples/optimizer/triage.as#Triage.main[style]": "detailed",
+        },
+        write: "preview",
+        trial_trace: "none",
+        output: "/tmp/triage.optimized.as",
+        dry_run: true,
+      };
+    case "examples/optimizer/triage.as":
+      return {
+        request: "Checkout is failing with 500 errors in production",
+      };
+  }
+  const file = path.split("/").pop() ?? path;
   switch (file) {
     case "changelog.as":
       return {
@@ -148,5 +186,15 @@ function inputFor(file: string): JsonObject {
 }
 
 function toolProviderFor(dir: string, file: string) {
-  return dir === "examples" && file === "node-crypto.as" ? createDefaultToolProvider() : new MockToolProvider();
+  if (dir === "examples" && file === "node-crypto.as") return createDefaultToolProvider();
+  if (dir === "examples" && (file === "meta/architect.as" || file === "optimizer/optimizer.as")) {
+    return new HostPassthroughToolProvider(
+      createDefaultToolProvider(process.cwd(), {
+        llmProvider: new MockLlmProvider(),
+        toolProvider: new MockToolProvider(),
+        memoryProvider: new MockMemoryProvider(),
+      }),
+    );
+  }
+  return new MockToolProvider();
 }

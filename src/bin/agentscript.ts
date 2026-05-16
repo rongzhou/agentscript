@@ -60,7 +60,7 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
     if (options.check) {
       return runCheck(options);
     }
-    if (options.targetFile) {
+    if (options.optimizer) {
       return await runOptimizer(options);
     }
     return await runAgent(options);
@@ -71,6 +71,7 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
 }
 
 async function runOptimizer(options: CliOptions): Promise<number> {
+  if (!options.optimizer) throw new Error("Optimizer target is required");
   const inputProvider = terminalInputProvider();
   const program = loadCliProgram(options);
   assertCliProgramSemanticallyValid(program);
@@ -86,8 +87,8 @@ async function runOptimizer(options: CliOptions): Promise<number> {
   const llmProvider = new BudgetedLlmProvider(createCliLlmProvider(options), budget);
   const memoryProvider = createCliMemoryProvider(options);
   const input = {
-    ...options.optimizerArgs,
-    target: options.targetFile!,
+    ...options.optimizer.args,
+    target: options.optimizer.targetFile,
     dry_run: options.dryRun,
   };
   const result = await executeAgent(program, input as JsonObject, {

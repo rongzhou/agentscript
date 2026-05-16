@@ -1,7 +1,6 @@
 import { SUPPORTED_PATTERNS } from "../spec/types.js";
 import type { AgentSpecDraft } from "../spec/schema.js";
-import type { SpecDiagnostic } from "./diagnostics.js";
-import { error } from "./diagnostics.js";
+import { error, type SpecDiagnostic } from "./helpers.js";
 import { patternOf } from "./helpers.js";
 
 export function checkPattern(spec: AgentSpecDraft): SpecDiagnostic[] {

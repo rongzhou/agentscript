@@ -1,11 +1,10 @@
 import { AGENT_SPEC_TYPES } from "../spec/types.js";
 import type { AgentSpecDraft } from "../spec/schema.js";
-import type { SpecDiagnostic } from "./diagnostics.js";
-import { error } from "./diagnostics.js";
 import {
   AGENT_NAME_RE,
   BUDGET_RE,
   IDENTIFIER_RE,
+  error,
   arrayOf,
   entriesOf,
   isNonEmptyString,
@@ -14,6 +13,7 @@ import {
   outputFields,
   patternOf,
   pointer,
+  type SpecDiagnostic,
 } from "./helpers.js";
 
 const REQUIRED_TOP_LEVEL = [
@@ -98,7 +98,9 @@ function checkTools(value: unknown, diagnostics: SpecDiagnostic[]): void {
     checkRequiredString(tool, "import_name", `${base}/import_name`, diagnostics);
     checkRequiredString(tool, "uri", `${base}/uri`, diagnostics);
     if (typeof tool.import_name === "string") checkIdentifier(tool.import_name, `${base}/import_name`, diagnostics);
-    if (!Array.isArray(tool.methods) || tool.methods.length === 0) {
+    if (!Array.isArray(tool.methods)) {
+      diagnostics.push(error("INVALID_SHAPE", `${base}/methods`, "tool methods must be an array."));
+    } else if (tool.methods.length === 0) {
       diagnostics.push(error("EMPTY_VALUE", `${base}/methods`, "tool methods must contain at least one method."));
     }
     for (const [methodIndex, method] of arrayOf(tool.methods).entries()) {

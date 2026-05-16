@@ -15,7 +15,8 @@ analyzeSource）、`agentscript architect` CLI、4 个 fixture spec 样例
 V7 Phase 1 不改变语言语法，不引入新的语言关键字，不引入 runtime
 dependency。所有工作集中在：
 
-- `src/architect/` 下新增 spec/validator/compiler/tool 四个子模块；
+- `src/architect/` 下新增 spec/validator/compiler/tool 四个子模块，其中
+  `compiler/analyze.ts` 封装生成源码的 parser + semantic analyzer 检查；
 - `src/providers/tools/host.ts` 注册 `host://architect` namespace；
 - `src/language/schemes.ts` 新增 `ARCHITECT_SCHEME` 常量；
 - `src/bin/` 增加 architect CLI runner；
@@ -145,7 +146,6 @@ type union 分支。
 ```ts
 export type AgentSpecDraft = Record<string, unknown>;
 
-export function isAgentSpecDraft(value: unknown): value is AgentSpecDraft;
 export function parseAgentSpecDraft(value: unknown): AgentSpecDraft | null;
 ```
 
@@ -258,12 +258,10 @@ export interface ValidateResult {
 }
 
 export function validateSpec(spec: AgentSpecDraft): ValidateResult;
-export function assertValidAgentSpec(spec: AgentSpecDraft): AgentSpec;
 ```
 
 `validateSpec` 聚合所有 check 的诊断，`ok` 为 `true` 当且仅当无 error 级
-诊断。`assertValidAgentSpec` 在 validation 通过后返回 typed `AgentSpec`，
-仅供 compiler 内部使用；validator 不期望调用方在失败后调用它。
+诊断。compiler 在 validation 通过后将 draft 收窄为 typed `AgentSpec`。
 
 诊断不短路：不同 check 之间互相独立，出现一个 schema 错误不应阻止后续
 check 报告其它问题。但一个 spec 的 pattern 若是未知值
@@ -371,7 +369,7 @@ tests/architect/compiler.test.ts
 
 ```ts
 // src/architect/compiler/index.ts
-import { assertValidAgentSpec, validateSpec } from "../validator/index.js";
+import { validateSpec } from "../validator/index.js";
 import { emitLinear } from "./emit-linear.js";
 import { emitReact } from "./emit-react.js";
 import type { AgentSpec } from "../spec/types.js";
@@ -386,11 +384,11 @@ export function compileSpec(spec: AgentSpecDraft): CompileResult;
 ```
 
 `compileSpec` 内部先调用 `validateSpec`；如果有 error 级诊断，返回
-`{ ok: false, code: "validation_required", diagnostics }`。否则调用
-`assertValidAgentSpec(spec)` 拿到 typed `AgentSpec`，再按 `pattern` 分发：
+`{ ok: false, code: "validation_required", diagnostics }`。否则将 draft
+收窄为 typed `AgentSpec`，再按 `pattern` 分发：
 
 ```ts
-const typed = assertValidAgentSpec(spec);
+const typed = spec as unknown as AgentSpec;
 const pattern = typed.pattern ?? "linear";
 const source = pattern === "react" ? emitReact(typed) : emitLinear(typed);
 ```
@@ -406,10 +404,12 @@ export function emitInputContract(inputs: ...): string;
 export function emitLocals(locals: ...): string;              // 缩进感知
 export function emitModelContext(ctx: ...): string;
 export function emitFinalGenerate(spec: AgentSpec): string;   // 最后那个 return generate
-export function emitContractFields(fields: ...): string;
 export function resolveArgExpr(value: string): string;        // input./local. 解析（不含 thought.）
-export function resolveContextSource(value: string): string;
 ```
+
+`emitContractFields`、`emitGenerateOptions`、`resolveContextSource` 等仅在
+`emit.ts` 内部使用的 helper 保持 module-private，避免扩大 compiler 的公开
+内部接口。
 
 `emit-linear.ts` 与 `emit-react.ts` 调用这些 helper 拼接最终源码，差别仅
 在 main func body 中间段。
@@ -771,8 +771,10 @@ export class ArchitectToolProvider implements ToolProvider {
 - 调用 `analyze(program)`，过滤 severity == "error" 的诊断。返回
   `{ ok: errors.length === 0, diagnostics: errors.map(...) }`。返回的诊断
   字段命名与 architect validator 的 `SpecDiagnostic` 保持一致结构（即
-  `{ severity, code, message }`），但 `code` 来自 semantic analyzer，
-  与 architect validator 的错误码命名空间不同。
+  `{ severity, code, path, message }`），但 `code` 来自 semantic analyzer，
+  与 architect validator 的错误码命名空间不同。semantic diagnostics 的
+  `path` 使用 `source:<line>:<column>`，因为它们定位的是生成源码，而不是
+  AgentSpec JSON pointer。
 
 ### host.ts 修改
 

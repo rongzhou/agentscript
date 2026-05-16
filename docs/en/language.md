@@ -86,8 +86,8 @@ Tools use URI schemes for dispatch:
 | `env://` | Environment variables | `env://process` |
 | `http://` / `https://` | HTTP requests | `https://api.example.com` |
 | `mcp://` | External MCP tools | `mcp://tools/search` |
-| `host://optimizer` | Built-in optimizer toolchain | `host://optimizer` |
-| `host://architect` | Built-in AgentSpec compiler toolchain | `host://architect` |
+| `host://optimizer` | Built-in optimizer toolchain. See [Optimizer Toolchain](./optimizer.md). | `host://optimizer` |
+| `host://architect` | Built-in AgentSpec compiler toolchain. See [AgentSpec](./agent-spec.md) and the [meta-agent tutorial](./tutorials/meta-agent-architect.md). | `host://architect` |
 | `node:` | Node built-in modules (requires `agentscript.npm.json`) | `node:path`, `node:fs/promises` |
 | `npm:` | Installed npm packages (requires `agentscript.npm.json`) | `npm:yaml`, `npm:@scope/util` |
 

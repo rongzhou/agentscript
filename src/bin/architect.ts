@@ -1,8 +1,7 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { basename, dirname } from "node:path";
 import { mkdirSync } from "node:fs";
-import { analyzeSource } from "../architect/analyze.js";
-import { compileSpec } from "../architect/compiler/index.js";
+import { buildAgentScript } from "../architect/pipeline.js";
 import { parseAgentSpecDraft } from "../architect/spec/schema.js";
 import { validateSpec, type SpecDiagnostic, type ValidateResult } from "../architect/validator/index.js";
 import { MockLlmProvider } from "../providers/mock/llm.js";
@@ -25,22 +24,13 @@ export async function runArchitect(options: ArchitectCliOptions): Promise<number
     printValidation(validation, options.quiet);
     return validation.ok ? 0 : 1;
   }
-  if (!validation.ok) {
-    printDiagnostics("AgentSpec validation failed", validation.diagnostics);
-    return 1;
-  }
-  const compiled = compileSpec(spec);
-  if (!compiled.ok) {
-    printDiagnostics("AgentSpec compilation failed", compiled.diagnostics);
-    return 1;
-  }
-  const analysis = analyzeSource(compiled.source);
-  if (!analysis.ok) {
-    printDiagnostics("Generated source analysis failed", analysis.diagnostics);
+  const built = buildAgentScript(spec);
+  if (!built.ok) {
+    printDiagnostics(pipelineFailureHeader(built.stage), built.diagnostics);
     return 1;
   }
   mkdirSync(dirname(options.outputFile), { recursive: true });
-  writeFileSync(options.outputFile, compiled.source);
+  writeFileSync(options.outputFile, built.source);
   if (!options.quiet) {
     console.log(JSON.stringify({ ok: true, output: options.outputFile }, null, 2));
   }
@@ -103,6 +93,17 @@ function printValidation(result: ValidateResult, quiet: boolean): void {
 function printDiagnostics(header: string, diagnostics: SpecDiagnostic[]): void {
   console.error(`${header}:`);
   console.error(JSON.stringify(diagnostics, null, 2));
+}
+
+function pipelineFailureHeader(stage: "validate" | "compile" | "analyze"): string {
+  switch (stage) {
+    case "validate":
+      return "AgentSpec validation failed";
+    case "compile":
+      return "AgentSpec compilation failed";
+    case "analyze":
+      return "Generated source analysis failed";
+  }
 }
 
 function targetNameFromOutput(outputFile: string): string {

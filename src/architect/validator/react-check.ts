@@ -1,18 +1,18 @@
 import type { AgentSpecDraft } from "../spec/schema.js";
-import type { SpecDiagnostic } from "./diagnostics.js";
-import { error } from "./diagnostics.js";
 import { AGENT_SPEC_TYPES } from "../spec/types.js";
 import {
   BUDGET_RE,
   RESERVED_REACT_NAMES,
+  error,
   entriesOf,
   isPositiveInteger,
   isRecord,
   outputFields,
   patternOf,
   pointer,
+  type SpecDiagnostic,
 } from "./helpers.js";
-import { buildReferenceIndex, checkInputLocalRef, checkToolMethod } from "./reference-check.js";
+import { buildReferenceIndex, checkInputLocalRef } from "./reference-check.js";
 
 export function checkReact(spec: AgentSpecDraft): SpecDiagnostic[] {
   if (patternOf(spec) !== "react" || !isRecord(spec.react)) return [];
@@ -41,9 +41,6 @@ export function checkReact(spec: AgentSpecDraft): SpecDiagnostic[] {
     }
   }
   if (isRecord(react.act)) {
-    // ReAct actions use the same declared tool/method namespace as locals,
-    // but diagnostics stay scoped to /react/act.
-    checkToolMethod(react.act.tool, react.act.method, "/react/act", index, diagnostics);
     for (const [argName, argValue] of entriesOf(react.act.args)) {
       if (typeof argValue !== "string") continue;
       const path = pointer("react", "act", "args", argName);

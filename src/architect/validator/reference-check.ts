@@ -1,7 +1,5 @@
 import type { AgentSpecDraft } from "../spec/schema.js";
-import type { SpecDiagnostic } from "./diagnostics.js";
-import { error } from "./diagnostics.js";
-import { entriesOf, isRecord, patternOf, pointer } from "./helpers.js";
+import { entriesOf, error, isRecord, patternOf, pointer, type SpecDiagnostic } from "./helpers.js";
 
 export interface ReferenceIndex {
   inputs: Set<string>;
@@ -85,7 +83,7 @@ export function checkInputLocalRef(
   }
 }
 
-export function checkToolMethod(
+function checkToolMethod(
   tool: unknown,
   method: unknown,
   path: string,

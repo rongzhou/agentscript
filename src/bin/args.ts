@@ -14,11 +14,10 @@ export interface CliOptions {
   maxSeconds?: number;
   maxTrials?: number;
   mock: boolean;
-  optimizerArgs: Record<string, unknown>;
+  optimizer?: OptimizerCliOptions;
   parse: boolean;
   quiet: boolean;
   runDir?: string;
-  targetFile?: string;
   traceLevel?: "summary" | "full" | "none";
   traceFile?: string;
   tracePretty: boolean;
@@ -47,13 +46,17 @@ export type ArchitectCliOptions =
   | { mode: "spec"; specFile: string; outputFile: string; mock: boolean; quiet: boolean }
   | { mode: "request"; request: string; outputFile: string; mock: boolean; quiet: boolean; modelUri: string };
 
+interface OptimizerCliOptions {
+  targetFile: string;
+  args: Record<string, unknown>;
+}
+
 function defaultRunOptions(): Omit<CliOptions, "command"> {
   return {
     check: false,
     dryRun: false,
     help: false,
     mock: false,
-    optimizerArgs: {},
     parse: false,
     quiet: false,
     tracePretty: false,
@@ -64,6 +67,7 @@ function defaultRunOptions(): Omit<CliOptions, "command"> {
 
 function parseRunArgs(argv: string[], options: CliOptions): void {
   const positional: string[] = [];
+  const optimizerArgs: Record<string, unknown> = {};
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index]!;
     switch (arg) {
@@ -136,13 +140,13 @@ function parseRunArgs(argv: string[], options: CliOptions): void {
           const key = rawKey.replace(/-/g, "_");
           if (!key) throw new Error(`Unknown option '${arg}'`);
           if (key.startsWith("no_")) {
-            options.optimizerArgs[key.slice(3)] = false;
+            optimizerArgs[key.slice(3)] = false;
           } else if (equalsIndex >= 0) {
-            options.optimizerArgs[key] = parseOptimizerValue(arg.slice(equalsIndex + 1));
+            optimizerArgs[key] = parseOptimizerValue(arg.slice(equalsIndex + 1));
           } else if (argv[index + 1] && !argv[index + 1]!.startsWith("--")) {
-            options.optimizerArgs[key] = parseOptimizerValue(argv[++index]!);
+            optimizerArgs[key] = parseOptimizerValue(argv[++index]!);
           } else {
-            options.optimizerArgs[key] = true;
+            optimizerArgs[key] = true;
           }
           break;
         }
@@ -152,12 +156,12 @@ function parseRunArgs(argv: string[], options: CliOptions): void {
 
   options.file = positional[0];
   if (positional.length > 1 && positional[1]!.endsWith(".as")) {
-    options.targetFile = positional[1];
+    options.optimizer = { targetFile: positional[1]!, args: optimizerArgs };
   } else if (positional.length > 1) {
     throw new Error("Unexpected positional argument. Use --input to pass input JSON.");
   }
-  if (!options.targetFile && Object.keys(options.optimizerArgs).length > 0) {
-    const option = Object.keys(options.optimizerArgs)[0]!.replace(/_/g, "-");
+  if (!options.optimizer && Object.keys(optimizerArgs).length > 0) {
+    const option = Object.keys(optimizerArgs)[0]!.replace(/_/g, "-");
     throw new Error(`Unknown option '--${option}'`);
   }
   if (options.quiet && (options.verbose || options.tracePretty)) {

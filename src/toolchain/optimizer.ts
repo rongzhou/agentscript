@@ -33,7 +33,7 @@ import type {
 import { analyze } from "../semantic/analyzer.js";
 import type { SemanticDiagnostic } from "../semantic/diagnostics.js";
 import { collectVariantSites, type VariantSiteMetadata } from "../language/variant-sites.js";
-import { expectObject, readOptionalString, readRequiredString } from "../providers/tools/shared.js";
+import { expectObject, readOptionalString, readRequiredString, softError } from "../providers/tools/shared.js";
 import { outputTarget, rewriteGraph, writeRewrite } from "./source-rewrite.js";
 
 export interface OptimizerToolContext {
@@ -434,10 +434,6 @@ function flattenTrace(trace: TraceEvent[]): TraceEvent[] {
 
 function countEvents(trace: TraceEvent[], kind: TraceEvent["kind"]): number {
   return flattenTrace(trace).filter((event) => event.kind === kind).length;
-}
-
-function softError(code: string, message: string): JsonObject {
-  return { ok: false, code, message };
 }
 
 function isBudgetExceeded(error: unknown): boolean {

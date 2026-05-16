@@ -1,7 +1,5 @@
 import type { AgentSpecDraft } from "../spec/schema.js";
-import type { SpecDiagnostic } from "./diagnostics.js";
-import { error } from "./diagnostics.js";
-import { isRecord, pointer } from "./helpers.js";
+import { error, isRecord, pointer, type SpecDiagnostic } from "./helpers.js";
 
 export function checkBindings(spec: AgentSpecDraft): SpecDiagnostic[] {
   const diagnostics: SpecDiagnostic[] = [];

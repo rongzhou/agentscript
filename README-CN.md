@@ -190,13 +190,15 @@ AgentScript 仍处于实验阶段。
 - MCP stdio tool provider
 - JSONL 和 SQLite memory backends
 - trace output
+- `host://optimizer` source optimization toolchain
+- 通过 `host://architect` 提供 AgentSpec → AgentScript compiler
+- `agentscript architect --check` / `--spec` / 自然语言 CLI 入口
 
 计划中：
 
 - stable IR
 - 更丰富的诊断信息
 - VS Code syntax support
-- package publishing hardening
 
 ## Agent 模式，可组合的原语
 

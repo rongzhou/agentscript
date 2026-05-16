@@ -138,6 +138,7 @@ describe("AgentSpec validator", () => {
         "STOP_WHEN_NOT_BOOLEAN",
       ]),
     );
+    expect(codes(result).filter((code) => code === "UNKNOWN_TOOL_METHOD")).toHaveLength(1);
 
     const doneField = clone(readFixture("fixtures/architect/react-research-agent.spec.json"));
     expect(codes(validateSpec(doneField))).not.toContain("RESERVED_IDENTIFIER");
@@ -145,6 +146,16 @@ describe("AgentSpec validator", () => {
     const invalidStop = clone(readFixture("fixtures/architect/react-research-agent.spec.json"));
     (invalidStop.react as Record<string, unknown>).stop_when = "thought.done == true";
     expect(codes(validateSpec(invalidStop))).toContain("INVALID_STOP_WHEN");
+  });
+
+  it("separates invalid and empty tool method shapes", () => {
+    const invalid = clone(readFixture("fixtures/architect/docs-assistant.spec.json"));
+    (invalid.tools as Array<Record<string, unknown>>)[0]!.methods = {};
+    expect(codes(validateSpec(invalid))).toContain("INVALID_SHAPE");
+
+    const empty = clone(readFixture("fixtures/architect/docs-assistant.spec.json"));
+    (empty.tools as Array<Record<string, unknown>>)[0]!.methods = [];
+    expect(codes(validateSpec(empty))).toContain("EMPTY_VALUE");
   });
 });
 

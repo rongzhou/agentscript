@@ -74,7 +74,7 @@ export function emitGenerateAssignment(
   ];
 }
 
-export function emitGenerateOptions(generation: AgentSpecGeneration, indent: number): string[] {
+function emitGenerateOptions(generation: AgentSpecGeneration, indent: number): string[] {
   const pad = spaces(indent);
   const lines = [`${pad}input: ${quote(generation.input)}`];
   if (generation.max_output !== undefined) {
@@ -84,7 +84,7 @@ export function emitGenerateOptions(generation: AgentSpecGeneration, indent: num
   return lines;
 }
 
-export function emitContractFields(fields: Record<string, AgentSpecOutputField>, indent: number): string[] {
+function emitContractFields(fields: Record<string, AgentSpecOutputField>, indent: number): string[] {
   const pad = spaces(indent);
   return Object.entries(fields).map(([name, field]) => `${pad}${name}: ${field.type}`);
 }
@@ -104,7 +104,7 @@ export function resolveArgExpr(value: string): string {
   return quote(value);
 }
 
-export function resolveContextSource(value: string): string {
+function resolveContextSource(value: string): string {
   if (value.startsWith("input.")) return value;
   if (value.startsWith("local.")) return value.slice("local.".length);
   return quote(value);

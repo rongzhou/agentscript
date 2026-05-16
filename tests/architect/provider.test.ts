@@ -39,6 +39,28 @@ describe("host://architect provider", () => {
     await expect(call("analyzeSource", { source: compiled.source })).resolves.toEqual({ ok: true, diagnostics: [] });
   });
 
+  it("returns source locations for semantic diagnostics", async () => {
+    const result = await call("analyzeSource", {
+      source: `
+        main agent A {
+          main func act(input) {
+            use missing.value
+            return input
+          }
+        }
+      `,
+    });
+    expect(result).toMatchObject({
+      ok: false,
+      diagnostics: [
+        expect.objectContaining({
+          code: "UNKNOWN_IDENTIFIER",
+          path: expect.stringMatching(/^source:\d+:\d+$/),
+        }),
+      ],
+    });
+  });
+
   it("throws for unknown methods and malformed arguments", async () => {
     await expect(call("unknown", {})).rejects.toThrow(RuntimeError);
     await expect(call("validateSpec", undefined)).rejects.toThrow(RuntimeError);

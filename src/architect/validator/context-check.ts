@@ -1,7 +1,5 @@
 import type { AgentSpecDraft } from "../spec/schema.js";
-import type { SpecDiagnostic } from "./diagnostics.js";
-import { error } from "./diagnostics.js";
-import { BUDGET_RE, isRecord, pointer } from "./helpers.js";
+import { BUDGET_RE, error, isRecord, pointer, type SpecDiagnostic } from "./helpers.js";
 import { buildReferenceIndex, checkInputLocalRef } from "./reference-check.js";
 
 export function checkContext(spec: AgentSpecDraft): SpecDiagnostic[] {

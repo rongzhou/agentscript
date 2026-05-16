@@ -378,6 +378,7 @@ useful for embedding are exposed through explicit subpaths:
 import { executeAgent, parse } from "@rong/agentscript";
 import type { ExecuteOptions, RuntimeValue } from "@rong/agentscript/runtime/types";
 import type { Program } from "@rong/agentscript/ast/types";
+import type { AgentSpec } from "@rong/agentscript/architect/spec/types";
 ```
 
 ## Why not just Python or TypeScript?

@@ -37,6 +37,7 @@ describe("public package API", () => {
     expect(packageJson.types).toBe("dist/index.d.ts");
     expect(Object.keys(packageJson.exports ?? {}).sort()).toEqual([
       ".",
+      "./architect/spec/types",
       "./ast/types",
       "./package.json",
       "./runtime/types",

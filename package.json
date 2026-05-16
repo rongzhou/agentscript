@@ -17,6 +17,10 @@
       "types": "./dist/runtime/types.d.ts",
       "import": "./dist/runtime/types.js"
     },
+    "./architect/spec/types": {
+      "types": "./dist/architect/spec/types.d.ts",
+      "import": "./dist/architect/spec/types.js"
+    },
     "./package.json": "./package.json"
   },
   "bin": {

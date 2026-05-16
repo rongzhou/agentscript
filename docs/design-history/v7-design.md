@@ -328,7 +328,8 @@ examples/meta/
 
 - `HostToolProvider` 的 host namespace map 中注册 `host://architect`（与
   `host://optimizer` 并列）。
-- `src/index.ts` 导出 architect 相关的公共类型（可选，Phase 2 再决定）。
+- `package.json` 暴露 `@rong/agentscript/architect/spec/types`，供 TypeScript
+  embedders 构造 AgentSpec。
 
 ## Meta-agent 示例
 

@@ -1,3 +1,4 @@
 {
-  "ignore": ["website/docusaurus.config.js", "website/sidebars.js", "website/src/pages/index.js"]
+  "ignore": ["website/docusaurus.config.js", "website/sidebars.js", "website/src/pages/index.js"],
+  "entry": ["src/index.ts", "src/architect/spec/types.ts"]
 }

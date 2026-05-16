@@ -1,7 +1,7 @@
 import { RuntimeError } from "../../runtime/errors.js";
 import { isObject } from "../../runtime/guards.js";
 import { sanitizeForJson } from "../../runtime/json.js";
-import type { RuntimeValue } from "../../runtime/types.js";
+import type { JsonObject, RuntimeValue } from "../../runtime/types.js";
 
 import { type Disposable, isDisposable } from "../../runtime/disposable.js";
 import type { ToolProvider } from "../../runtime/types.js";
@@ -63,6 +63,10 @@ export function parseJsonOrNull(text: string): RuntimeValue {
   } catch {
     return null;
   }
+}
+
+export function softError(code: string, message: string): JsonObject {
+  return { ok: false, code, message };
 }
 
 export async function closeDisposableProviders(providers: Record<string, ToolProvider>): Promise<void> {

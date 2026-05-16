@@ -1,5 +1,18 @@
 import type { AgentSpecDraft } from "../spec/schema.js";
 
+export interface SpecDiagnostic {
+  severity: "error" | "warning";
+  code: string;
+  path: string;
+  message: string;
+  suggested_fix?: string;
+}
+
+export interface ValidateResult {
+  ok: boolean;
+  diagnostics: SpecDiagnostic[];
+}
+
 export const AGENT_NAME_RE = /^[A-Z][A-Za-z0-9_]*$/;
 export const IDENTIFIER_RE = /^[A-Za-z_][A-Za-z0-9_]*$/;
 export const BUDGET_RE = /^\d+k?$/;
@@ -38,6 +51,12 @@ export function outputFields(output: unknown): Record<string, unknown> | null {
   return output.fields;
 }
 
-export function stringRecord(value: unknown): Record<string, unknown> | null {
-  return isRecord(value) ? value : null;
+export function error(code: string, path: string, message: string, suggested_fix?: string): SpecDiagnostic {
+  return suggested_fix
+    ? { severity: "error", code, path, message, suggested_fix }
+    : { severity: "error", code, path, message };
+}
+
+export function okFromDiagnostics(diagnostics: SpecDiagnostic[]): boolean {
+  return !diagnostics.some((diagnostic) => diagnostic.severity === "error");
 }

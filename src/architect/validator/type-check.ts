@@ -1,8 +1,6 @@
 import { AGENT_SPEC_TYPES } from "../spec/types.js";
 import type { AgentSpecDraft } from "../spec/schema.js";
-import type { SpecDiagnostic } from "./diagnostics.js";
-import { error } from "./diagnostics.js";
-import { entriesOf, isRecord, outputFields, patternOf, pointer } from "./helpers.js";
+import { entriesOf, error, isRecord, outputFields, patternOf, pointer, type SpecDiagnostic } from "./helpers.js";
 
 export function checkTypes(spec: AgentSpecDraft): SpecDiagnostic[] {
   const diagnostics: SpecDiagnostic[] = [];

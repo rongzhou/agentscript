@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { asAgentSpecDraft } from "../../src/architect/spec/types.js";
-import { validateSpec } from "../../src/architect/validator/index.js";
+import { validateSpec, validateTypedSpec } from "../../src/architect/validator/index.js";
 import { architectFixtures, clone, readFixture } from "./helpers.js";
 
 describe("AgentSpec validator", () => {
@@ -82,6 +82,31 @@ describe("AgentSpec validator", () => {
     result = validateSpec(nonStringType);
     expect(result.ok).toBe(false);
     expect(codes(result)).toContain("INVALID_SHAPE");
+
+    const numericVersion = clone(readFixture("fixtures/architect/docs-assistant.spec.json"));
+    numericVersion.version = 1;
+    expect(codes(validateSpec(numericVersion))).toContain("INVALID_VERSION");
+
+    const numericPattern = clone(readFixture("fixtures/architect/docs-assistant.spec.json"));
+    numericPattern.pattern = 1;
+    expect(codes(validateSpec(numericPattern))).toContain("INVALID_SHAPE");
+
+    const invalidAssumptions = clone(readFixture("fixtures/architect/docs-assistant.spec.json"));
+    invalidAssumptions.assumptions = "none";
+    expect(codes(validateSpec(invalidAssumptions))).toContain("INVALID_SHAPE");
+  });
+
+  it("returns a normalized typed spec after validation", () => {
+    const spec = clone(readFixture("fixtures/architect/docs-assistant.spec.json"));
+    spec.extra = "ignored";
+
+    const result = validateTypedSpec(spec);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.spec).not.toHaveProperty("extra");
+    expect(result.spec.version).toBe("0.1");
+    expect(result.spec.inputs.question?.type).toBe("string");
   });
 
   it("checks pattern blocks", () => {

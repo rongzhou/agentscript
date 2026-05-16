@@ -5,6 +5,10 @@ import { patternOf } from "./helpers.js";
 
 export function checkPattern(spec: AgentSpecDraft): SpecDiagnostic[] {
   const diagnostics: SpecDiagnostic[] = [];
+  if ("pattern" in spec && typeof spec.pattern !== "string") {
+    diagnostics.push(error("INVALID_SHAPE", "/pattern", "pattern must be a string when present."));
+    return diagnostics;
+  }
   const pattern = patternOf(spec);
   if (!isAgentSpecPattern(pattern)) {
     diagnostics.push(error("UNSUPPORTED_PATTERN", "/pattern", `Unsupported pattern '${pattern}'.`));

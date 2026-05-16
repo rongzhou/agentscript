@@ -34,7 +34,7 @@ export function checkSchema(spec: AgentSpecDraft): SpecDiagnostic[] {
     if (!(field in spec))
       diagnostics.push(error("MISSING_FIELD", pointer(field), `Missing required field '${field}'.`));
   }
-  if (typeof spec.version === "string" && spec.version !== "0.1") {
+  if ("version" in spec && spec.version !== "0.1") {
     diagnostics.push(error("INVALID_VERSION", "/version", "AgentSpec version must be '0.1'."));
   }
   if ("agent" in spec) checkAgent(spec.agent, diagnostics);
@@ -231,7 +231,11 @@ function checkReactShape(value: unknown, diagnostics: SpecDiagnostic[]): void {
 }
 
 function checkAssumptions(value: unknown, diagnostics: SpecDiagnostic[]): void {
-  if (value === undefined || !Array.isArray(value)) return;
+  if (value === undefined) return;
+  if (!Array.isArray(value)) {
+    diagnostics.push(error("INVALID_SHAPE", "/assumptions", "assumptions must be an array when present."));
+    return;
+  }
   value.forEach((item, index) => {
     if (!isNonEmptyString(item)) {
       diagnostics.push(

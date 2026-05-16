@@ -3,13 +3,13 @@ import { isObject } from "../../runtime/values/guards.js";
 import { sanitizeForJson } from "../../runtime/values/json.js";
 import type { RuntimeValue } from "../../runtime/values/values.js";
 import type { ToolCallRequest, ToolProvider } from "../../runtime/values/providers.js";
-import { expectObject, parseJsonOrNull, readPositiveInteger, readRequiredString } from "./shared.js";
+import { expectRuntimeObject, parseJsonOrNull, readPositiveInteger, readRequiredString } from "./shared.js";
 
 const DEFAULT_HTTP_TIMEOUT_MS = 10_000;
 
 export class HttpToolProvider implements ToolProvider {
   async call(request: ToolCallRequest): Promise<RuntimeValue> {
-    const args = expectObject(request.args[0], `Http.${request.method}`);
+    const args = expectRuntimeObject(request.args[0], `Http.${request.method}`);
     const url = resolveHttpUrl(request.uri, readRequiredString(args.url, "Http.url"));
     const timeout = readPositiveInteger(args.timeout, DEFAULT_HTTP_TIMEOUT_MS);
     const controller = new AbortController();

@@ -4,12 +4,11 @@ export type GenerateOptionKey = "input" | "attempts" | "max_output" | "temperatu
 type NumberGenerateOptionKey = "attempts" | "temperature";
 type BooleanGenerateOptionKey = "strict" | "debug";
 
-const DEFAULT_GENERATE_ATTEMPTS = 1;
-const DEFAULT_GENERATE_STRICT = false;
-const DEFAULT_GENERATE_DEBUG = false;
+export const DEFAULT_GENERATE_ATTEMPTS = 1;
+export const DEFAULT_GENERATE_STRICT = false;
+export const DEFAULT_GENERATE_DEBUG = false;
 
 interface GenerateOptionSpec {
-  defaultValue?: unknown;
   invalidCode?: string;
   invalidMessage?: string;
   isValid?: (value: Expr) => boolean;
@@ -18,7 +17,6 @@ interface GenerateOptionSpec {
 const GENERATE_OPTION_SPECS: Record<GenerateOptionKey, GenerateOptionSpec> = {
   input: {},
   attempts: {
-    defaultValue: DEFAULT_GENERATE_ATTEMPTS,
     invalidCode: "INVALID_GENERATE_ATTEMPTS",
     invalidMessage: "generate attempts must be a positive integer",
     isValid: (value) => value.kind === "NumberExpr" && Number.isInteger(value.value) && value.value > 0,
@@ -38,13 +36,11 @@ const GENERATE_OPTION_SPECS: Record<GenerateOptionKey, GenerateOptionSpec> = {
     isValid: isGenerateThinkExpression,
   },
   strict: {
-    defaultValue: DEFAULT_GENERATE_STRICT,
     invalidCode: "INVALID_GENERATE_STRICT",
     invalidMessage: "generate strict must be a boolean",
     isValid: (value) => value.kind === "BooleanExpr",
   },
   debug: {
-    defaultValue: DEFAULT_GENERATE_DEBUG,
     invalidCode: "INVALID_GENERATE_DEBUG",
     invalidMessage: "generate debug must be a boolean",
     isValid: (value) => value.kind === "BooleanExpr",
@@ -72,14 +68,6 @@ export function invalidGenerateOptionValue(key: string, value: Expr): { code: st
     code: spec.invalidCode ?? "INVALID_GENERATE_OPTION",
     message: spec.invalidMessage ?? "Invalid generate option",
   };
-}
-
-export function requiredGenerateOptionDefault<T>(key: GenerateOptionKey): T {
-  const value = GENERATE_OPTION_SPECS[key].defaultValue as T | undefined;
-  if (value === undefined) {
-    throw new Error(`Missing default for generate option '${key}'`);
-  }
-  return value;
 }
 
 function findGenerateProperty(options: GenerateOptionsExpr, key: GenerateOptionKey): ObjectProperty | undefined {

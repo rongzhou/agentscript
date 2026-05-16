@@ -6,7 +6,7 @@ import { asAgentSpecDraft } from "../architect/spec/types.js";
 import { validateSpec, type SpecDiagnostic, type ValidateResult } from "../architect/validator/index.js";
 import { MockLlmProvider } from "../providers/mock/llm.js";
 import { ProtocolLlmProvider } from "../providers/llm/protocol.js";
-import { createAgentScriptToolProvider } from "../host-tools.js";
+import { createAgentScriptToolProvider } from "../providers/agent-script-tools.js";
 import { executeAgent } from "../runtime/core/interpreter.js";
 import { loadProgram } from "../runtime/program/loader.js";
 import { isObject } from "../runtime/values/guards.js";

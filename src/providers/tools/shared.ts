@@ -3,19 +3,18 @@ import { isObject } from "../../runtime/values/guards.js";
 import { sanitizeForJson } from "../../runtime/values/json.js";
 import type { JsonObject, RuntimeValue } from "../../runtime/values/values.js";
 
-import { type Disposable, isDisposable } from "../../runtime/values/providers.js";
 import type { ToolProvider } from "../../runtime/values/providers.js";
 
 export const DEFAULT_MAX_RESULTS = 100;
 
-export function expectObject(value: RuntimeValue | undefined, call: string): Record<string, RuntimeValue> {
+export function expectRuntimeObject(value: RuntimeValue | undefined, call: string): Record<string, RuntimeValue> {
   if (!isObject(value ?? null)) {
     throw new RuntimeError(`${call} expects one json object argument`);
   }
   return value as Record<string, RuntimeValue>;
 }
 
-export function expectPlainObject(value: unknown, name: string): Record<string, unknown> {
+export function expectJsonRecord(value: unknown, name: string): Record<string, unknown> {
   if (typeof value !== "object" || value === null || Array.isArray(value)) {
     throw new RuntimeError(`${name} must be an object`);
   }
@@ -71,6 +70,5 @@ export function softError(code: string, message: string): JsonObject {
 
 export async function closeDisposableProviders(providers: Record<string, ToolProvider>): Promise<void> {
   const unique = new Set(Object.values(providers));
-  const disposables: Disposable[] = [...unique].filter(isDisposable);
-  await Promise.all(disposables.map((provider) => provider.close()));
+  await Promise.all([...unique].map((provider) => provider.close?.()));
 }

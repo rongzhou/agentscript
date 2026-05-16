@@ -145,7 +145,8 @@ function annotateSourcePath(node: unknown, sourcePath: string, seen = new WeakSe
   if (isAstNode(node)) {
     setNodeSourcePath(node, sourcePath);
   }
-  for (const value of Object.values(node)) {
+  for (const [key, value] of Object.entries(node)) {
+    if (key === "range") continue;
     if (Array.isArray(value)) {
       for (const item of value) annotateSourcePath(item, sourcePath, seen);
     } else if (value && typeof value === "object") {

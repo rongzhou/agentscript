@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { RuntimeError } from "../../runtime/core/errors.js";
-import { expectPlainObject } from "./shared.js";
+import { expectJsonRecord } from "./shared.js";
 
 export interface McpRegistry {
   mcpServers: Record<string, McpServerConfig>;
@@ -36,12 +36,12 @@ export function loadMcpRegistry(workspaceRoot: string): McpRegistry {
 }
 
 function parseMcpRegistry(value: unknown): McpRegistry {
-  const root = expectPlainObject(value, "MCP registry");
+  const root = expectJsonRecord(value, "MCP registry");
   const serversValue = root.mcpServers;
   if (serversValue === undefined) {
     return { mcpServers: {} };
   }
-  const servers = expectPlainObject(serversValue, "MCP registry mcpServers");
+  const servers = expectJsonRecord(serversValue, "MCP registry mcpServers");
   const result: Record<string, McpServerConfig> = {};
   for (const [key, item] of Object.entries(servers)) {
     result[key] = parseServerConfig(key, item);
@@ -50,7 +50,7 @@ function parseMcpRegistry(value: unknown): McpRegistry {
 }
 
 function parseServerConfig(key: string, value: unknown): McpServerConfig {
-  const server = expectPlainObject(value, `MCP server '${key}'`);
+  const server = expectJsonRecord(value, `MCP server '${key}'`);
   if (server.transport !== "stdio") {
     throw new RuntimeError(`MCP server '${key}' transport must be 'stdio'`);
   }
@@ -76,7 +76,7 @@ function readStringArray(value: unknown, name: string): string[] {
 
 function readEnv(value: unknown, key: string): Record<string, string> {
   if (value === undefined) return {};
-  const env = expectPlainObject(value, `MCP server '${key}' env`);
+  const env = expectJsonRecord(value, `MCP server '${key}' env`);
   const result: Record<string, string> = {};
   for (const [name, item] of Object.entries(env)) {
     if (typeof item !== "string") {

@@ -7,7 +7,7 @@ import { MockLlmProvider } from "../src/providers/mock/llm.js";
 import { MockMemoryProvider } from "../src/providers/mock/memory.js";
 import { HostPassthroughToolProvider } from "../src/providers/mock/host-passthrough.js";
 import { MockToolProvider } from "../src/providers/mock/tool.js";
-import { createAgentScriptToolProvider } from "../src/host-tools.js";
+import { createAgentScriptToolProvider } from "../src/providers/agent-script-tools.js";
 import { createDefaultToolProvider } from "../src/providers/tools/host.js";
 import type { JsonObject } from "../src/runtime/values/values.js";
 import { analyze } from "../src/semantic/analyzer.js";

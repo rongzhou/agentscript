@@ -2,7 +2,7 @@ import { budgetToJson, sanitizeForJson } from "../runtime/values/json.js";
 import type { JsonObject, JsonValue, RuntimeValue } from "../runtime/values/values.js";
 import type { ToolCallRequest } from "../runtime/values/providers.js";
 import type { VariantSiteMetadata } from "../language/variant-sites.js";
-import { expectObject, readRequiredString } from "../providers/tools/shared.js";
+import { expectRuntimeObject, readRequiredString } from "../providers/tools/shared.js";
 import type { OptimizerToolContext } from "./context.js";
 import {
   collectGraphSites,
@@ -14,7 +14,7 @@ import {
 import { snapshotGraph } from "./snapshot.js";
 
 export function inspectOptimizer(request: ToolCallRequest, ctx: OptimizerToolContext): RuntimeValue {
-  const args = expectObject(request.args[0], "Optimizer.inspect");
+  const args = expectRuntimeObject(request.args[0], "Optimizer.inspect");
   const graph = readTargetGraph(readRequiredString(args.target, "target"));
   const diagnostics = semanticErrors(graph);
   if (diagnostics.length > 0) {

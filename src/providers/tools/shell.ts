@@ -5,7 +5,7 @@ import type { ToolCallRequest, ToolProvider } from "../../runtime/values/provide
 import type { WorkspaceContext } from "../shared/workspace.js";
 import {
   DEFAULT_MAX_RESULTS,
-  expectObject,
+  expectRuntimeObject,
   globMatcher,
   readOptionalString,
   readPositiveInteger,
@@ -40,7 +40,7 @@ export class ShellToolProvider implements ToolProvider {
   }
 
   private runFind(value: RuntimeValue): RuntimeValue {
-    const args = expectObject(value, "Find.run");
+    const args = expectRuntimeObject(value, "Find.run");
     const root = this.workspace.resolveWorkspacePath(readRequiredString(args.path, "Find.run.path"));
     const name = readOptionalString(args.name);
     const type = readOptionalString(args.type);
@@ -59,7 +59,7 @@ export class ShellToolProvider implements ToolProvider {
   }
 
   private runGrep(value: RuntimeValue): RuntimeValue {
-    const args = expectObject(value, "Grep.run");
+    const args = expectRuntimeObject(value, "Grep.run");
     const root = this.workspace.resolveWorkspacePath(readRequiredString(args.path, "Grep.run.path"));
     const pattern = readRequiredString(args.pattern, "Grep.run.pattern");
     const include = readOptionalString(args.include);
@@ -84,7 +84,7 @@ export class ShellToolProvider implements ToolProvider {
   }
 
   private runReadRange(value: RuntimeValue): RuntimeValue {
-    const args = expectObject(value, "ReadRange.run");
+    const args = expectRuntimeObject(value, "ReadRange.run");
     const path = this.workspace.resolveWorkspacePath(readRequiredString(args.path, "ReadRange.run.path"));
     const start = readPositiveInteger(args.start, 1);
     const max = readPositiveInteger(args.max, DEFAULT_MAX_RESULTS);

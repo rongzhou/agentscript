@@ -121,6 +121,9 @@ function extractJsonCandidates(text: string): string[] {
   return candidates;
 }
 
+// Best-effort extraction for noisy LLM text: tracks balanced JSON braces and
+// double-quoted strings, but intentionally does not accept JSON5 comments or
+// single-quoted JavaScript object literals.
 function extractFirstJsonObject(text: string): string | undefined {
   let start = -1;
   let depth = 0;

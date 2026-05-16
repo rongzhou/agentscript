@@ -3,7 +3,6 @@ import { FILE_SCHEME, SQLITE_SCHEME, schemePrefix } from "../../language/schemes
 import { splitSqliteUri, uriScheme } from "../../language/uri.js";
 import { RuntimeError } from "../../runtime/core/errors.js";
 import { isObject } from "../../runtime/values/guards.js";
-import type { Disposable } from "../../runtime/values/providers.js";
 import type { RuntimeValue } from "../../runtime/values/values.js";
 import type { MemoryAddRequest, MemoryProvider, MemoryQueryRequest } from "../../runtime/values/providers.js";
 import { Workspace } from "../shared/workspace.js";
@@ -17,7 +16,7 @@ export interface HostMemoryProviderOptions {
   workspaceRoot?: string;
 }
 
-export class HostMemoryProvider implements MemoryProvider, Disposable {
+export class HostMemoryProvider implements MemoryProvider {
   private readonly file = new FileMemoryBackend();
   private readonly sqlite = new SqliteMemoryBackend();
   private readonly baseDir: string;

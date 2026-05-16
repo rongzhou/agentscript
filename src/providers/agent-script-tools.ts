@@ -1,8 +1,8 @@
-import { ARCHITECT_SCHEME, OPTIMIZER_SCHEME } from "./language/schemes.js";
-import { ArchitectToolProvider } from "./architect/tool/provider.js";
-import { OptimizerToolProvider, type OptimizerToolContext } from "./optimizer/provider.js";
-import { createDefaultToolProvider } from "./providers/tools/host.js";
-import type { ToolProvider } from "./runtime/values/providers.js";
+import { ARCHITECT_SCHEME, OPTIMIZER_SCHEME } from "../language/schemes.js";
+import { ArchitectToolProvider } from "../architect/tool/provider.js";
+import { OptimizerToolProvider, type OptimizerToolContext } from "../optimizer/provider.js";
+import { createDefaultToolProvider } from "./tools/host.js";
+import type { ToolProvider } from "../runtime/values/providers.js";
 
 export type HostNamespaceProviders = Record<string, ToolProvider>;
 

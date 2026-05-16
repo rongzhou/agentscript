@@ -2,14 +2,6 @@ import type { Budget } from "../../ast/types.js";
 import type { BuiltContext } from "../context/context.js";
 import type { JsonObject, LlmBinding, RuntimeValue } from "./values.js";
 
-export interface Disposable {
-  close(): void | Promise<void>;
-}
-
-export function isDisposable<T>(value: T): value is T & Disposable {
-  return typeof value === "object" && value !== null && "close" in value && typeof value.close === "function";
-}
-
 export interface ContextUse {
   source?: string;
   label?: string;

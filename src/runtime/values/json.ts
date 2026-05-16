@@ -55,6 +55,8 @@ function runtimeResourceToJson(value: RuntimeResource): JsonObject {
     case "memory":
       return { memory: value.name, uri: value.uri };
   }
+  const _exhaustive: never = value;
+  throw new TypeError(`Unsupported runtime resource ${JSON.stringify(_exhaustive)}`);
 }
 
 export function budgetToJson(budget: Budget | undefined): JsonValue {

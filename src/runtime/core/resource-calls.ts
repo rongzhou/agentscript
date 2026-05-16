@@ -2,13 +2,13 @@ import type { MemberExpr } from "../../ast/types.js";
 import { MEMORY_ADD_METHOD, type MemoryMethod, getMemoryMethodSpec } from "../../language/memory.js";
 import { NODE_SCHEME, NPM_SCHEME } from "../../language/schemes.js";
 import { uriScheme } from "../../language/uri.js";
-import { RuntimeError } from "../core/errors.js";
+import { RuntimeError } from "./errors.js";
 import { isObject } from "../values/guards.js";
 import { sanitizeForJson } from "../values/json.js";
-import { buildTraceEvent } from "./trace.js";
+import { buildTraceEvent } from "../trace/trace.js";
 import type { JsonValue, MemoryBinding, RuntimeValue, ToolBinding } from "../values/values.js";
 import type { MemoryProvider, ToolProvider } from "../values/providers.js";
-import type { TraceEvent } from "./trace.js";
+import type { TraceEvent } from "../trace/trace.js";
 
 export class ResourceCallRuntime {
   constructor(

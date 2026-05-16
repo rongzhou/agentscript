@@ -8,7 +8,8 @@ import {
   NPM_SCHEME,
   SHELL_SCHEME,
 } from "../../language/schemes.js";
-import type { ToolProvider } from "../../runtime/values/providers.js";
+import type { ToolCallRequest, ToolProvider } from "../../runtime/values/providers.js";
+import type { RuntimeValue } from "../../runtime/values/values.js";
 import { RuntimeError } from "../../runtime/core/errors.js";
 import { EnvToolProvider } from "./env.js";
 import { FileToolProvider } from "./file.js";
@@ -30,7 +31,7 @@ export class HostToolProvider extends SchemeToolProvider {
     const npmRegistry = loadNpmRegistry(workspaceRoot);
     super(
       {
-        host: new HostNamespaceProvider(hostNamespaces),
+        host: createHostNamespaceProvider(hostNamespaces),
         [ENV_SCHEME]: new EnvToolProvider(),
         [FILE_SCHEME]: new FileToolProvider(workspace),
         [HTTP_SCHEME]: http,
@@ -45,21 +46,21 @@ export class HostToolProvider extends SchemeToolProvider {
   }
 }
 
-class HostNamespaceProvider implements ToolProvider {
-  constructor(private readonly providers: Record<string, ToolProvider>) {}
+function createHostNamespaceProvider(providers: Record<string, ToolProvider>): ToolProvider {
+  return {
+    async call(request: ToolCallRequest): Promise<RuntimeValue> {
+      const namespace = new URL(request.uri).hostname;
+      const provider = providers[namespace];
+      if (!provider) {
+        throw new RuntimeError(`Unsupported host namespace '${namespace}'`);
+      }
+      return provider.call(request);
+    },
 
-  async call(request: Parameters<ToolProvider["call"]>[0]): ReturnType<ToolProvider["call"]> {
-    const namespace = new URL(request.uri).hostname;
-    const provider = this.providers[namespace];
-    if (!provider) {
-      throw new RuntimeError(`Unsupported host namespace '${namespace}'`);
-    }
-    return provider.call(request);
-  }
-
-  async close(): Promise<void> {
-    await closeDisposableProviders(this.providers);
-  }
+    async close(): Promise<void> {
+      await closeDisposableProviders(providers);
+    },
+  };
 }
 
 export function createDefaultToolProvider(

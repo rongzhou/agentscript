@@ -4,7 +4,7 @@ import { sanitizeForJson } from "../runtime/values/json.js";
 import type { RuntimeValue } from "../runtime/values/values.js";
 import type { ToolCallRequest } from "../runtime/values/providers.js";
 import type { TraceEvent } from "../runtime/trace/trace.js";
-import { expectObject, readOptionalString, readRequiredString, softError } from "../providers/tools/shared.js";
+import { expectRuntimeObject, readOptionalString, readRequiredString, softError } from "../providers/tools/shared.js";
 import type { OptimizerToolContext } from "./context.js";
 import { collectGraphSites, normalizePath, readTargetGraph, semanticErrors } from "./graph.js";
 import { readEntry, readSelection, validateEntry, validateSelection } from "./selection.js";
@@ -18,7 +18,7 @@ export async function trialOptimizer(
   ctx: OptimizerToolContext,
   writeTrace: TrialTraceWriter,
 ): Promise<RuntimeValue> {
-  const args = expectObject(request.args[0], "Optimizer.trial");
+  const args = expectRuntimeObject(request.args[0], "Optimizer.trial");
   const target = readRequiredString(args.target, "target");
   const graph = readTargetGraph(target);
   const warnings: RuntimeValue[] = [];

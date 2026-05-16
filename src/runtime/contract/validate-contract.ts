@@ -75,11 +75,6 @@ const CONTRACT_TYPE_CONFIG: Record<string, ContractTypeConfig> = {
       }
     },
   },
-  list: {
-    validate: (value, range, errorPrefix = "LLM result field") => {
-      if (!Array.isArray(value)) throw new RuntimeError(`${errorPrefix} must be a list`, range);
-    },
-  },
 };
 
 function coerceValueToContractType(value: RuntimeValue, type: ContractTypeExpr): RuntimeValue {

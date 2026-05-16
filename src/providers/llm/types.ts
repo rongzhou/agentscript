@@ -1,6 +1,3 @@
-import type { RuntimeValue } from "../../runtime/values/values.js";
-import type { GenerateRequest } from "../../runtime/values/providers.js";
-
 export const OPENAI_PROTOCOL = "openai";
 export const ANTHROPIC_PROTOCOL = "anthropic";
 export const OLLAMA_PROTOCOL = "ollama";
@@ -19,18 +16,6 @@ export interface ParsedLlmUri {
 
 export interface FetchLike {
   (input: string | URL, init?: RequestInit): Promise<Response>;
-}
-
-export interface LlmAdapter {
-  call(request: GenerateRequest, context: LlmAdapterContext): Promise<RuntimeValue>;
-}
-
-interface LlmAdapterContext {
-  parsed: ParsedLlmUri;
-  fetchImpl: FetchLike;
-  options: ProtocolLlmProviderOptions;
-  timeoutMs: number;
-  baseUrl: string;
 }
 
 export interface ProtocolLlmProviderOptions {

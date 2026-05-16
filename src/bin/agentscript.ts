@@ -2,8 +2,6 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { basename, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { stdin as inputStream, stdout as outputStream } from "node:process";
-import { createInterface } from "node:readline/promises";
 import type { Program } from "../ast/types.js";
 import { loadNpmRegistry } from "../language/npm-registry.js";
 import { executeAgent } from "../runtime/core/interpreter.js";
@@ -15,14 +13,14 @@ import { HostPassthroughToolProvider } from "../providers/mock/host-passthrough.
 import { sanitizeForJson } from "../runtime/values/json.js";
 import { formatTrace } from "../runtime/trace/trace.js";
 import type { JsonObject } from "../runtime/values/values.js";
-import type { InputProvider, LlmProvider, MemoryProvider, ToolProvider } from "../runtime/values/providers.js";
+import type { LlmProvider, MemoryProvider, ToolProvider } from "../runtime/values/providers.js";
 import { analyze, assertSemanticallyValid } from "../semantic/analyzer.js";
 import { formatSemanticDiagnostics } from "../semantic/diagnostics.js";
 import { createDryRunToolProvider } from "../providers/dry-run/tool.js";
-import { createAgentScriptHostNamespaces, createAgentScriptToolProvider } from "../host-tools.js";
+import { createAgentScriptHostNamespaces, createAgentScriptToolProvider } from "../providers/agent-script-tools.js";
 import { parseArgs, printUsage, type CliOptions } from "./args.js";
 import { runArchitect } from "./architect.js";
-import { createReadlineInputProvider, parseJsonObjectInput } from "./input.js";
+import { createTerminalInputProvider, parseJsonObjectInput, printJson } from "./input.js";
 import { runOptimizer } from "./optimizer.js";
 import { runRepl } from "./repl.js";
 
@@ -85,7 +83,7 @@ function runCheck(options: CliOptions): number {
 
 async function runAgent(options: CliOptions): Promise<number> {
   const input = readInput(options);
-  const inputProvider = terminalInputProvider();
+  const inputProvider = createTerminalInputProvider();
   const program = loadCliProgram(options);
   assertSemanticallyValid(program, cliAnalyzeOptions());
   const result = await executeAgent(program, input, {
@@ -160,25 +158,10 @@ function readInput(options: CliOptions): JsonObject {
   return {};
 }
 
-function terminalInputProvider(): (InputProvider & { close(): void }) | undefined {
-  if (!inputStream.isTTY || !outputStream.isTTY) {
-    return undefined;
-  }
-  const reader = createInterface({ input: inputStream, output: outputStream });
-  return {
-    ...createReadlineInputProvider(reader),
-    close: () => reader.close(),
-  };
-}
-
 function readPackageVersion(): string {
   const packagePath = join(dirname(fileURLToPath(import.meta.url)), "../../package.json");
   const packageJson = JSON.parse(readFileSync(packagePath, "utf8")) as { version?: unknown };
   return typeof packageJson.version === "string" ? packageJson.version : "0.0.0";
-}
-
-function printJson(value: unknown): void {
-  console.log(JSON.stringify(value, null, 2));
 }
 
 function cliAnalyzeOptions() {

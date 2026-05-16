@@ -6,7 +6,7 @@ import { analyzeSource as analyzeArchitectSource } from "../compiler/analyze.js"
 import { compileSpec as compileAgentSpec } from "../compiler/index.js";
 import { asAgentSpecDraft } from "../spec/types.js";
 import { validateSpec } from "../validator/index.js";
-import { expectObject, readRequiredString, softError } from "../../providers/tools/shared.js";
+import { expectRuntimeObject, readRequiredString, softError } from "../../providers/tools/shared.js";
 
 export class ArchitectToolProvider implements ToolProvider {
   async call(request: ToolCallRequest): Promise<RuntimeValue> {
@@ -26,21 +26,21 @@ export class ArchitectToolProvider implements ToolProvider {
   }
 
   validateSpec(request: ToolCallRequest): RuntimeValue {
-    const args = expectObject(request.args[0], "Architect.validateSpec");
+    const args = expectRuntimeObject(request.args[0], "Architect.validateSpec");
     const draft = asAgentSpecDraft(args.spec);
     if (!draft) return invalidSpecInput();
     return toRuntimeValue(validateSpec(draft));
   }
 
   compileSpec(request: ToolCallRequest): RuntimeValue {
-    const args = expectObject(request.args[0], "Architect.compileSpec");
+    const args = expectRuntimeObject(request.args[0], "Architect.compileSpec");
     const draft = asAgentSpecDraft(args.spec);
     if (!draft) return invalidSpecInput();
     return toRuntimeValue(compileAgentSpec(draft));
   }
 
   analyzeSource(request: ToolCallRequest): RuntimeValue {
-    const args = expectObject(request.args[0], "Architect.analyzeSource");
+    const args = expectRuntimeObject(request.args[0], "Architect.analyzeSource");
     const source = readRequiredString(args.source, "source");
     const result = analyzeArchitectSource(source);
     if (result.ok) return toRuntimeValue(result);

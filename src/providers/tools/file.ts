@@ -5,7 +5,7 @@ import { isObject } from "../../runtime/values/guards.js";
 import type { JsonObject, RuntimeValue } from "../../runtime/values/values.js";
 import type { ToolCallRequest, ToolProvider } from "../../runtime/values/providers.js";
 import type { WorkspaceContext } from "../shared/workspace.js";
-import { expectObject, readRequiredString } from "./shared.js";
+import { expectRuntimeObject, readRequiredString } from "./shared.js";
 
 const FILE_EFFECT_ACTIONS = new Set(["write", "patch"]);
 
@@ -16,7 +16,7 @@ export class FileToolProvider implements ToolProvider {
     if (request.method === "undo") {
       return this.undoFileEffects(request.args[0]);
     }
-    const args = expectObject(request.args[0], `File.${request.method}`);
+    const args = expectRuntimeObject(request.args[0], `File.${request.method}`);
 
     switch (request.method) {
       case "read":

@@ -19,6 +19,22 @@ export const AGENT_SPEC_TYPES = new Set<AgentSpecType>([
   "list[json]",
 ]);
 
+export function isAgentSpecType(value: string): value is AgentSpecType {
+  switch (value) {
+    case "string":
+    case "number":
+    case "boolean":
+    case "json":
+    case "list[string]":
+    case "list[number]":
+    case "list[boolean]":
+    case "list[json]":
+      return true;
+    default:
+      return false;
+  }
+}
+
 export const SUPPORTED_PATTERNS = new Set(["linear", "react"]);
 
 export interface AgentSpecBase {

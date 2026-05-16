@@ -2,7 +2,7 @@ import { RuntimeError } from "../../runtime/core/errors.js";
 import type { RuntimeValue } from "../../runtime/values/values.js";
 import type { McpServerConfig } from "./mcp-config.js";
 import { StdioJsonRpcClient } from "./mcp-rpc.js";
-import { expectPlainObject } from "./shared.js";
+import { expectJsonRecord } from "./shared.js";
 
 export interface McpToolInfo {
   name: string;
@@ -64,7 +64,7 @@ export class McpClient {
 }
 
 function parseToolsList(serverKey: string, value: unknown): McpToolInfo[] {
-  const root = expectPlainObject(value, `MCP server '${serverKey}' tools/list result`);
+  const root = expectJsonRecord(value, `MCP server '${serverKey}' tools/list result`);
   if (!Array.isArray(root.tools)) {
     throw new RuntimeError(`MCP server '${serverKey}' tools/list result must contain tools array`);
   }
@@ -72,7 +72,7 @@ function parseToolsList(serverKey: string, value: unknown): McpToolInfo[] {
 }
 
 function parseToolInfo(serverKey: string, value: unknown, index: number): McpToolInfo {
-  const tool = expectPlainObject(value, `MCP server '${serverKey}' tool ${index}`);
+  const tool = expectJsonRecord(value, `MCP server '${serverKey}' tool ${index}`);
   if (typeof tool.name !== "string" || tool.name.length === 0) {
     throw new RuntimeError(`MCP server '${serverKey}' tool ${index} name is required`);
   }

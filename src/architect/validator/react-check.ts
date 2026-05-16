@@ -1,5 +1,5 @@
 import type { AgentSpecDraft } from "../spec/types.js";
-import { AGENT_SPEC_TYPES } from "../spec/types.js";
+import { isAgentSpecType } from "../spec/types.js";
 import {
   BUDGET_RE,
   RESERVED_REACT_NAMES,
@@ -30,7 +30,7 @@ export function checkReact(spec: AgentSpecDraft): SpecDiagnostic[] {
     diagnostics.push(error("INVALID_BUDGET_FORMAT", "/react/scratch/max", "react.scratch.max must match /^\\d+k?$/."));
   }
   for (const [fieldName, field] of entriesOf(thoughtFields)) {
-    if (isRecord(field) && typeof field.type === "string" && !AGENT_SPEC_TYPES.has(field.type as never)) {
+    if (isRecord(field) && typeof field.type === "string" && !isAgentSpecType(field.type)) {
       diagnostics.push(
         error(
           "UNSUPPORTED_TYPE",

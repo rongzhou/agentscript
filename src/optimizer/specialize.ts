@@ -2,7 +2,7 @@ import { RuntimeError } from "../runtime/core/errors.js";
 import { sanitizeForJson } from "../runtime/values/json.js";
 import type { RuntimeValue } from "../runtime/values/values.js";
 import type { ToolCallRequest } from "../runtime/values/providers.js";
-import { expectObject, readOptionalString, readRequiredString } from "../providers/tools/shared.js";
+import { expectRuntimeObject, readOptionalString, readRequiredString } from "../providers/tools/shared.js";
 import type { OptimizerToolContext } from "./context.js";
 import { collectGraphSites, normalizePath, readTargetGraph, semanticErrors } from "./graph.js";
 import { readSelection, validateSelection } from "./selection.js";
@@ -10,7 +10,7 @@ import { snapshotGraph } from "./snapshot.js";
 import { outputTarget, rewriteGraph, writeRewrite } from "./source-rewrite.js";
 
 export function specializeOptimizer(request: ToolCallRequest, ctx: OptimizerToolContext): RuntimeValue {
-  const args = expectObject(request.args[0], "Optimizer.specialize");
+  const args = expectRuntimeObject(request.args[0], "Optimizer.specialize");
   const target = readRequiredString(args.target, "target");
   const graph = readTargetGraph(target);
   const expectedSnapshot = readOptionalString(args.snapshot_id);

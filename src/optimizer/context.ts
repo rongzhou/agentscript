@@ -1,13 +1,15 @@
 import type { LlmProvider, MemoryProvider, ToolProvider } from "../runtime/values/providers.js";
 
+export interface BudgetCounter {
+  incrementTrial(): void;
+  incrementLlm(): void;
+  checkDeadline(): void;
+}
+
 export interface OptimizerToolContext {
   workspaceRoot: string;
   artifactsDir?: string;
-  budget?: {
-    incrementTrial(): void;
-    incrementLlm(): void;
-    checkDeadline(): void;
-  };
+  budget?: BudgetCounter;
   llmProvider?: LlmProvider;
   toolProvider?: ToolProvider;
   memoryProvider?: MemoryProvider;

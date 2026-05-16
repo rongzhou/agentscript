@@ -4,7 +4,7 @@ import { GenerateRuntime } from "../generate/generate.js";
 import { isAgentBinding, isFunctionBinding, isLlmBinding, isMemoryBinding, isObject, isToolBinding } from "../values/guards.js";
 import { sanitizeForJson } from "../values/json.js";
 import { evaluateBinaryOperator } from "./operators.js";
-import { ResourceCallRuntime } from "../trace/resource-calls.js";
+import { ResourceCallRuntime } from "./resource-calls.js";
 import type { RuntimeScope } from "./scope.js";
 import { isTruthy } from "./truth.js";
 import { evaluateParallelFor } from "./evaluate-parallel-for.js";

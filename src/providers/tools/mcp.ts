@@ -5,7 +5,7 @@ import type { RuntimeObject, RuntimeValue } from "../../runtime/values/values.js
 import type { ToolCallRequest, ToolProvider } from "../../runtime/values/providers.js";
 import { loadMcpRegistry, type McpRegistry } from "./mcp-config.js";
 import { McpClient } from "./mcp-client.js";
-import { expectObject } from "./shared.js";
+import { expectRuntimeObject } from "./shared.js";
 
 export class McpToolProvider implements ToolProvider {
   private readonly registry: McpRegistry;
@@ -54,28 +54,35 @@ function mcpServerKey(uri: string): string {
 
 function parseMcpToolCall(request: ToolCallRequest): { tool: string; args: Record<string, RuntimeValue> } {
   if (request.method === "call") {
-    if (request.args.length !== 1) {
-      throw new RuntimeError("MCP call expects one object argument");
-    }
-    const arg = expectObject(request.args[0], "MCP call");
-    const tool = arg.tool;
-    if (typeof tool !== "string" || tool.length === 0) {
-      throw new RuntimeError(`MCP ${request.toolName}.call tool is required`);
-    }
-    const args = arg.args ?? {};
-    if (!isObject(args)) {
-      throw new RuntimeError(`MCP ${request.toolName}.call args must be an object`);
-    }
-    return { tool, args: args as Record<string, RuntimeValue> };
+    return parseExplicitMcpCall(request);
   }
+  return parseDirectMcpCall(request);
+}
 
+function parseExplicitMcpCall(request: ToolCallRequest): { tool: string; args: Record<string, RuntimeValue> } {
+  if (request.args.length !== 1) {
+    throw new RuntimeError("MCP call expects one object argument");
+  }
+  const arg = expectRuntimeObject(request.args[0], "MCP call");
+  const tool = arg.tool;
+  if (typeof tool !== "string" || tool.length === 0) {
+    throw new RuntimeError(`MCP ${request.toolName}.call tool is required`);
+  }
+  const args = arg.args ?? {};
+  if (!isObject(args)) {
+    throw new RuntimeError(`MCP ${request.toolName}.call args must be an object`);
+  }
+  return { tool, args: args as Record<string, RuntimeValue> };
+}
+
+function parseDirectMcpCall(request: ToolCallRequest): { tool: string; args: Record<string, RuntimeValue> } {
   if (request.args.length > 1) {
     throw new RuntimeError(`MCP ${request.toolName}.${request.method} expects zero or one argument`);
   }
   if (request.args.length === 0) {
     return { tool: request.method, args: {} };
   }
-  const arg = expectObject(request.args[0], `MCP ${request.toolName}.${request.method}`);
+  const arg = expectRuntimeObject(request.args[0], `MCP ${request.toolName}.${request.method}`);
   return { tool: request.method, args: arg as Record<string, RuntimeValue> };
 }
 

@@ -1,4 +1,4 @@
-import { AGENT_SPEC_TYPES } from "../spec/types.js";
+import { isAgentSpecType } from "../spec/types.js";
 import type { AgentSpecDraft } from "../spec/types.js";
 import { entriesOf, error, isRecord, outputFields, patternOf, pointer, type SpecDiagnostic } from "./helpers.js";
 
@@ -24,7 +24,7 @@ export function checkTypes(spec: AgentSpecDraft): SpecDiagnostic[] {
 function checkType(value: unknown, path: string, diagnostics: SpecDiagnostic[]): void {
   if (value === undefined) return;
   if (typeof value !== "string") return;
-  if (!AGENT_SPEC_TYPES.has(value as never)) {
+  if (!isAgentSpecType(value)) {
     diagnostics.push(error("UNSUPPORTED_TYPE", path, `Unsupported AgentSpec type '${value}'.`));
   }
 }

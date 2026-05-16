@@ -363,7 +363,13 @@ class Parser {
   }
 
   private peekNext(): Token {
-    return this.tokens[this.current + 1] ?? this.tokens[this.tokens.length - 1]!;
+    const next = this.tokens[this.current + 1];
+    if (next) return next;
+    const eof = this.tokens[this.tokens.length - 1];
+    if (!eof || eof.kind !== "eof") {
+      throw new Error("Parser token stream is missing EOF token");
+    }
+    return eof;
   }
 
   previous(): Token {

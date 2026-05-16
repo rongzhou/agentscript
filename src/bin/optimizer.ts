@@ -1,7 +1,5 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { stdin as inputStream, stdout as outputStream } from "node:process";
-import { createInterface } from "node:readline/promises";
 import { MockLlmProvider } from "../providers/mock/llm.js";
 import { MockMemoryProvider } from "../providers/mock/memory.js";
 import { MockToolProvider } from "../providers/mock/tool.js";
@@ -13,14 +11,15 @@ import { sanitizeForJson } from "../runtime/values/json.js";
 import { loadProgram } from "../runtime/program/loader.js";
 import { formatTrace } from "../runtime/trace/trace.js";
 import type { JsonObject, RuntimeValue } from "../runtime/values/values.js";
-import type { GenerateRequest, InputProvider, LlmProvider } from "../runtime/values/providers.js";
+import type { GenerateRequest, LlmProvider } from "../runtime/values/providers.js";
+import type { BudgetCounter } from "../optimizer/context.js";
 import { assertSemanticallyValid } from "../semantic/analyzer.js";
 import type { CliOptions } from "./args.js";
-import { createReadlineInputProvider } from "./input.js";
+import { createTerminalInputProvider, printJson } from "./input.js";
 
 export async function runOptimizer(options: CliOptions): Promise<number> {
   if (!options.optimizer) throw new Error("Optimizer target is required");
-  const inputProvider = terminalInputProvider();
+  const inputProvider = createTerminalInputProvider();
   const program = loadProgram(options.file!);
   assertSemanticallyValid(program, { npmRegistry: loadNpmRegistry(process.cwd()) });
   const runDir =
@@ -32,7 +31,7 @@ export async function runOptimizer(options: CliOptions): Promise<number> {
     maxLlmCalls: options.maxLlmCalls ?? 10000,
     maxSeconds: options.maxSeconds ?? 1800,
   });
-  const llmProvider = new BudgetedLlmProvider(createOptimizerLlmProvider(options), budget);
+  const llmProvider = withBudget(createOptimizerLlmProvider(options), budget);
   const memoryProvider = options.mock ? new MockMemoryProvider() : undefined;
   const input = {
     ...options.optimizer.args,
@@ -48,11 +47,10 @@ export async function runOptimizer(options: CliOptions): Promise<number> {
     memoryProvider,
     sourcePath: options.file,
     workspaceRoot: process.cwd(),
-    artifactsDir: runDir,
     optimizer: {
+      artifactsDir: runDir,
       budget,
-      memoryProvider,
-      toolProvider: options.mock ? new MockToolProvider() : undefined,
+      trialToolProvider: options.mock ? new MockToolProvider() : undefined,
     },
   }).finally(() => inputProvider?.close?.());
 
@@ -79,7 +77,7 @@ interface BudgetOptions {
   maxSeconds: number;
 }
 
-function createBudgetCounter(options: BudgetOptions) {
+function createBudgetCounter(options: BudgetOptions): BudgetCounter {
   let trials = 0;
   let llmCalls = 0;
   const started = Date.now();
@@ -106,37 +104,16 @@ function createBudgetCounter(options: BudgetOptions) {
   };
 }
 
-class BudgetedLlmProvider implements LlmProvider {
-  constructor(
-    private readonly inner: LlmProvider,
-    private readonly budget: ReturnType<typeof createBudgetCounter>,
-  ) {}
-
-  async generate(request: GenerateRequest): Promise<RuntimeValue> {
-    this.budget.incrementLlm();
-    return this.inner.generate(request);
-  }
-
-  async close(): Promise<void> {
-    await this.inner.close?.();
-  }
+function withBudget(inner: LlmProvider, budget: BudgetCounter): LlmProvider {
+  return {
+    async generate(request: GenerateRequest): Promise<RuntimeValue> {
+      budget.incrementLlm();
+      return inner.generate(request);
+    },
+    close: () => inner.close?.(),
+  };
 }
 
 function createOptimizerLlmProvider(options: CliOptions): LlmProvider {
   return options.dryRun || options.mock ? new MockLlmProvider() : new ProtocolLlmProvider();
-}
-
-function terminalInputProvider(): (InputProvider & { close(): void }) | undefined {
-  if (!inputStream.isTTY || !outputStream.isTTY) {
-    return undefined;
-  }
-  const reader = createInterface({ input: inputStream, output: outputStream });
-  return {
-    ...createReadlineInputProvider(reader),
-    close: () => reader.close(),
-  };
-}
-
-function printJson(value: unknown): void {
-  console.log(JSON.stringify(value, null, 2));
 }

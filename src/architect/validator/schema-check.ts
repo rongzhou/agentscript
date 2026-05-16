@@ -1,4 +1,4 @@
-import { AGENT_SPEC_TYPES } from "../spec/types.js";
+import { isAgentSpecType } from "../spec/types.js";
 import type { AgentSpecDraft } from "../spec/types.js";
 import {
   AGENT_NAME_RE,
@@ -288,7 +288,7 @@ function checkTypeField(value: unknown, path: string, diagnostics: SpecDiagnosti
     diagnostics.push(error("INVALID_SHAPE", path, "type must be a string."));
     return;
   }
-  if (!AGENT_SPEC_TYPES.has(value as never)) {
+  if (!isAgentSpecType(value)) {
     diagnostics.push(error("UNSUPPORTED_TYPE", path, `Unsupported AgentSpec type '${value}'.`));
   }
 }

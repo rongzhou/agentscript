@@ -1,7 +1,9 @@
 import { RuntimeError } from "../../runtime/core/errors.js";
 import type { RuntimeValue } from "../../runtime/values/values.js";
 import type { GenerateRequest, LlmProvider } from "../../runtime/values/providers.js";
-import { LLM_ADAPTERS } from "./adapters.js";
+import { callAnthropic } from "./anthropic.js";
+import { callOllama } from "./ollama.js";
+import { callOpenAI } from "./openai.js";
 import { trimTrailingSlash } from "./shared.js";
 import {
   ANTHROPIC_PROTOCOL,
@@ -27,14 +29,15 @@ export class ProtocolLlmProvider implements LlmProvider {
 
     const parsed = parseLlmUri(request.model);
     const timeoutMs = this.requestTimeoutMs();
-    const adapter = LLM_ADAPTERS[parsed.protocol];
-    return adapter.call(request, {
-      parsed,
-      fetchImpl: this.fetchImpl,
-      options: this.options,
-      timeoutMs,
-      baseUrl: this.baseUrl(parsed),
-    });
+    const baseUrl = this.baseUrl(parsed);
+    switch (parsed.protocol) {
+      case OPENAI_PROTOCOL:
+        return callOpenAI(request, parsed, this.options, this.fetchImpl, timeoutMs, baseUrl);
+      case ANTHROPIC_PROTOCOL:
+        return callAnthropic(request, parsed, this.options, this.fetchImpl, timeoutMs, baseUrl);
+      case OLLAMA_PROTOCOL:
+        return callOllama(request, parsed, this.fetchImpl, timeoutMs, baseUrl);
+    }
   }
 
   private requestTimeoutMs(): number {

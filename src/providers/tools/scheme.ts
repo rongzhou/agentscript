@@ -1,11 +1,10 @@
 import { RuntimeError } from "../../runtime/core/errors.js";
-import type { Disposable } from "../../runtime/values/providers.js";
 import { uriScheme } from "../../language/uri.js";
 import type { RuntimeValue } from "../../runtime/values/values.js";
 import type { ToolCallRequest, ToolProvider } from "../../runtime/values/providers.js";
 import { closeDisposableProviders } from "./shared.js";
 
-export class SchemeToolProvider implements ToolProvider, Disposable {
+export class SchemeToolProvider implements ToolProvider {
   constructor(
     private readonly providers: Record<string, ToolProvider>,
     private readonly unsupportedSchemeLabel = "tool URI scheme",

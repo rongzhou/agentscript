@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { parse } from "../src/parser/parser.js";
 import { buildContext, builtContextToJson } from "../src/runtime/context/context.js";
-import { contractToSchema } from "../src/runtime/contract/contract-schema.js";
+import { contractToSchema } from "../src/runtime/contract/build-contract-schema.js";
 
 describe("buildContext", () => {
   it("builds system prompt, clipped context, final instruction, and schema", () => {

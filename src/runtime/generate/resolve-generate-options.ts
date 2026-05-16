@@ -1,10 +1,12 @@
 import type { Budget, Expr, GenerateExpr } from "../../ast/types.js";
 import {
+  DEFAULT_GENERATE_ATTEMPTS,
+  DEFAULT_GENERATE_DEBUG,
+  DEFAULT_GENERATE_STRICT,
   findGenerateInputProperty,
   readGenerateBooleanProperty,
   readGenerateNumberProperty,
   readGenerateThinkProperty,
-  requiredGenerateOptionDefault,
 } from "../../language/generate-options.js";
 import { RuntimeError } from "../core/errors.js";
 import type { RuntimeScope } from "../core/scope.js";
@@ -34,7 +36,7 @@ export async function resolveGenerateOptions(
     throw new RuntimeError("generate object argument requires an input field", expr.options.range);
   }
   const attemptsExpr = readGenerateNumberProperty(expr.options, "attempts");
-  const attempts = attemptsExpr?.value ?? requiredGenerateOptionDefault<number>("attempts");
+  const attempts = attemptsExpr?.value ?? DEFAULT_GENERATE_ATTEMPTS;
   if (!Number.isInteger(attempts) || attempts <= 0) {
     throw new RuntimeError("generate attempts must be a positive integer", attemptsExpr?.range ?? expr.options.range);
   }
@@ -44,8 +46,7 @@ export async function resolveGenerateOptions(
     maxOutput: expr.options.maxOutput,
     temperature: readGenerateNumberProperty(expr.options, "temperature")?.value,
     think: readGenerateThinkProperty(expr.options)?.value,
-    strict:
-      readGenerateBooleanProperty(expr.options, "strict")?.value ?? requiredGenerateOptionDefault<boolean>("strict"),
-    debug: readGenerateBooleanProperty(expr.options, "debug")?.value ?? requiredGenerateOptionDefault<boolean>("debug"),
+    strict: readGenerateBooleanProperty(expr.options, "strict")?.value ?? DEFAULT_GENERATE_STRICT,
+    debug: readGenerateBooleanProperty(expr.options, "debug")?.value ?? DEFAULT_GENERATE_DEBUG,
   };
 }

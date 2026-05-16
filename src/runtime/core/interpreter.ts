@@ -16,23 +16,18 @@ import { evaluateBlockFinalValue, executeBlock, type StatementHost } from "./sta
 import { pickUseOneOfCandidate } from "../context/use-one-of.js";
 import { createDefaultMemoryProvider } from "../../providers/memory/host.js";
 import { MockLlmProvider } from "../../providers/mock/llm.js";
-import { createAgentScriptToolProvider } from "../../host-tools.js";
-import { type Disposable, isDisposable } from "../values/providers.js";
+import { createAgentScriptToolProvider } from "../../providers/agent-script-tools.js";
+import type { BudgetCounter } from "../../optimizer/context.js";
 import type { RuntimeValue } from "../values/values.js";
 import type { InputProvider, LlmProvider, MemoryProvider, ToolProvider } from "../values/providers.js";
 import type { TraceEvent } from "../trace/trace.js";
 
-interface OptimizerExecutionOptions {
+interface OptimizerHookOptions {
   artifactsDir?: string;
-  budget?: {
-    incrementTrial(): void;
-    incrementLlm(): void;
-    checkDeadline(): void;
-  };
-  llmProvider?: LlmProvider;
-  memoryProvider?: MemoryProvider;
-  toolProvider?: ToolProvider;
-  workspaceRoot?: string;
+  budget?: BudgetCounter;
+  trialLlmProvider?: LlmProvider;
+  trialMemoryProvider?: MemoryProvider;
+  trialToolProvider?: ToolProvider;
 }
 
 export interface ExecuteOptions {
@@ -48,8 +43,7 @@ export interface ExecuteOptions {
   workspaceRoot?: string;
   variant?: Record<string, string>;
   closeProviders?: boolean;
-  artifactsDir?: string;
-  optimizer?: OptimizerExecutionOptions;
+  optimizer?: OptimizerHookOptions;
 }
 
 export interface ExecuteResult {
@@ -106,8 +100,11 @@ class Interpreter {
         llmProvider: this.llmProvider,
         memoryProvider: this.memoryProvider,
         workspaceRoot: paths.workspaceRoot,
-        artifactsDir: options.artifactsDir,
-        ...options.optimizer,
+        artifactsDir: options.optimizer?.artifactsDir,
+        budget: options.optimizer?.budget,
+        ...(options.optimizer?.trialLlmProvider ? { llmProvider: options.optimizer.trialLlmProvider } : {}),
+        ...(options.optimizer?.trialMemoryProvider ? { memoryProvider: options.optimizer.trialMemoryProvider } : {}),
+        ...(options.optimizer?.trialToolProvider ? { toolProvider: options.optimizer.trialToolProvider } : {}),
       });
     this.agents = createAgentMap(program);
     this.agent = resolveEntryAgent(program, options.agentName);
@@ -133,17 +130,14 @@ class Interpreter {
       return await this.callFunction(this.agent, entry.name, args, entry.range, this.trace);
     } finally {
       if (this.options.closeProviders !== false) {
-        const providers = [this.toolProvider, this.memoryProvider, this.llmProvider, this.inputProvider];
-        await Promise.all(
-          providers.filter(isDisposable).map(async (provider: Disposable) => {
-            try {
-              await provider.close();
-            } catch (error) {
-              const message = error instanceof Error ? error.message : String(error);
-              console.error(`AgentScript cleanup failed: ${message}`);
-            }
-          }),
-        );
+        for (const provider of [this.toolProvider, this.memoryProvider, this.llmProvider, this.inputProvider]) {
+          try {
+            await provider?.close?.();
+          } catch (error) {
+            const message = error instanceof Error ? error.message : String(error);
+            console.error(`AgentScript cleanup failed: ${message}`);
+          }
+        }
       }
     }
   }

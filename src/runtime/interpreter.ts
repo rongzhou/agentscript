@@ -1,25 +1,37 @@
-import type { AgentDecl, CallExpr, FuncDecl, Program, Stmt, UseOneOfStmt, UseStmt } from "../ast/types.js";
+import type { AgentDecl, CallExpr, FuncDecl, Program, UseOneOfStmt, UseStmt } from "../ast/types.js";
 import { formatExpressionSource } from "../ast/format.js";
 import { createAgentMap, findFunction, requireAgent, resolveEntryAgent, resolveMainFunction } from "./agents.js";
 import { Evaluator } from "./evaluator.js";
 import { RuntimeError } from "./errors.js";
 import { GenerateRuntime } from "./generate.js";
-import { isObject } from "./guards.js";
 import { budgetToJson } from "./json.js";
 import { prepareEntryInput } from "./input.js";
 import { createRuntimeImportBindings, type RuntimeImportBinding } from "./imports.js";
 import { createRuntimePaths } from "./paths.js";
 import { RuntimeScope } from "./scope.js";
 import { collectVariantSites, type VariantSiteMetadata } from "../language/variant-sites.js";
-import { buildTraceEvent } from "./trace-event.js";
-import { isTruthy } from "./truth.js";
+import { buildSiteId } from "../language/site-id.js";
+import { buildTraceEvent } from "./trace.js";
+import { evaluateBlockFinalValue, executeBlock, type StatementHost } from "./statements.js";
 import { pickUseOneOfCandidate } from "./use-one-of.js";
 import { createDefaultMemoryProvider } from "../providers/memory/host.js";
 import { MockLlmProvider } from "../providers/mock/llm.js";
-import { createDefaultToolProvider } from "../providers/tools/host.js";
-import { isDisposable } from "./disposable.js";
+import { createAgentScriptToolProvider } from "../host-tools.js";
+import { isDisposable } from "./providers.js";
 import type { InputProvider, LlmProvider, MemoryProvider, RuntimeValue, ToolProvider, TraceEvent } from "./types.js";
-import type { OptimizerToolContext } from "../optimizer/provider.js";
+
+interface OptimizerExecutionOptions {
+  artifactsDir?: string;
+  budget?: {
+    incrementTrial(): void;
+    incrementLlm(): void;
+    checkDeadline(): void;
+  };
+  llmProvider?: LlmProvider;
+  memoryProvider?: MemoryProvider;
+  toolProvider?: ToolProvider;
+  workspaceRoot?: string;
+}
 
 export interface ExecuteOptions {
   agentName?: string;
@@ -35,7 +47,7 @@ export interface ExecuteOptions {
   variant?: Record<string, string>;
   closeProviders?: boolean;
   artifactsDir?: string;
-  optimizer?: Partial<OptimizerToolContext>;
+  optimizer?: OptimizerExecutionOptions;
 }
 
 export interface ExecuteResult {
@@ -43,12 +55,10 @@ export interface ExecuteResult {
   trace: TraceEvent[];
 }
 
-interface ReturnSignal {
-  kind: "return";
-  value: RuntimeValue;
+interface ExecutionContext {
+  agentName: string;
+  functionName?: string;
 }
-
-type StatementResult = ReturnSignal | undefined;
 const DEFAULT_MAX_CALL_DEPTH = 1000;
 
 export async function executeAgent(
@@ -90,7 +100,7 @@ class Interpreter {
       });
     this.toolProvider =
       options.toolProvider ??
-      createDefaultToolProvider(paths.workspaceRoot, {
+      createAgentScriptToolProvider(paths.workspaceRoot, {
         llmProvider: this.llmProvider,
         memoryProvider: this.memoryProvider,
         workspaceRoot: paths.workspaceRoot,
@@ -153,18 +163,19 @@ class Interpreter {
     }
 
     this.callDepth += 1;
-    const evaluator = this.createEvaluator(trace, agent);
+    const evaluator = this.createEvaluator(trace, agent, fn);
     const scope = await this.buildFunctionScope(agent, fn, args, evaluator, trace);
+    const context: ExecutionContext = { agentName: agent.name, functionName: fn.name };
 
     try {
-      const signal = await this.executeBlock(fn.body, scope, evaluator, trace, true);
+      const signal = await executeBlock(fn.body, scope, evaluator, trace, this.statementHost(context), true);
       return signal?.value ?? null;
     } finally {
       this.callDepth -= 1;
     }
   }
 
-  private createEvaluator(trace: TraceEvent[], activeAgent: AgentDecl): Evaluator {
+  private createEvaluator(trace: TraceEvent[], activeAgent: AgentDecl, activeFunction?: FuncDecl): Evaluator {
     let evaluator: Evaluator;
     const generateRuntime = new GenerateRuntime(this.llmProvider, trace, {
       currentAgent: () => activeAgent,
@@ -183,8 +194,19 @@ class Interpreter {
         concurrency: () => this.options.concurrency ?? 4,
         evaluateBlockFinalValue: (statements, scope, blockOptions = {}) => {
           const blockTrace = blockOptions.trace ?? trace;
-          const blockEvaluator = blockOptions.trace ? this.createEvaluator(blockTrace, activeAgent) : evaluator;
-          return this.evaluateBlockFinalValue(statements, scope, blockEvaluator, blockTrace);
+          const blockEvaluator = blockOptions.trace
+            ? this.createEvaluator(blockTrace, activeAgent, activeFunction)
+            : evaluator;
+          return evaluateBlockFinalValue(
+            statements,
+            scope,
+            blockEvaluator,
+            blockTrace,
+            this.statementHost({
+              agentName: activeAgent.name,
+              functionName: activeFunction?.name,
+            }),
+          );
         },
         requireAgent: (name, range) => this.requireAgent(name, range),
         resolveMainFunction,
@@ -221,7 +243,7 @@ class Interpreter {
       agentScope.setConfig(config.key, configValue);
     }
     for (const use of agent.uses) {
-      this.declareUse(use, agentScope, trace);
+      this.declareUse(use, agentScope, trace, { agentName: agent.name });
     }
 
     const scope = agentScope.child();
@@ -232,136 +254,10 @@ class Interpreter {
     return scope;
   }
 
-  private async executeBlock(
-    statements: Stmt[],
-    scope: RuntimeScope,
-    evaluator: Evaluator,
-    trace: TraceEvent[],
-    allowFinalExpressionReturn = false,
-  ): Promise<StatementResult> {
-    for (const [index, stmt] of statements.entries()) {
-      if (allowFinalExpressionReturn && index === statements.length - 1 && stmt.kind === "ExprStmt") {
-        return { kind: "return", value: await evaluator.evaluate(stmt.expr, scope) };
-      }
-      const result = await this.executeStatement(stmt, scope, evaluator, trace);
-      if (result) return result;
-    }
-    return undefined;
-  }
-
-  private async evaluateBlockFinalValue(
-    statements: Stmt[],
-    scope: RuntimeScope,
-    evaluator: Evaluator,
-    trace: TraceEvent[],
-  ): Promise<RuntimeValue> {
-    const signal = await this.executeBlock(statements, scope, evaluator, trace, true);
-    if (!signal) {
-      throw new RuntimeError("parallel for body must end with a value expression");
-    }
-    return signal.value;
-  }
-
-  private async executeStatement(
-    stmt: Stmt,
-    scope: RuntimeScope,
-    evaluator: Evaluator,
-    trace: TraceEvent[],
-  ): Promise<StatementResult> {
-    switch (stmt.kind) {
-      case "ConfigDecl":
-        scope.setConfig(stmt.key, await evaluator.evaluateConfig(stmt, scope));
-        return undefined;
-
-      case "UseStmt":
-      case "UseOneOfStmt": {
-        this.declareUse(stmt, scope, trace);
-        return undefined;
-      }
-
-      case "AssignStmt": {
-        const value = await evaluator.evaluateAssignmentValue(stmt, scope);
-        if (stmt.target.kind === "IdentifierExpr") {
-          scope.set(stmt.target.name, value, stmt.target.range);
-          return undefined;
-        }
-        if (stmt.target.kind === "MemberExpr") {
-          const object = await evaluator.evaluate(stmt.target.object, scope);
-          if (Array.isArray(object)) {
-            throw new RuntimeError("Cannot assign a property on a list value", stmt.target.range);
-          }
-          if (!isObject(object)) {
-            throw new RuntimeError("Cannot assign a property on a non-object value", stmt.target.range);
-          }
-          object[stmt.target.property] = value;
-          return undefined;
-        }
-        throw new RuntimeError("Invalid assignment target", stmt.target.range);
-      }
-
-      case "ExprStmt":
-        await evaluator.evaluate(stmt.expr, scope);
-        return undefined;
-
-      case "IfStmt": {
-        if (isTruthy(await evaluator.evaluate(stmt.condition, scope))) {
-          return this.executeBlock(stmt.thenBody, scope.child(), evaluator, trace);
-        }
-        if (stmt.elseBody) {
-          return this.executeBlock(stmt.elseBody, scope.child(), evaluator, trace);
-        }
-        return undefined;
-      }
-
-      case "ForInStmt": {
-        const iterable = await evaluator.evaluate(stmt.iterable, scope);
-        if (!Array.isArray(iterable)) {
-          throw new RuntimeError("for loop requires a list value", stmt.iterable.range);
-        }
-
-        const iterations = Math.min(stmt.maxIterations, iterable.length);
-        for (let index = 0; index < iterations; index += 1) {
-          const item = iterable[index]!;
-          trace.push(
-            buildTraceEvent("for", {
-              item: stmt.item.name,
-              index,
-              value: item,
-              max_items: stmt.maxIterations,
-              total_items: iterable.length,
-              truncated: iterable.length > stmt.maxIterations,
-            }),
-          );
-          const child = scope.child();
-          child.define(stmt.item.name, item);
-          const result = await this.executeBlock(stmt.body, child, evaluator, trace);
-          if (result) return result;
-        }
-        return undefined;
-      }
-
-      case "LoopUntilStmt": {
-        for (let index = 0; index < stmt.maxIterations; index += 1) {
-          if (isTruthy(await evaluator.evaluate(stmt.condition, scope))) {
-            return undefined;
-          }
-          const result = await this.executeBlock(stmt.body, scope.child(), evaluator, trace);
-          if (result) return result;
-        }
-        return undefined;
-      }
-
-      case "RepeatStmt": {
-        for (let index = 0; index < stmt.maxAttempts; index += 1) {
-          const result = await this.executeBlock(stmt.body, scope.child(), evaluator, trace);
-          if (result) return result;
-        }
-        return undefined;
-      }
-
-      case "ReturnStmt":
-        return { kind: "return", value: await evaluator.evaluate(stmt.value, scope) };
-    }
+  private statementHost(context: ExecutionContext): StatementHost {
+    return {
+      declareUse: (stmt, scope, trace) => this.declareUse(stmt, scope, trace, context),
+    };
   }
 
   private async callAgent(
@@ -389,9 +285,14 @@ class Interpreter {
     return requireAgent(this.agents, name, range);
   }
 
-  private declareUse(stmt: UseStmt | UseOneOfStmt, scope: RuntimeScope, trace: TraceEvent[]): void {
+  private declareUse(
+    stmt: UseStmt | UseOneOfStmt,
+    scope: RuntimeScope,
+    trace: TraceEvent[],
+    context: ExecutionContext,
+  ): void {
     if (stmt.kind === "UseOneOfStmt") {
-      this.declareUseOneOf(stmt, scope, trace);
+      this.declareUseOneOf(stmt, scope, trace, context);
       return;
     }
     const source = formatExpressionSource(stmt.value);
@@ -399,9 +300,14 @@ class Interpreter {
     trace.push(buildTraceEvent("use", { source, label: stmt.label ?? null, budget: budgetToJson(stmt.budget) }));
   }
 
-  private declareUseOneOf(stmt: UseOneOfStmt, scope: RuntimeScope, trace: TraceEvent[]): void {
+  private declareUseOneOf(
+    stmt: UseOneOfStmt,
+    scope: RuntimeScope,
+    trace: TraceEvent[],
+    context: ExecutionContext,
+  ): void {
     const site = this.variantSites.get(stmt);
-    const siteId = site?.siteId ?? this.useOneOfSiteId(stmt);
+    const siteId = site?.siteId ?? this.useOneOfSiteId(stmt, context);
     const candidates = stmt.candidates.map((candidate) => ({
       name: candidate.name,
       expr: candidate.value,
@@ -427,9 +333,15 @@ class Interpreter {
     );
   }
 
-  private useOneOfSiteId(stmt: UseOneOfStmt): string {
-    const source = this.options.sourcePath ?? "<memory>";
-    return `${source}:${stmt.range.start.line}:${stmt.range.start.column}`;
+  private useOneOfSiteId(stmt: UseOneOfStmt, context: ExecutionContext): string {
+    return buildSiteId({
+      sourcePath: this.options.sourcePath,
+      workspaceRoot: this.options.workspaceRoot,
+      agentName: context.agentName,
+      funcName: context.functionName,
+      label: stmt.label,
+      ordinal: 1,
+    });
   }
 }
 

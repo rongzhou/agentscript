@@ -17,7 +17,8 @@ dependency。所有工作集中在：
 
 - `src/architect/` 下新增 spec/validator/compiler/tool 四个子模块，其中
   `compiler/analyze.ts` 封装生成源码的 parser + semantic analyzer 检查；
-- `src/providers/tools/host.ts` 注册 `host://architect` namespace；
+- `src/host-tools.ts` 将 `host://architect` 与 `host://optimizer` 注入默认
+  AgentScript host namespace；
 - `src/language/schemes.ts` 新增 `ARCHITECT_SCHEME` 常量；
 - `src/bin/` 增加 architect CLI runner；
 - fixture spec JSON 文件；
@@ -60,7 +61,6 @@ V7 不依赖 V6 的任何模块。两者完全独立。
 
 ```text
 src/architect/spec/types.ts
-src/architect/spec/schema.ts
 ```
 
 ### types.ts
@@ -141,15 +141,15 @@ export const SUPPORTED_PATTERNS: ReadonlySet<string> = new Set([
 将来增加 `"plan_execute"` 等 pattern 时只需扩展这个集合并加上对应的
 type union 分支。
 
-### schema.ts
+`types.ts` 同时导出 draft object 的轻量守卫：
 
 ```ts
 export type AgentSpecDraft = Record<string, unknown>;
 
-export function parseAgentSpecDraft(value: unknown): AgentSpecDraft | null;
+export function asAgentSpecDraft(value: unknown): AgentSpecDraft | null;
 ```
 
-`parseAgentSpecDraft` 只判断输入是不是非数组、非 null 的 object。字段
+`asAgentSpecDraft` 只判断输入是不是非数组、非 null 的 object。字段
 存在性、字段类型、标识符格式、引用关系全部交给 validator。这样缺字段、
 字段类型错误等问题都能由 validator 给出精确诊断路径，而不是在 tool
 入参解析阶段被整体拒绝。
@@ -160,10 +160,10 @@ export function parseAgentSpecDraft(value: unknown): AgentSpecDraft | null;
 验收：
 
 - `npm run typecheck` 通过。
-- `parseAgentSpecDraft` 对合法 spec 返回 draft object。
-- `parseAgentSpecDraft` 对缺少 `version` 的 object 仍返回 draft object
+- `asAgentSpecDraft` 对合法 spec 返回 draft object。
+- `asAgentSpecDraft` 对缺少 `version` 的 object 仍返回 draft object
   （validator 会报 `MISSING_FIELD`）。
-- `parseAgentSpecDraft` 对 `null`、`[]`、`"string"` 等返回 `null`。
+- `asAgentSpecDraft` 对 `null`、`[]`、`"string"` 等返回 `null`。
 
 ## 阶段 1：Fixture spec 样例
 
@@ -369,11 +369,10 @@ tests/architect/compiler.test.ts
 
 ```ts
 // src/architect/compiler/index.ts
-import { validateSpec } from "../validator/index.js";
+import { validateTypedSpec } from "../validator/index.js";
 import { emitLinear } from "./emit-linear.js";
 import { emitReact } from "./emit-react.js";
-import type { AgentSpec } from "../spec/types.js";
-import type { AgentSpecDraft } from "../spec/schema.js";
+import type { AgentSpecDraft } from "../spec/types.js";
 import type { SpecDiagnostic } from "../validator/index.js";
 
 export type CompileResult =
@@ -383,12 +382,12 @@ export type CompileResult =
 export function compileSpec(spec: AgentSpecDraft): CompileResult;
 ```
 
-`compileSpec` 内部先调用 `validateSpec`；如果有 error 级诊断，返回
-`{ ok: false, code: "validation_required", diagnostics }`。否则将 draft
-收窄为 typed `AgentSpec`，再按 `pattern` 分发：
+`compileSpec` 内部先调用 `validateTypedSpec`；如果有 error 级诊断，返回
+`{ ok: false, code: "validation_required", diagnostics }`。否则使用 validator
+返回的 typed `AgentSpec`，再按 `pattern` 分发：
 
 ```ts
-const typed = spec as unknown as AgentSpec;
+const typed = validation.spec;
 const pattern = typed.pattern ?? "linear";
 const source = pattern === "react" ? emitReact(typed) : emitLinear(typed);
 ```
@@ -529,7 +528,7 @@ tests/architect/integration.test.ts
 ```ts
 import { readFileSync } from "node:fs";
 import { compileSpec } from "../../src/architect/compiler/index.js";
-import { parseAgentSpecDraft } from "../../src/architect/spec/schema.js";
+import { asAgentSpecDraft } from "../../src/architect/spec/types.js";
 import { parse } from "../../src/parser/parser.js";
 import { analyze } from "../../src/semantic/analyzer.js";
 
@@ -544,7 +543,7 @@ describe("architect integration", () => {
   for (const fixturePath of fixtures) {
     it(`${fixturePath} → compile → parse → analyze = no errors`, () => {
       const json = JSON.parse(readFileSync(fixturePath, "utf-8"));
-      const spec = parseAgentSpecDraft(json);
+      const spec = asAgentSpecDraft(json);
       expect(spec).not.toBeNull();
 
       const compiled = compileSpec(spec!);
@@ -688,7 +687,7 @@ main agent ReactResearchAgent {
 状态：计划中。
 
 目标：把 validator + compiler + analyzer 包装为 `host://architect` tool
-provider，注册到 `HostToolProvider`。
+provider，并通过默认 AgentScript tool provider 注入到 host namespace。
 
 新增模块：
 
@@ -700,7 +699,7 @@ src/architect/tool/provider.ts
 
 ```text
 src/language/schemes.ts           — 新增 ARCHITECT_SCHEME 常量
-src/providers/tools/host.ts       — 注册 ArchitectToolProvider
+src/host-tools.ts                 — 注入 ArchitectToolProvider
 ```
 
 ### schemes.ts
@@ -714,7 +713,7 @@ export const ARCHITECT_SCHEME = "architect";
 ```ts
 import type { RuntimeValue, ToolCallRequest, ToolProvider } from "../../runtime/types.js";
 import { RuntimeError } from "../../runtime/errors.js";
-import { parseAgentSpecDraft } from "../spec/schema.js";
+import { asAgentSpecDraft } from "../spec/types.js";
 import { validateSpec } from "../validator/index.js";
 import { compileSpec } from "../compiler/index.js";
 import { parse } from "../../parser/parser.js";
@@ -749,7 +748,7 @@ export class ArchitectToolProvider implements ToolProvider {
 `validateSpec`：
 
 - `request.args[0]` 必须是 object（否则 hard error）。
-- 取 `spec` 字段，调用 `parseAgentSpecDraft(spec)`。返回 `null` 时返回
+- 取 `spec` 字段，调用 `asAgentSpecDraft(spec)`。返回 `null` 时返回
   `{ ok: false, code: "invalid_input", message: "spec must be a JSON object" }`。
 - 对 draft 调用 `validateSpec(draft)`，把 `{ ok, diagnostics }` 直接 JSON
   序列化返回。
@@ -779,14 +778,15 @@ export class ArchitectToolProvider implements ToolProvider {
 ### host.ts 修改
 
 ```ts
-import { ARCHITECT_SCHEME } from "../../language/schemes.js";
-import { ArchitectToolProvider } from "../../architect/tool/provider.js";
+import { ARCHITECT_SCHEME, OPTIMIZER_SCHEME } from "./language/schemes.js";
+import { ArchitectToolProvider } from "./architect/tool/provider.js";
+import { OptimizerToolProvider } from "./optimizer/provider.js";
 
-// HostToolProvider 构造函数中的 host namespace map：
-host: new HostNamespaceProvider({
+// createAgentScriptHostNamespaces:
+return {
   [OPTIMIZER_SCHEME]: new OptimizerToolProvider({ workspaceRoot, ...optimizer }),
-  [ARCHITECT_SCHEME]:   new ArchitectToolProvider(),
-}),
+  [ARCHITECT_SCHEME]: new ArchitectToolProvider(),
+};
 ```
 
 `ArchitectToolProvider` 不需要 workspace 或 budget context，构造无参。

@@ -1,4 +1,4 @@
-import type { SourceLocation, SourceRange } from "../ast/types.js";
+import type { SourceLocation, SourceRange } from "./types.js";
 
 export function formatSourceLocation(location: SourceLocation): string {
   return `${location.line}:${location.column}`;

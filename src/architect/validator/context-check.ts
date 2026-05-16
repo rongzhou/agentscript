@@ -1,4 +1,4 @@
-import type { AgentSpecDraft } from "../spec/schema.js";
+import type { AgentSpecDraft } from "../spec/types.js";
 import { BUDGET_RE, error, isRecord, pointer, type SpecDiagnostic } from "./helpers.js";
 import { buildReferenceIndex, checkInputLocalRef } from "./reference-check.js";
 

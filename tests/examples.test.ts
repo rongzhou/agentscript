@@ -7,6 +7,7 @@ import { MockLlmProvider } from "../src/providers/mock/llm.js";
 import { MockMemoryProvider } from "../src/providers/mock/memory.js";
 import { HostPassthroughToolProvider } from "../src/providers/mock/host-passthrough.js";
 import { MockToolProvider } from "../src/providers/mock/tool.js";
+import { createAgentScriptToolProvider } from "../src/host-tools.js";
 import { createDefaultToolProvider } from "../src/providers/tools/host.js";
 import type { JsonObject } from "../src/runtime/types.js";
 import { analyze } from "../src/semantic/analyzer.js";
@@ -189,7 +190,7 @@ function toolProviderFor(dir: string, file: string) {
   if (dir === "examples" && file === "node-crypto.as") return createDefaultToolProvider();
   if (dir === "examples" && (file === "meta/architect.as" || file === "optimizer/optimizer.as")) {
     return new HostPassthroughToolProvider(
-      createDefaultToolProvider(process.cwd(), {
+      createAgentScriptToolProvider(process.cwd(), {
         llmProvider: new MockLlmProvider(),
         toolProvider: new MockToolProvider(),
         memoryProvider: new MockMemoryProvider(),

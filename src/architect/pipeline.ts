@@ -1,6 +1,6 @@
 import { analyzeSource } from "./compiler/analyze.js";
 import { compileSpec } from "./compiler/index.js";
-import type { AgentSpecDraft } from "./spec/schema.js";
+import type { AgentSpecDraft } from "./spec/types.js";
 import type { SpecDiagnostic } from "./validator/index.js";
 
 export type ArchitectPipelineResult =

@@ -41,7 +41,7 @@ V7 不是通用 code generation，也不试图替代手写 `.as`。它服从 Age
 
 V7 Phase 1 支持：
 
-- AgentSpec JSON schema 定义与 TypeScript 类型。
+- AgentSpec JSON 结构约定、TypeScript 类型与手写 validator。
 - 两种 agent pattern：
   - `"linear"`：单次 RAG（locals → use → generate）。
   - `"react"`：ReAct 循环（locals → use → loop(reason → act → observe) →
@@ -122,9 +122,10 @@ draft 的输入。
 与 `host://optimizer` 相同的 host tool 模式。通过
 `import tool Architect from "host://architect"` 获取。
 
-默认 `HostToolProvider` 注册此 tool，与 `host://optimizer` 并列。如果
-嵌入式调用传入自定义 `toolProvider`，宿主需要自行决定是否暴露
-`host://architect`。
+默认 AgentScript tool provider 会把此 tool 与 `host://optimizer` 一起注入
+`HostToolProvider` 的 host namespace。`HostToolProvider` 本身只负责按
+namespace 路由；如果嵌入式调用传入自定义 `toolProvider`，宿主需要自行
+决定是否暴露 `host://architect`。
 
 ### 方法
 
@@ -273,8 +274,7 @@ agentscript architect --check agent.spec.json
 ```text
 src/architect/
   spec/
-    types.ts          — AgentSpec TypeScript 类型定义（含 pattern discriminated union）
-    schema.ts         — AgentSpec draft 解析与守卫
+    types.ts          — AgentSpec TypeScript 类型定义与 draft object 守卫
 
   validator/
     index.ts          — validator 入口，聚合所有 check
@@ -318,16 +318,18 @@ examples/meta/
 - `src/providers/tools/shared.ts` — tool provider 的参数解析工具。
 - `src/runtime/types.ts` — ToolProvider 接口、RuntimeValue 类型。
 
-### 不修改
+### 语言核心
 
-- parser、semantic analyzer、runtime、现有 tool providers 不做任何修改。
-- AST 类型不变。
+- V7 不新增 AgentScript 语法，AST 类型不变。
+- parser、semantic analyzer 与 runtime 可做支撑性接线和代码组织调整，但不改变
+  语言行为。
 - 现有测试不受影响。
 
 ### 新增注册
 
-- `HostToolProvider` 的 host namespace map 中注册 `host://architect`（与
-  `host://optimizer` 并列）。
+- 默认 AgentScript tool provider 通过 `src/host-tools.ts` 注入
+  `host://architect`（与 `host://optimizer` 并列）；`HostToolProvider`
+  只负责按 host namespace 路由。
 - `package.json` 暴露 `@rong/agentscript/architect/spec/types`，供 TypeScript
   embedders 构造 AgentSpec。
 
@@ -449,14 +451,14 @@ V7 的 `host://architect` 和 V6 的 `host://optimizer` 是并列的 host tool�
 
 ## 实施顺序
 
-### Step 1：AgentSpec 类型与 schema（含 pattern dispatch）
+### Step 1：AgentSpec 类型与 draft guard（含 pattern dispatch）
 
-定义 TypeScript 类型、运行时类型守卫、JSON schema 验证函数。类型层用
-discriminated union 表达 `pattern: "linear" | "react"`。
+定义 TypeScript 类型和 draft object 守卫。字段级验证由 validator 完成；
+类型层用 discriminated union 表达 `pattern: "linear" | "react"`。
 
-交付物：`src/architect/spec/types.ts`、`src/architect/spec/schema.ts`
+交付物：`src/architect/spec/types.ts`
 
-验收：类型定义通过 typecheck；schema 函数能正确区分合法/非法 spec。
+验收：类型定义通过 typecheck；draft guard 能正确区分 object 与非 object 输入。
 
 ### Step 2：手写 linear fixture 样例
 
@@ -494,10 +496,10 @@ react）。
 
 ### Step 6：host://architect tool provider
 
-包装 validator + compiler + analyzer 为 ToolProvider，并挂到默认
-`HostToolProvider` 的 host namespace map。
+包装 validator + compiler + analyzer 为 ToolProvider，并通过默认
+AgentScript tool provider 注入 `HostToolProvider` 的 host namespace map。
 
-交付物：`src/architect/tool/provider.ts`、`src/providers/tools/host.ts` 注册代码。
+交付物：`src/architect/tool/provider.ts`、`src/host-tools.ts` 注入代码。
 
 验收：`agentscript examples/meta/architect.as --mock` 能跑通。
 
@@ -573,8 +575,8 @@ V7 Phase 1 完成后仍必须成立：
 - AgentSpec 是 JSON，不是新语言。
 - compiler 是纯函数，不调用 LLM。
 - 生成的 `.as` 源码必须通过现有 parser + semantic analyzer。
-- `host://architect` 是显式 capability。默认 `HostToolProvider` 会注册它；
-  自定义嵌入式 `toolProvider` 不会自动获得它。
+- `host://architect` 是显式 capability。默认 AgentScript tool provider 会
+  注入它；自定义嵌入式 `toolProvider` 不会自动获得它。
 - 零运行时依赖。
 
 ## Phase 2 展望（不阻塞 Phase 1）

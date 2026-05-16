@@ -7,39 +7,30 @@ import {
   NODE_SCHEME,
   NPM_SCHEME,
   SHELL_SCHEME,
-  OPTIMIZER_SCHEME,
-  ARCHITECT_SCHEME,
 } from "../../language/schemes.js";
 import type { ToolProvider } from "../../runtime/types.js";
 import { RuntimeError } from "../../runtime/errors.js";
-import { OptimizerToolProvider, type OptimizerToolContext } from "../../optimizer/provider.js";
-import { ArchitectToolProvider } from "../../architect/tool/provider.js";
 import { EnvToolProvider } from "./env.js";
 import { FileToolProvider } from "./file.js";
 import { HttpToolProvider } from "./http.js";
 import { McpToolProvider } from "./mcp.js";
 import { NodeToolProvider } from "./node.js";
 import { NpmToolProvider } from "./npm.js";
-import { loadNpmRegistry } from "./npm-registry.js";
+import { loadNpmRegistry } from "../../language/npm-registry.js";
 import { SchemeToolProvider } from "./scheme.js";
 import { ShellToolProvider } from "./shell.js";
+import { closeDisposableProviders } from "./shared.js";
 import { Workspace } from "../shared/workspace.js";
 
 export class HostToolProvider extends SchemeToolProvider {
-  constructor(workspaceRoot = process.cwd(), optimizer?: Partial<OptimizerToolContext>) {
+  constructor(workspaceRoot = process.cwd(), hostNamespaces: Record<string, ToolProvider> = {}) {
     const workspace = new Workspace(workspaceRoot);
     const http = new HttpToolProvider();
     const mcp = new McpToolProvider(workspaceRoot);
     const npmRegistry = loadNpmRegistry(workspaceRoot);
     super(
       {
-        host: new HostNamespaceProvider({
-          [OPTIMIZER_SCHEME]: new OptimizerToolProvider({
-            workspaceRoot,
-            ...optimizer,
-          }),
-          [ARCHITECT_SCHEME]: new ArchitectToolProvider(),
-        }),
+        host: new HostNamespaceProvider(hostNamespaces),
         [ENV_SCHEME]: new EnvToolProvider(),
         [FILE_SCHEME]: new FileToolProvider(workspace),
         [HTTP_SCHEME]: http,
@@ -65,11 +56,15 @@ class HostNamespaceProvider implements ToolProvider {
     }
     return provider.call(request);
   }
+
+  async close(): Promise<void> {
+    await closeDisposableProviders(this.providers);
+  }
 }
 
 export function createDefaultToolProvider(
   workspaceRoot = process.cwd(),
-  optimizer?: Partial<OptimizerToolContext>,
+  hostNamespaces: Record<string, ToolProvider> = {},
 ): ToolProvider {
-  return new HostToolProvider(workspaceRoot, optimizer);
+  return new HostToolProvider(workspaceRoot, hostNamespaces);
 }

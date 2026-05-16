@@ -78,14 +78,21 @@ describe("agentscript CLI", () => {
   it("runs architect natural-language CLI in mock mode without crashing", async () => {
     const dir = mkdtempSync(join(tmpdir(), "agentscript-architect-"));
     const outputFile = join(dir, "mock-agent.as");
-    const code = await main([
-      "architect",
-      "build a docs assistant",
-      outputFile,
-      "--mock",
-      "--model",
-      "openai://gpt-4.1-mini",
-    ]);
+    const cwd = process.cwd();
+    process.chdir(dir);
+    let code: number;
+    try {
+      code = await main([
+        "architect",
+        "build a docs assistant",
+        outputFile,
+        "--mock",
+        "--model",
+        "openai://gpt-4.1-mini",
+      ]);
+    } finally {
+      process.chdir(cwd);
+    }
 
     expect(code).toBe(1);
     expect(existsSync(outputFile)).toBe(false);

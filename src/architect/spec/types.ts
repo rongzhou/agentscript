@@ -47,6 +47,12 @@ export interface ReactAgentSpec extends AgentSpecBase {
 
 export type AgentSpec = LinearAgentSpec | ReactAgentSpec;
 
+export type AgentSpecDraft = Record<string, unknown>;
+
+export function asAgentSpecDraft(value: unknown): AgentSpecDraft | null {
+  return typeof value === "object" && value !== null && !Array.isArray(value) ? (value as AgentSpecDraft) : null;
+}
+
 export interface AgentSpecAgent {
   name: string;
   role: string;

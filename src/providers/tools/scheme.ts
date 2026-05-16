@@ -1,5 +1,5 @@
 import { RuntimeError } from "../../runtime/errors.js";
-import type { Disposable } from "../../runtime/disposable.js";
+import type { Disposable } from "../../runtime/providers.js";
 import { uriScheme } from "../../language/uri.js";
 import type { RuntimeValue, ToolCallRequest, ToolProvider } from "../../runtime/types.js";
 import { closeDisposableProviders } from "./shared.js";

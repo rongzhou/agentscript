@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { NodeToolProvider } from "../src/providers/tools/node.js";
-import type { NpmRegistry } from "../src/providers/tools/npm-registry.js";
+import type { NpmRegistry } from "../src/language/npm-registry.js";
 
 function registry(modules: string[]): NpmRegistry {
   return { allow: { node: new Set(modules), npm: new Map() }, path: null };

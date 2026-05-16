@@ -1,5 +1,8 @@
 import type { AgentDecl, Program } from "../ast/types.js";
 
+export const ANONYMOUS_MAIN_AGENT = "__main_agent";
+export const ANONYMOUS_MAIN_FUNC = "__main";
+
 function findMainAgent(program: Program): Program["agents"][number] | undefined {
   return program.agents.find((agent) => agent.isMain);
 }

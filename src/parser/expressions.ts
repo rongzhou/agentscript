@@ -14,7 +14,7 @@ import type {
 import { parseGenerate } from "./generate.js";
 import type { ExpressionParserHost } from "./host.js";
 import { parseList, parseObject } from "./literals.js";
-import { parseParallelFor } from "./parallel-for.js";
+import { parseParallelFor } from "./control-flow.js";
 
 export function parseExpressionExpr(parser: ExpressionParserHost): Expr {
   return parseLogicalOr(parser);

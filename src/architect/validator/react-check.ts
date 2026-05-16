@@ -1,4 +1,4 @@
-import type { AgentSpecDraft } from "../spec/schema.js";
+import type { AgentSpecDraft } from "../spec/types.js";
 import { AGENT_SPEC_TYPES } from "../spec/types.js";
 import {
   BUDGET_RE,

@@ -12,6 +12,10 @@ export function runtimeValuesEqual(left: RuntimeValue | undefined, right: Runtim
   return renderJsonForComparison(left ?? null) === renderJsonForComparison(right ?? null);
 }
 
+export function renderJson(value: JsonValue): string {
+  return typeof value === "string" ? value : JSON.stringify(value, null, 2);
+}
+
 const SANITIZE_JSON_POLICY: JsonWalkPolicy = {
   unsupported(value) {
     if (typeof value === "undefined" || typeof value === "function" || typeof value === "symbol") {

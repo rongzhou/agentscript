@@ -1,5 +1,5 @@
 import type { AgentDecl, ConfigDecl, FuncDecl, FuncParam, ImportDecl, UseDecl } from "../ast/types.js";
-import { ANONYMOUS_MAIN_AGENT, ANONYMOUS_MAIN_FUNC } from "../language/anonymous.js";
+import { ANONYMOUS_MAIN_AGENT, ANONYMOUS_MAIN_FUNC } from "../language/entry.js";
 import { isImportResourceKind } from "../language/bindings.js";
 import type { DeclarationParserHost } from "./host.js";
 import { parseContractObject } from "./contract.js";

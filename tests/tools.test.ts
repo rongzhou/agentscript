@@ -43,6 +43,24 @@ describe("tool URI providers", () => {
     );
   });
 
+  it("closes injected host namespace providers", async () => {
+    let closed = false;
+    const provider = new HostToolProvider(process.cwd(), {
+      custom: {
+        async call() {
+          return { ok: true };
+        },
+        close() {
+          closed = true;
+        },
+      },
+    });
+
+    await provider.close();
+
+    expect(closed).toBe(true);
+  });
+
   it("runs concrete workspace shell and file tools without a general shell", async () => {
     const dir = mkdtempSync(join(tmpdir(), "agentscript-"));
     mkdirSync(join(dir, "src"));

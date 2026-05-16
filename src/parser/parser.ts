@@ -19,9 +19,8 @@ import { ParseError } from "./errors.js";
 import { parseForIn, parseIf, parseLoop, parseRepeat } from "./control-flow.js";
 import { parseAgentDecl, parseImportDecl } from "./declarations.js";
 import { parseExpressionExpr, parsePostfixExpr } from "./expressions.js";
-import { parseContractBlock } from "./contract.js";
-import { isNewLineBetween, isOnSameLine } from "./tokens.js";
-import { type Token, tokenize } from "./tokenizer.js";
+import { parseLabelledBlock } from "./labelled-block.js";
+import { isNewLineBetween, isOnSameLine, type Token, tokenize } from "./tokenizer.js";
 
 export function parse(source: string): Program {
   return new Parser(tokenize(source)).parseProgram();
@@ -121,7 +120,7 @@ class Parser {
   }
 
   private parseUseOneOf(start: UseOneOfStmt["range"]["start"]): UseOneOfStmt {
-    const block = parseContractBlock(this, {
+    const block = parseLabelledBlock(this, {
       fieldNameMessage: "Expected use one of candidate name",
       parseValue: () => this.parseUseOneOfCandidateValue(),
     });

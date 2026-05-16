@@ -2,7 +2,7 @@ import type { FuncDecl, ContractField, ContractObjectExpr } from "../ast/types.j
 import { RuntimeError } from "./errors.js";
 import { isObject } from "./guards.js";
 import { validateValueAgainstContractType } from "./contract.js";
-import { buildTraceEvent } from "./trace-event.js";
+import { buildTraceEvent } from "./trace.js";
 import type { InputProvider, RuntimeValue, TraceEvent } from "./types.js";
 
 export async function prepareEntryInput(

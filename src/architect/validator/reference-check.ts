@@ -1,4 +1,4 @@
-import type { AgentSpecDraft } from "../spec/schema.js";
+import type { AgentSpecDraft } from "../spec/types.js";
 import { entriesOf, error, isRecord, patternOf, pointer, type SpecDiagnostic } from "./helpers.js";
 
 export interface ReferenceIndex {

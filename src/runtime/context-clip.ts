@@ -1,5 +1,5 @@
 import type { Budget } from "../ast/types.js";
-import { renderJson } from "./context-render.js";
+import { renderJson } from "./json.js";
 import type { JsonObject, JsonValue } from "./types.js";
 
 export function clipJson(

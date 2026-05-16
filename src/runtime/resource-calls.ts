@@ -5,7 +5,7 @@ import { uriScheme } from "../language/uri.js";
 import { RuntimeError } from "./errors.js";
 import { isObject } from "./guards.js";
 import { sanitizeForJson } from "./json.js";
-import { buildTraceEvent } from "./trace-event.js";
+import { buildTraceEvent } from "./trace.js";
 import type {
   JsonValue,
   MemoryBinding,

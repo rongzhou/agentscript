@@ -1,6 +1,5 @@
 import { stdin as inputStream, stdout as outputStream } from "node:process";
 import { createInterface } from "node:readline/promises";
-import { isBalancedAgentBuffer } from "./repl-buffer.js";
 import { handleCommand } from "./repl-commands.js";
 import { addAgentSource, createReplSession } from "./repl-session.js";
 
@@ -63,4 +62,21 @@ export async function runRepl(options: ReplOptions = {}): Promise<number> {
 
 function isTty(stream: NodeJS.ReadableStream): boolean {
   return "isTTY" in stream && stream.isTTY === true;
+}
+
+const AGENT_PATTERN = /^\s*(?:main\s+)?agent\b/;
+
+function isBalancedAgentBuffer(lines: string[]): boolean {
+  let depth = 0;
+  let sawAgent = false;
+  for (const line of lines) {
+    if (AGENT_PATTERN.test(line)) {
+      sawAgent = true;
+    }
+    for (const char of line) {
+      if (char === "{") depth += 1;
+      if (char === "}") depth -= 1;
+    }
+  }
+  return sawAgent && depth === 0;
 }

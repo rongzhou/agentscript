@@ -2,6 +2,19 @@
 
 All notable changes to AgentScript will be documented in this file.
 
+## 0.1.22 - 2026-05-16
+
+### Changed
+
+- Reorganized the AgentScript runtime internals into clearer value, statement, provider, and trace modules.
+- Split the optimizer host tool implementation into focused inspect, trial, specialize, graph, snapshot, and selection modules.
+- Moved npm and node import registry validation into the shared language layer.
+- Extracted optimizer CLI handling into its own command module and centralized built-in host tool provider assembly.
+
+### Fixed
+
+- Preserved `host://architect` and `host://optimizer` passthrough behavior in mock and dry-run tool providers after the host tool refactor.
+
 ## 0.1.21 - 2026-05-15
 
 ### Added

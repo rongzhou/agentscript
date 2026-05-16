@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
-import type { AgentSpecDraft } from "../../src/architect/spec/schema.js";
-import { parseAgentSpecDraft } from "../../src/architect/spec/schema.js";
+import type { AgentSpecDraft } from "../../src/architect/spec/types.js";
+import { asAgentSpecDraft } from "../../src/architect/spec/types.js";
 
 export const architectFixtures = [
   "fixtures/architect/docs-assistant.spec.json",
@@ -10,7 +10,7 @@ export const architectFixtures = [
 ];
 
 export function readFixture(path: string): AgentSpecDraft {
-  const parsed = parseAgentSpecDraft(JSON.parse(readFileSync(path, "utf8")));
+  const parsed = asAgentSpecDraft(JSON.parse(readFileSync(path, "utf8")));
   if (!parsed) throw new Error(`Fixture ${path} is not an AgentSpec draft`);
   return parsed;
 }

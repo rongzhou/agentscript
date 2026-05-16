@@ -1,10 +1,8 @@
-import type { AgentSpecDraft } from "../spec/schema.js";
+import type { AgentSpecDraft } from "../spec/types.js";
+import type { DiagnosticBase } from "../../language/diagnostic.js";
 
-export interface SpecDiagnostic {
-  severity: "error" | "warning";
-  code: string;
+export interface SpecDiagnostic extends DiagnosticBase {
   path: string;
-  message: string;
   suggested_fix?: string;
 }
 

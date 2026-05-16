@@ -1,5 +1,5 @@
 import { SUPPORTED_PATTERNS } from "../spec/types.js";
-import type { AgentSpecDraft } from "../spec/schema.js";
+import type { AgentSpecDraft } from "../spec/types.js";
 import { error, type SpecDiagnostic } from "./helpers.js";
 import { patternOf } from "./helpers.js";
 

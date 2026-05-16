@@ -1,5 +1,5 @@
 import type { AgentDecl, Budget, FuncDecl, Program, Stmt, UseOneOfCandidate, UseOneOfStmt } from "../ast/types.js";
-import { ANONYMOUS_MAIN_AGENT, ANONYMOUS_MAIN_FUNC } from "./anonymous.js";
+import { ANONYMOUS_MAIN_AGENT, ANONYMOUS_MAIN_FUNC } from "./entry.js";
 import { buildSiteId, type SiteIdContext } from "./site-id.js";
 import { getNodeSourcePath } from "./source-map.js";
 

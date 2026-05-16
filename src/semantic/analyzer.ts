@@ -1,6 +1,6 @@
 import type { AgentDecl, ConfigDecl, Expr, GenerateExpr, Program, SourceRange, Stmt } from "../ast/types.js";
 import { REQUIRED_GENERATE_CONFIG_KEYS } from "../language/config.js";
-import type { NpmRegistry } from "../providers/tools/npm-registry.js";
+import type { NpmRegistry } from "../language/npm-registry.js";
 import { createAgentScope, createFunctionScope, defineAgentFunctions } from "./agents.js";
 import { collectAssignmentDiagnostics } from "./assignment.js";
 import { collectCallDiagnostics } from "./calls.js";

@@ -1,14 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { parseAgentSpecDraft } from "../../src/architect/spec/schema.js";
+import { asAgentSpecDraft } from "../../src/architect/spec/types.js";
 import { validateSpec } from "../../src/architect/validator/index.js";
 import { architectFixtures, clone, readFixture } from "./helpers.js";
 
 describe("AgentSpec validator", () => {
   it("treats object values as drafts and rejects non-object roots", () => {
-    expect(parseAgentSpecDraft({})).toEqual({});
-    expect(parseAgentSpecDraft(null)).toBeNull();
-    expect(parseAgentSpecDraft([])).toBeNull();
-    expect(parseAgentSpecDraft("x")).toBeNull();
+    expect(asAgentSpecDraft({})).toEqual({});
+    expect(asAgentSpecDraft(null)).toBeNull();
+    expect(asAgentSpecDraft([])).toBeNull();
+    expect(asAgentSpecDraft("x")).toBeNull();
   });
 
   it("accepts all architect fixtures", () => {

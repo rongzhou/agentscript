@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { NpmToolProvider } from "../src/providers/tools/npm.js";
-import type { NpmPackageEntry, NpmRegistry } from "../src/providers/tools/npm-registry.js";
+import type { NpmPackageEntry, NpmRegistry } from "../src/language/npm-registry.js";
 
 function workspaceWithPackage(version = "1.2.3"): string {
   const workspace = mkdtempSync(join(tmpdir(), "agentscript-npm-tool-"));

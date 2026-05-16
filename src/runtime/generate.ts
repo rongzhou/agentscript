@@ -1,20 +1,12 @@
 import type { AgentDecl, Expr, GenerateExpr } from "../ast/types.js";
 import { buildContext, builtContextToJson, type BuiltContext } from "./context.js";
 import { RuntimeError } from "./errors.js";
-import { writeGenerateDebugPrompt } from "./generate-debug.js";
 import { parseGenerateOptions, type GenerateOptions } from "./generate-options.js";
-import {
-  appendGenerateRepair,
-  type GenerateRepair,
-  generateErrorMessage,
-  isRepairableGenerateError,
-  withGenerateRange,
-} from "./generate-repair.js";
 import { isLlmBinding } from "./guards.js";
-import { budgetToJson } from "./json.js";
+import { budgetToJson, sanitizeForJson } from "./json.js";
 import type { RuntimeScope } from "./scope.js";
 import { coerceValueToContract, validateValueAgainstContract } from "./contract.js";
-import { buildTraceEvent } from "./trace-event.js";
+import { buildTraceEvent } from "./trace.js";
 import {
   type ContextUse,
   type JsonObject,
@@ -259,4 +251,66 @@ export class GenerateRuntime {
       description,
     };
   }
+}
+
+interface GenerateRepair {
+  output?: RuntimeValue;
+  error: string;
+}
+
+function appendGenerateRepair(input: RuntimeValue, repair: GenerateRepair): RuntimeValue {
+  const message = [
+    "Previous generation failed.",
+    repair.output === undefined
+      ? undefined
+      : `Previous output:\n${JSON.stringify(sanitizeForJson(repair.output), null, 2)}`,
+    `Error:\n${repair.error}`,
+    "Return corrected JSON matching the requested schema only.",
+  ]
+    .filter(Boolean)
+    .join("\n\n");
+
+  if (typeof input === "string") {
+    return `${input}\n\n${message}`;
+  }
+  if (typeof input === "object" && input !== null && !Array.isArray(input)) {
+    return {
+      ...input,
+      repair: message,
+    };
+  }
+  return {
+    input,
+    repair: message,
+  };
+}
+
+function isRepairableGenerateError(error: unknown): boolean {
+  return error instanceof RuntimeError && /LLM provider did not return JSON/.test(error.message);
+}
+
+function generateErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
+function withGenerateRange(error: unknown, range: GenerateExpr["range"]): Error {
+  if (error instanceof RuntimeError) {
+    // If the error already carries a range, its message already includes the formatted location.
+    return error.range ? error : new RuntimeError(error.message, range);
+  }
+  return new RuntimeError(generateErrorMessage(error), range);
+}
+
+function writeGenerateDebugPrompt(agentName: string, attempt: number, builtContext: BuiltContext): void {
+  const parts = [
+    `--- AgentScript generate debug: ${agentName} attempt ${attempt} ---`,
+    "System:",
+    builtContext.system,
+    "Final user message:",
+    builtContext.finalUserMessage,
+    "Return schema:",
+    JSON.stringify(builtContext.returnSchema, null, 2),
+    "--- end AgentScript generate debug ---",
+  ];
+  console.error(parts.join("\n"));
 }

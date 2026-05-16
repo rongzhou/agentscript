@@ -3,7 +3,7 @@ import { sanitizeForJson } from "../../runtime/json.js";
 import type { RuntimeValue, ToolCallRequest, ToolProvider } from "../../runtime/types.js";
 import { analyzeSource as analyzeArchitectSource } from "../compiler/analyze.js";
 import { compileSpec as compileAgentSpec } from "../compiler/index.js";
-import { parseAgentSpecDraft } from "../spec/schema.js";
+import { asAgentSpecDraft } from "../spec/types.js";
 import { validateSpec } from "../validator/index.js";
 import { expectObject, readRequiredString, softError } from "../../providers/tools/shared.js";
 
@@ -26,14 +26,14 @@ export class ArchitectToolProvider implements ToolProvider {
 
   validateSpec(request: ToolCallRequest): RuntimeValue {
     const args = expectObject(request.args[0], "Architect.validateSpec");
-    const draft = parseAgentSpecDraft(args.spec);
+    const draft = asAgentSpecDraft(args.spec);
     if (!draft) return invalidSpecInput();
     return toRuntimeValue(validateSpec(draft));
   }
 
   compileSpec(request: ToolCallRequest): RuntimeValue {
     const args = expectObject(request.args[0], "Architect.compileSpec");
-    const draft = parseAgentSpecDraft(args.spec);
+    const draft = asAgentSpecDraft(args.spec);
     if (!draft) return invalidSpecInput();
     return toRuntimeValue(compileAgentSpec(draft));
   }

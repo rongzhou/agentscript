@@ -1,4 +1,17 @@
-import type { JsonValue, TraceEvent } from "./types.js";
+import { sanitizeForJson } from "./json.js";
+import type { JsonObject, JsonValue } from "./values.js";
+
+export interface TraceEvent {
+  kind: "use" | "generate" | "tool" | "input" | "agent" | "for" | "parallel_for" | "memory";
+  data: JsonObject;
+}
+
+export function buildTraceEvent(kind: TraceEvent["kind"], data: Record<string, unknown>): TraceEvent {
+  return {
+    kind,
+    data: sanitizeForJson(data) as JsonObject,
+  };
+}
 
 export function formatTrace(trace: TraceEvent[]): string {
   if (trace.length === 0) {
@@ -78,7 +91,7 @@ function isJsonObject(value: unknown): value is Record<string, JsonValue> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function isTraceEventArray(value: unknown): value is TraceEvent[] {
+export function isTraceEventArray(value: unknown): value is TraceEvent[] {
   return Array.isArray(value) && value.every(isTraceEvent);
 }
 

@@ -6,7 +6,7 @@ import { NPM_SCHEME } from "../../language/schemes.js";
 import { RuntimeError } from "../../runtime/errors.js";
 import type { RuntimeValue, ToolCallRequest, ToolProvider } from "../../runtime/types.js";
 import { invokeModuleMember } from "./module-tool.js";
-import { checkNpmImport, type NpmPackageEntry, type NpmRegistry } from "./npm-registry.js";
+import { checkNpmImport, type NpmPackageEntry, type NpmRegistry } from "../../language/npm-registry.js";
 
 export class NpmToolProvider implements ToolProvider {
   private readonly modules = new Map<string, unknown>();

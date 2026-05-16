@@ -3,7 +3,7 @@ import { isObject } from "../../runtime/guards.js";
 import { sanitizeForJson } from "../../runtime/json.js";
 import type { JsonObject, RuntimeValue } from "../../runtime/types.js";
 
-import { type Disposable, isDisposable } from "../../runtime/disposable.js";
+import { type Disposable, isDisposable } from "../../runtime/providers.js";
 import type { ToolProvider } from "../../runtime/types.js";
 
 export const DEFAULT_MAX_RESULTS = 100;

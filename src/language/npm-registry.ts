@@ -1,8 +1,6 @@
 import { builtinModules } from "node:module";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { RuntimeError } from "../../runtime/errors.js";
-import { expectPlainObject } from "./shared.js";
 
 export interface NpmRegistry {
   allow: {
@@ -37,7 +35,7 @@ export function loadNpmRegistry(workspaceRoot: string): NpmRegistry {
     parsed = JSON.parse(readFileSync(path, "utf8"));
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    throw new RuntimeError(`Invalid npm registry '${CONFIG_FILE}': ${message}`);
+    throw new Error(`Invalid npm registry '${CONFIG_FILE}': ${message}`);
   }
   return parseNpmRegistry(parsed, path);
 }
@@ -47,10 +45,10 @@ export function checkNpmImport(uri: string, registry: NpmRegistry): CheckedNpmIm
   const { packageName, subPath } = splitNpmTarget(target);
   const entry = registry.allow.npm.get(packageName);
   if (!entry) {
-    throw new RuntimeError(`Package '${packageName}' is not allowed by ${CONFIG_FILE}`);
+    throw new Error(`Package '${packageName}' is not allowed by ${CONFIG_FILE}`);
   }
   if (subPath && !entry.exports?.includes(subPath)) {
-    throw new RuntimeError(`Package '${packageName}' sub-path '${subPath}' is not allowed by ${CONFIG_FILE}`);
+    throw new Error(`Package '${packageName}' sub-path '${subPath}' is not allowed by ${CONFIG_FILE}`);
   }
   return { packageName, subPath, entry };
 }
@@ -58,29 +56,29 @@ export function checkNpmImport(uri: string, registry: NpmRegistry): CheckedNpmIm
 export function checkNodeImport(uri: string, registry: NpmRegistry): string {
   const moduleName = readNodeTarget(uri);
   if (!registry.allow.node.has(moduleName)) {
-    throw new RuntimeError(`Node module '${moduleName}' is not allowed by ${CONFIG_FILE}`);
+    throw new Error(`Node module '${moduleName}' is not allowed by ${CONFIG_FILE}`);
   }
   return moduleName;
 }
 
 function readNpmTarget(uri: string): string {
   if (!uri.startsWith("npm:")) {
-    throw new RuntimeError(`Expected npm: URI, got '${uri}'`);
+    throw new Error(`Expected npm: URI, got '${uri}'`);
   }
   const target = uri.slice("npm:".length);
   if (target.length === 0) {
-    throw new RuntimeError("npm: URI must include a package name");
+    throw new Error("npm: URI must include a package name");
   }
   return target;
 }
 
 function readNodeTarget(uri: string): string {
   if (!uri.startsWith("node:")) {
-    throw new RuntimeError(`Expected node: URI, got '${uri}'`);
+    throw new Error(`Expected node: URI, got '${uri}'`);
   }
   const moduleName = uri.slice("node:".length);
   if (moduleName.length === 0) {
-    throw new RuntimeError("node: URI must include a module name");
+    throw new Error("node: URI must include a module name");
   }
   return moduleName;
 }
@@ -102,14 +100,14 @@ function parseNpmRegistry(value: unknown, path: string): NpmRegistry {
 function parseNodeAllow(value: unknown, label: string): Set<string> {
   if (value === undefined) return new Set();
   if (!Array.isArray(value) || value.some((item) => typeof item !== "string" || item.length === 0)) {
-    throw new RuntimeError(`${label} must be a string array`);
+    throw new Error(`${label} must be a string array`);
   }
   for (const item of value) {
     if (item.startsWith("node:")) {
-      throw new RuntimeError(`${label} entries must omit the node: prefix`);
+      throw new Error(`${label} entries must omit the node: prefix`);
     }
     if (!NODE_BUILTINS.has(item)) {
-      throw new RuntimeError(`${label} contains unknown Node built-in module '${item}'`);
+      throw new Error(`${label} contains unknown Node built-in module '${item}'`);
     }
   }
   return new Set(value);
@@ -121,7 +119,7 @@ function parseNpmAllow(value: unknown, label: string): Map<string, NpmPackageEnt
   const entries = expectPlainObject(value, label);
   for (const [name, rawEntry] of Object.entries(entries)) {
     if (name.length === 0) {
-      throw new RuntimeError(`${label} package name must not be empty`);
+      throw new Error(`${label} package name must not be empty`);
     }
     const entry = expectPlainObject(rawEntry, `${label}.${name}`);
     result.set(name, parsePackageEntry(name, entry, `${label}.${name}`));
@@ -133,19 +131,19 @@ function parsePackageEntry(name: string, value: Record<string, unknown>, label: 
   const entry: NpmPackageEntry = { name };
   if (value.version !== undefined) {
     if (typeof value.version !== "string" || value.version.length === 0) {
-      throw new RuntimeError(`${label}.version must be string`);
+      throw new Error(`${label}.version must be string`);
     }
     entry.version = value.version;
   }
   if (value.exports !== undefined) {
     if (!Array.isArray(value.exports) || value.exports.some((item) => typeof item !== "string" || item.length === 0)) {
-      throw new RuntimeError(`${label}.exports must be a string array`);
+      throw new Error(`${label}.exports must be a string array`);
     }
     entry.exports = value.exports;
   }
   if (value.effectful !== undefined) {
     if (typeof value.effectful !== "boolean") {
-      throw new RuntimeError(`${label}.effectful must be boolean`);
+      throw new Error(`${label}.effectful must be boolean`);
     }
     entry.effectful = value.effectful;
   }
@@ -156,17 +154,24 @@ function splitNpmTarget(target: string): { packageName: string; subPath?: string
   if (target.startsWith("@")) {
     const parts = target.split("/");
     if (parts.length < 2 || !parts[0] || !parts[1]) {
-      throw new RuntimeError(`Invalid scoped npm package '${target}'`);
+      throw new Error(`Invalid scoped npm package '${target}'`);
     }
     return { packageName: `${parts[0]}/${parts[1]}`, subPath: parts.slice(2).join("/") || undefined };
   }
   const [packageName, ...rest] = target.split("/");
   if (!packageName) {
-    throw new RuntimeError(`Invalid npm package '${target}'`);
+    throw new Error(`Invalid npm package '${target}'`);
   }
   return { packageName, subPath: rest.join("/") || undefined };
 }
 
 function emptyRegistry(path: string | null): NpmRegistry {
   return { allow: { node: new Set(), npm: new Map() }, path };
+}
+
+function expectPlainObject(value: unknown, name: string): Record<string, unknown> {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    throw new Error(`${name} must be an object`);
+  }
+  return value as Record<string, unknown>;
 }

@@ -2,7 +2,7 @@ import { NODE_SCHEME, NPM_SCHEME } from "../../language/schemes.js";
 import { uriScheme } from "../../language/uri.js";
 import type { RuntimeValue, ToolCallRequest, ToolProvider } from "../../runtime/types.js";
 import { createDefaultToolProvider } from "../tools/host.js";
-import { checkNodeImport, checkNpmImport, loadNpmRegistry, type NpmRegistry } from "../tools/npm-registry.js";
+import { checkNodeImport, checkNpmImport, loadNpmRegistry, type NpmRegistry } from "../../language/npm-registry.js";
 
 class DryRunToolProvider implements ToolProvider {
   private readonly registry: NpmRegistry;
@@ -32,6 +32,9 @@ class DryRunToolProvider implements ToolProvider {
   }
 }
 
-export function createDryRunToolProvider(workspaceRoot = process.cwd()): ToolProvider {
-  return new DryRunToolProvider(workspaceRoot, createDefaultToolProvider(workspaceRoot));
+export function createDryRunToolProvider(
+  workspaceRoot = process.cwd(),
+  hostNamespaces: Record<string, ToolProvider> = {},
+): ToolProvider {
+  return new DryRunToolProvider(workspaceRoot, createDefaultToolProvider(workspaceRoot, hostNamespaces));
 }

@@ -3,7 +3,7 @@ import type { BindingKind } from "../language/bindings.js";
 import { defaultEntryAgent } from "../language/entry.js";
 import { NODE_SCHEME, NPM_SCHEME } from "../language/schemes.js";
 import { uriScheme } from "../language/uri.js";
-import { checkNodeImport, checkNpmImport, type NpmRegistry } from "../providers/tools/npm-registry.js";
+import { checkNodeImport, checkNpmImport, type NpmRegistry } from "../language/npm-registry.js";
 import { errorDiagnostic, type SemanticDiagnostic } from "./diagnostics.js";
 
 interface ProgramAnalyzeOptions {

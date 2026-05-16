@@ -1,12 +1,12 @@
-import { readFileSync, writeFileSync } from "node:fs";
-import { basename, dirname } from "node:path";
-import { mkdirSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { basename, dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { buildAgentScript } from "../architect/pipeline.js";
-import { parseAgentSpecDraft } from "../architect/spec/schema.js";
+import { asAgentSpecDraft } from "../architect/spec/types.js";
 import { validateSpec, type SpecDiagnostic, type ValidateResult } from "../architect/validator/index.js";
 import { MockLlmProvider } from "../providers/mock/llm.js";
 import { ProtocolLlmProvider } from "../providers/llm/protocol.js";
-import { createDefaultToolProvider } from "../providers/tools/host.js";
+import { createAgentScriptToolProvider } from "../host-tools.js";
 import { executeAgent } from "../runtime/interpreter.js";
 import { loadProgram } from "../runtime/loader.js";
 import { isObject } from "../runtime/guards.js";
@@ -38,9 +38,9 @@ export async function runArchitect(options: ArchitectCliOptions): Promise<number
 }
 
 async function runArchitectRequest(options: Extract<ArchitectCliOptions, { mode: "request" }>): Promise<number> {
-  const sourcePath = "examples/meta/architect.as";
+  const sourcePath = packagedArchitectSourcePath();
   const llmProvider: LlmProvider = options.mock ? new MockLlmProvider() : new ProtocolLlmProvider();
-  const toolProvider = createDefaultToolProvider(process.cwd());
+  const toolProvider = createAgentScriptToolProvider(process.cwd());
   const result = await executeAgent(
     loadProgram(sourcePath),
     {
@@ -70,6 +70,10 @@ async function runArchitectRequest(options: Extract<ArchitectCliOptions, { mode:
   return 1;
 }
 
+function packagedArchitectSourcePath(): string {
+  return join(dirname(fileURLToPath(import.meta.url)), "../../examples/meta/architect.as");
+}
+
 function readSpecFile(path: string) {
   let parsed: unknown;
   try {
@@ -77,7 +81,7 @@ function readSpecFile(path: string) {
   } catch (error) {
     throw new Error(`Failed to read AgentSpec '${path}': ${error instanceof Error ? error.message : String(error)}`);
   }
-  const draft = parseAgentSpecDraft(parsed);
+  const draft = asAgentSpecDraft(parsed);
   if (!draft) throw new Error(`AgentSpec '${path}' must contain a JSON object`);
   return draft;
 }

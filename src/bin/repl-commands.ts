@@ -1,7 +1,9 @@
 import { createInterface } from "node:readline/promises";
 import { executeAgent } from "../runtime/interpreter.js";
+import { loadNpmRegistry } from "../language/npm-registry.js";
 import { sanitizeForJson } from "../runtime/json.js";
 import { formatTrace } from "../runtime/trace.js";
+import { analyze, assertSemanticallyValid } from "../semantic/analyzer.js";
 import { formatSemanticDiagnostics } from "../semantic/diagnostics.js";
 import { createReadlineInputProvider, parseJsonObjectInput } from "./input.js";
 import {
@@ -14,7 +16,6 @@ import {
   type ReplSession,
   setMainAgent,
 } from "./repl-session.js";
-import { analyzeCliProgram, assertCliProgramSemanticallyValid } from "./semantic.js";
 
 type ReplReader = ReturnType<typeof createInterface>;
 
@@ -71,7 +72,7 @@ export async function handleCommand(commandLine: string, session: ReplSession, r
 
 function checkSession(session: ReplSession): boolean {
   const program = loadSessionProgram(session);
-  const result = analyzeCliProgram(program);
+  const result = analyze(program, cliAnalyzeOptions());
   if (result.diagnostics.length > 0) {
     console.error(formatSemanticDiagnostics(result.diagnostics));
   } else {
@@ -82,7 +83,7 @@ function checkSession(session: ReplSession): boolean {
 
 async function runSession(session: ReplSession, inputJson: string, reader: ReplReader): Promise<void> {
   const program = loadSessionProgram(session);
-  assertCliProgramSemanticallyValid(program);
+  assertSemanticallyValid(program, cliAnalyzeOptions());
   const input = inputJson.trim().length > 0 ? parseJsonObjectInput(inputJson, ":run input") : {};
   const result = await executeAgent(program, input, {
     inputProvider: createReadlineInputProvider(reader),
@@ -107,4 +108,8 @@ function printHelp(): void {
     ":exit",
   ];
   console.log(`Commands:\n${lines.join("\n")}`);
+}
+
+function cliAnalyzeOptions() {
+  return { npmRegistry: loadNpmRegistry(process.cwd()) };
 }

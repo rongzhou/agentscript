@@ -12,7 +12,7 @@ import {
 } from "../../language/schemes.js";
 import type { ToolProvider } from "../../runtime/types.js";
 import { RuntimeError } from "../../runtime/errors.js";
-import { OptimizerToolProvider, type OptimizerToolContext } from "../../toolchain/optimizer.js";
+import { OptimizerToolProvider, type OptimizerToolContext } from "../../optimizer/provider.js";
 import { ArchitectToolProvider } from "../../architect/tool/provider.js";
 import { EnvToolProvider } from "./env.js";
 import { FileToolProvider } from "./file.js";

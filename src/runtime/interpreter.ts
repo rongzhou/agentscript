@@ -19,7 +19,7 @@ import { MockLlmProvider } from "../providers/mock/llm.js";
 import { createDefaultToolProvider } from "../providers/tools/host.js";
 import { isDisposable } from "./disposable.js";
 import type { InputProvider, LlmProvider, MemoryProvider, RuntimeValue, ToolProvider, TraceEvent } from "./types.js";
-import type { OptimizerToolContext } from "../toolchain/optimizer.js";
+import type { OptimizerToolContext } from "../optimizer/provider.js";
 
 export interface ExecuteOptions {
   agentName?: string;

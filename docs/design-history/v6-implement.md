@@ -64,7 +64,7 @@ src/runtime/use-one-of.ts               // 共享 variant 选择逻辑
 src/language/site-id.ts                 // site_id builder + path 规范化
 src/language/source-map.ts              // AST node origin source metadata
 src/language/variant-sites.ts           // AST walker：收集 use-one-of site metadata
-src/toolchain/optimizer.ts            // provider 层 JSON 化包装
+src/optimizer/provider.ts             // provider 层 JSON 化包装
 ```
 
 实现要点：
@@ -179,7 +179,7 @@ src/semantic/use.ts           // 继续沿用已有诊断；不读取 ordinal
 新增模块：
 
 ```text
-src/toolchain/optimizer.ts                  // OptimizerToolProvider + 三原语实现
+src/optimizer/provider.ts                   // OptimizerToolProvider + 三原语实现
 src/providers/tools/host.ts                   // host://optimizer 薄路由
 ```
 
@@ -231,7 +231,7 @@ src/semantic/walker.ts / analyzer.ts    // parallel-for 内 effectful 列表包�
 新增 / 修改：
 
 ```text
-src/toolchain/optimizer.ts
+src/optimizer/provider.ts
 ```
 
 实现要点：
@@ -337,7 +337,7 @@ soft error 条件（返回 `{ok: false, code, ...}`）：
 新增 / 修改：
 
 ```text
-src/toolchain/optimizer.ts
+src/optimizer/provider.ts
 src/runtime/interpreter.ts          // 若需暴露一个纯 executeAgent-with-provider
                                     // variant 的内部 API
 ```
@@ -445,8 +445,8 @@ src/runtime/interpreter.ts          // 若需暴露一个纯 executeAgent-with-p
 新增模块：
 
 ```text
-src/toolchain/optimizer.ts              // Phase 1 可先单文件实现，后续再拆模块
-src/toolchain/source-rewrite.ts           // 纯源码文本操作（可选拆分）
+src/optimizer/provider.ts               // Phase 1 可先单文件实现，后续再拆模块
+src/optimizer/source-rewrite.ts         // 纯源码文本操作（可选拆分）
 ```
 
 ### 5.1 structure-preserving 模式
@@ -601,7 +601,7 @@ src/runtime/interpreter.ts              // ExecuteOptions 新增 budget / artifa
                                         // 向 tool provider 注入上下文
 src/runtime/types.ts                    // 类型导出
 src/providers/tools/host.ts             // HostToolProvider 构造支持 ctx
-src/toolchain/optimizer.ts            // 接收 ctx
+src/optimizer/provider.ts             // 接收 ctx
 ```
 
 实现要点：

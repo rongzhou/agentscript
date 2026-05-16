@@ -3,6 +3,8 @@
 This tutorial shows how to build an AgentScript meta-agent: an agent that helps
 create another AgentScript agent.
 
+<img src="/agentscript/img/tutorial-12.png" alt="Meta-Agent Architect tutorial overview" width="900" />
+
 The important constraint is that the model does **not** write `.as` source
 directly. Instead, it drafts an AgentSpec JSON object. AgentScript validates
 that spec, repairs it if needed, compiles it deterministically into source, and

@@ -16,5 +16,6 @@ speed with AgentScript.
 9. [Memory and Reflection](./memory-and-reflection.md) — Intermediate · ~15 min
 10. [Context Optimization with `use one of`](./context-optimization-with-use-one-of.md) — Advanced · ~10 min
 11. [Optimizer Toolchain](./optimizer-toolchain.md) — Advanced · ~20 min
+12. [Build a Meta-Agent with Architect](./meta-agent-architect.md) — Advanced · ~20 min
 
 **Runnable source**: All tutorial source files live in the [`tutorials/`](../../../tutorials/) directory.

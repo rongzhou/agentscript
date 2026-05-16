@@ -13,5 +13,6 @@
 9. [记忆与反思](./memory-and-reflection.md) — 中级 · ~15 分钟
 10. [使用 `use one of`（选择其一）优化上下文](./context-optimization-with-use-one-of.md) — 高级 · ~10 分钟
 11. [优化器工具链](./optimizer-toolchain.md) — 高级 · ~20 分钟
+12. [用 Architect 构建 Meta-Agent](./meta-agent-architect.md) — 高级 · ~20 分钟
 
 **可运行源码**：所有教程的完整源码位于 [`tutorials/`](../../../tutorials/) 目录。

@@ -18,6 +18,7 @@ const tutorialSidebar = [
       "tutorials/memory-and-reflection",
       "tutorials/context-optimization-with-use-one-of",
       "tutorials/optimizer-toolchain",
+      "tutorials/meta-agent-architect",
     ],
   },
 ];

@@ -1,5 +1,5 @@
-import { sanitizeForJson } from "./json.js";
-import type { JsonObject, JsonValue } from "./values.js";
+import { sanitizeForJson } from "../values/json.js";
+import type { JsonObject, JsonValue } from "../values/values.js";
 
 export interface TraceEvent {
   kind: "use" | "generate" | "tool" | "input" | "agent" | "for" | "parallel_for" | "memory";

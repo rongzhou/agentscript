@@ -2,8 +2,8 @@ import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { executeAgent } from "../src/runtime/interpreter.js";
-import { loadProgram, loadProgramSource } from "../src/runtime/loader.js";
+import { executeAgent } from "../src/runtime/core/interpreter.js";
+import { loadProgram, loadProgramSource } from "../src/runtime/program/loader.js";
 
 describe("loadProgram", () => {
   it("loads imported agents from another file", async () => {

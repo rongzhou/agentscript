@@ -1,14 +1,5 @@
-import type {
-  AgentBinding,
-  FunctionBinding,
-  LlmBinding,
-  MemoryBinding,
-  RuntimeObject,
-  RuntimeResource,
-  RuntimeValue,
-  ToolBinding,
-} from "./types.js";
-import { URI_BINDING_KINDS } from "../language/bindings.js";
+import type { AgentBinding, FunctionBinding, LlmBinding, MemoryBinding, RuntimeObject, RuntimeResource, RuntimeValue, ToolBinding } from "./values.js";
+import { URI_BINDING_KINDS } from "../../language/bindings.js";
 
 export function isToolBinding(value: RuntimeValue): value is ToolBinding {
   return isResourceBinding(value, "tool");

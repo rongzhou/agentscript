@@ -1,5 +1,6 @@
 import { NODE_SCHEME } from "../../language/schemes.js";
-import type { RuntimeValue, ToolCallRequest, ToolProvider } from "../../runtime/types.js";
+import type { RuntimeValue } from "../../runtime/values/values.js";
+import type { ToolCallRequest, ToolProvider } from "../../runtime/values/providers.js";
 import { invokeModuleMember } from "./module-tool.js";
 import { checkNodeImport, type NpmRegistry } from "../../language/npm-registry.js";
 

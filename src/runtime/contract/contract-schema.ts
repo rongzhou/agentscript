@@ -1,6 +1,6 @@
-import type { ContractObjectExpr, ContractTypeExpr } from "../ast/types.js";
-import { contractTypeJsonSchema } from "../language/contract.js";
-import type { JsonObject } from "./types.js";
+import type { ContractObjectExpr, ContractTypeExpr } from "../../ast/types.js";
+import { contractTypeJsonSchema } from "../../language/contract.js";
+import type { JsonObject } from "../values/values.js";
 
 export function contractToSchema(contract: ContractObjectExpr): JsonObject {
   const properties: JsonObject = {};

@@ -2,9 +2,9 @@ import { existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { executeAgent } from "../src/runtime/interpreter.js";
-import { loadProgram } from "../src/runtime/loader.js";
-import type { RuntimeValue } from "../src/runtime/types.js";
+import { executeAgent } from "../src/runtime/core/interpreter.js";
+import { loadProgram } from "../src/runtime/program/loader.js";
+import type { RuntimeValue } from "../src/runtime/values/values.js";
 
 describe("host://optimizer", () => {
   it("inspects use one of sites across imported agents", async () => {

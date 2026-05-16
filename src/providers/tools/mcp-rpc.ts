@@ -1,6 +1,6 @@
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
 import { createInterface, type Interface } from "node:readline";
-import { RuntimeError } from "../../runtime/errors.js";
+import { RuntimeError } from "../../runtime/core/errors.js";
 import type { McpServerConfig } from "./mcp-config.js";
 
 interface PendingRequest {

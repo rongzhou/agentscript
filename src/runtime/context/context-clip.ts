@@ -1,6 +1,6 @@
-import type { Budget } from "../ast/types.js";
-import { renderJson } from "./json.js";
-import type { JsonObject, JsonValue } from "./types.js";
+import type { Budget } from "../../ast/types.js";
+import { renderJson } from "../values/json.js";
+import type { JsonObject, JsonValue } from "../values/values.js";
 
 export function clipJson(
   value: JsonValue,

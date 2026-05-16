@@ -1,4 +1,5 @@
-import type { GenerateRequest, RuntimeValue } from "../../runtime/types.js";
+import type { RuntimeValue } from "../../runtime/values/values.js";
+import type { GenerateRequest } from "../../runtime/values/providers.js";
 
 export const OPENAI_PROTOCOL = "openai";
 export const ANTHROPIC_PROTOCOL = "anthropic";

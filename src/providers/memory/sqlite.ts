@@ -1,9 +1,10 @@
 import { existsSync, mkdirSync } from "node:fs";
 import { dirname } from "node:path";
 import { DatabaseSync } from "node:sqlite";
-import { RuntimeError } from "../../runtime/errors.js";
-import { isObject } from "../../runtime/guards.js";
-import type { MemoryAddRequest, MemoryQueryRequest, RuntimeObject, RuntimeValue } from "../../runtime/types.js";
+import { RuntimeError } from "../../runtime/core/errors.js";
+import { isObject } from "../../runtime/values/guards.js";
+import type { RuntimeObject, RuntimeValue } from "../../runtime/values/values.js";
+import type { MemoryAddRequest, MemoryQueryRequest } from "../../runtime/values/providers.js";
 import { createMemoryEnvelope, matchesQuery, readLimit, type MemoryEnvelope } from "./shared.js";
 
 interface SqliteMemoryRow {

@@ -1,8 +1,9 @@
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
-import { RuntimeError } from "../../runtime/errors.js";
-import { isObject } from "../../runtime/guards.js";
-import type { JsonObject, RuntimeValue, ToolCallRequest, ToolProvider } from "../../runtime/types.js";
+import { RuntimeError } from "../../runtime/core/errors.js";
+import { isObject } from "../../runtime/values/guards.js";
+import type { JsonObject, RuntimeValue } from "../../runtime/values/values.js";
+import type { ToolCallRequest, ToolProvider } from "../../runtime/values/providers.js";
 import type { WorkspaceContext } from "../shared/workspace.js";
 import { expectObject, readRequiredString } from "./shared.js";
 

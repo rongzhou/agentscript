@@ -1,6 +1,6 @@
 import { existsSync, lstatSync, readdirSync, realpathSync, statSync, type Stats } from "node:fs";
 import { isAbsolute, relative, resolve, sep } from "node:path";
-import { RuntimeError } from "../../runtime/errors.js";
+import { RuntimeError } from "../../runtime/core/errors.js";
 
 export interface WorkspaceContext {
   workspaceRoot: string;

@@ -1,9 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { parse } from "../src/parser/parser.js";
-import { buildContext } from "../src/runtime/context.js";
+import { buildContext } from "../src/runtime/context/context.js";
 import { ProtocolLlmProvider } from "../src/providers/llm/protocol.js";
 import { parseLlmUri } from "../src/providers/llm/uri.js";
-import type { GenerateRequest, JsonObject, LlmBinding } from "../src/runtime/types.js";
+import type { JsonObject, LlmBinding } from "../src/runtime/values/values.js";
+import type { GenerateRequest } from "../src/runtime/values/providers.js";
 
 const mainModel: LlmBinding = {
   __agentScriptResource: "llm",

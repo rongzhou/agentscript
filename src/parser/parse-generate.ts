@@ -1,6 +1,6 @@
 import type { Budget, GenerateExpr, GenerateOptionsExpr, ObjectProperty, SourceRange } from "../ast/types.js";
 import type { ExpressionParserHost } from "./host.js";
-import { parseContractObject } from "./contract.js";
+import { parseContractObject } from "./parse-contract.js";
 
 export function parseGenerate(parser: ExpressionParserHost): GenerateExpr {
   const start = parser.consume("generate").range.start;

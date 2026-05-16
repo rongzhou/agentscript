@@ -35,6 +35,7 @@ function toSpecDiagnostic(diagnostic: SemanticDiagnostic): SpecDiagnostic {
     severity: diagnostic.severity,
     code: diagnostic.code,
     path: `source:${diagnostic.range.start.line}:${diagnostic.range.start.column}`,
+    range: diagnostic.range,
     message: diagnostic.message,
   };
 }

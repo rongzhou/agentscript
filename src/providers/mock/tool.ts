@@ -1,7 +1,8 @@
 import { ENV_SCHEME, FILE_SCHEME } from "../../language/schemes.js";
 import { uriScheme } from "../../language/uri.js";
-import { sanitizeForJson } from "../../runtime/json.js";
-import type { RuntimeValue, ToolCallRequest, ToolProvider } from "../../runtime/types.js";
+import { sanitizeForJson } from "../../runtime/values/json.js";
+import type { RuntimeValue } from "../../runtime/values/values.js";
+import type { ToolCallRequest, ToolProvider } from "../../runtime/values/providers.js";
 
 export class MockToolProvider implements ToolProvider {
   async call(request: ToolCallRequest): Promise<RuntimeValue> {

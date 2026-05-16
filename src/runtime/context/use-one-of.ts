@@ -1,5 +1,5 @@
-import type { Budget, Expr } from "../ast/types.js";
-import { RuntimeError } from "./errors.js";
+import type { Budget, Expr } from "../../ast/types.js";
+import { RuntimeError } from "../core/errors.js";
 
 export interface RuntimeUseOneOfCandidate {
   name: string;

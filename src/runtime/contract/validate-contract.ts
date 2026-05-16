@@ -1,7 +1,7 @@
-import type { ContractObjectExpr, ContractTypeExpr, SourceRange } from "../ast/types.js";
-import { RuntimeError } from "./errors.js";
-import { isObject, isRuntimeResource } from "./guards.js";
-import type { RuntimeObject, RuntimeValue } from "./types.js";
+import type { ContractObjectExpr, ContractTypeExpr, SourceRange } from "../../ast/types.js";
+import { RuntimeError } from "../core/errors.js";
+import { isObject, isRuntimeResource } from "../values/guards.js";
+import type { RuntimeObject, RuntimeValue } from "../values/values.js";
 
 export function validateValueAgainstContract(
   value: RuntimeValue,

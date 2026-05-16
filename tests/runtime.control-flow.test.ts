@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { parse } from "../src/parser/parser.js";
-import { executeAgent } from "../src/runtime/interpreter.js";
+import { executeAgent } from "../src/runtime/core/interpreter.js";
 
 describe("runtime control-flow", () => {
   it("evaluates if else and boolean operators", async () => {

@@ -1,11 +1,12 @@
-import type { Stmt, UseOneOfStmt, UseStmt } from "../ast/types.js";
+import type { Stmt, UseOneOfStmt, UseStmt } from "../../ast/types.js";
 import { RuntimeError } from "./errors.js";
 import type { Evaluator } from "./evaluator.js";
-import { isObject } from "./guards.js";
-import { buildTraceEvent } from "./trace.js";
+import { isObject } from "../values/guards.js";
+import { buildTraceEvent } from "../trace/trace.js";
 import type { RuntimeScope } from "./scope.js";
 import { isTruthy } from "./truth.js";
-import type { RuntimeValue, TraceEvent } from "./types.js";
+import type { RuntimeValue } from "../values/values.js";
+import type { TraceEvent } from "../trace/trace.js";
 
 interface ReturnSignal {
   kind: "return";

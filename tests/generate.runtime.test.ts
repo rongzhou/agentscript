@@ -3,12 +3,14 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it, vi } from "vitest";
 import { parse } from "../src/parser/parser.js";
-import { GenerateRuntime } from "../src/runtime/generate.js";
-import { executeAgent } from "../src/runtime/interpreter.js";
-import { RuntimeError } from "../src/runtime/errors.js";
-import { RuntimeScope } from "../src/runtime/scope.js";
+import { GenerateRuntime } from "../src/runtime/generate/generate.js";
+import { executeAgent } from "../src/runtime/core/interpreter.js";
+import { RuntimeError } from "../src/runtime/core/errors.js";
+import { RuntimeScope } from "../src/runtime/core/scope.js";
 import type { GenerateExpr, Stmt } from "../src/ast/types.js";
-import type { GenerateRequest, RuntimeValue, TraceEvent } from "../src/runtime/types.js";
+import type { RuntimeValue } from "../src/runtime/values/values.js";
+import type { GenerateRequest } from "../src/runtime/values/providers.js";
+import type { TraceEvent } from "../src/runtime/trace/trace.js";
 
 describe("generate runtime", () => {
   it("passes generate budgets and visible use context to the LLM provider", async () => {

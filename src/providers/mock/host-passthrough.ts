@@ -1,5 +1,5 @@
 import { uriScheme } from "../../language/uri.js";
-import type { ToolCallRequest, ToolProvider } from "../../runtime/types.js";
+import type { ToolCallRequest, ToolProvider } from "../../runtime/values/providers.js";
 import { MockToolProvider } from "./tool.js";
 
 export class HostPassthroughToolProvider implements ToolProvider {

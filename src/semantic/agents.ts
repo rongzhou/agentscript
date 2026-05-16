@@ -1,7 +1,7 @@
 import type { AgentDecl, FuncDecl, Program } from "../ast/types.js";
 import { errorDiagnostic, type SemanticDiagnostic } from "./diagnostics.js";
 import type { ImportBindingDecl } from "./program.js";
-import { collectContractDiagnostics } from "./contract.js";
+import { collectContractDiagnostics } from "./check-contract.js";
 import { SemanticScope, functionBinding, isImportedBinding } from "./scope.js";
 
 export function createAgentScope(program: Program, importBindings: Map<string, ImportBindingDecl>): SemanticScope {

@@ -1,8 +1,8 @@
 import { createInterface } from "node:readline/promises";
-import { executeAgent } from "../runtime/interpreter.js";
+import { executeAgent } from "../runtime/core/interpreter.js";
 import { loadNpmRegistry } from "../language/npm-registry.js";
-import { sanitizeForJson } from "../runtime/json.js";
-import { formatTrace } from "../runtime/trace.js";
+import { sanitizeForJson } from "../runtime/values/json.js";
+import { formatTrace } from "../runtime/trace/trace.js";
 import { analyze, assertSemanticallyValid } from "../semantic/analyzer.js";
 import { formatSemanticDiagnostics } from "../semantic/diagnostics.js";
 import { createReadlineInputProvider, parseJsonObjectInput } from "./input.js";
@@ -13,75 +13,86 @@ import {
   loadSessionProgram,
   printAgents,
   resetSession,
+  type ReplPrinter,
   type ReplSession,
   setMainAgent,
 } from "./repl-session.js";
 
 type ReplReader = ReturnType<typeof createInterface>;
 
-export async function handleCommand(commandLine: string, session: ReplSession, reader: ReplReader): Promise<boolean> {
+export async function handleCommand(
+  commandLine: string,
+  session: ReplSession,
+  reader: ReplReader,
+  printer: ReplPrinter,
+): Promise<boolean> {
   const [command, ...rest] = commandLine.slice(1).trim().split(/\s+/);
   const args = rest.join(" ");
 
   switch (command) {
     case "help":
-      printHelp();
+      printHelp(printer);
       return true;
     case "exit":
     case "quit":
       return false;
     case "import":
-      addImport(session, args);
+      addImport(session, args, printer);
       return true;
     case "load":
-      loadFile(session, args);
+      loadFile(session, args, printer);
       return true;
     case "agents":
-      printAgents(session);
+      printAgents(session, printer);
       return true;
     case "main":
-      setMainAgent(session, args);
+      setMainAgent(session, args, printer);
       return true;
     case "show":
-      console.log(buildProgramSource(session));
+      printer.out(buildProgramSource(session));
       return true;
     case "parse":
-      console.log(JSON.stringify(loadSessionProgram(session), null, 2));
+      printer.out(JSON.stringify(loadSessionProgram(session), null, 2));
       return true;
     case "check":
-      checkSession(session);
+      checkSession(session, printer);
       return true;
     case "run":
-      await runSession(session, args, reader);
+      await runSession(session, args, reader, printer);
       return true;
     case "trace":
       if (args.length === 0) {
-        console.log(formatTrace(session.lastTrace));
+        printer.out(formatTrace(session.lastTrace));
       } else {
-        console.error("Usage: :trace");
+        printer.err("Usage: :trace");
       }
       return true;
     case "reset":
-      resetSession(session);
+      resetSession(session, printer);
       return true;
     default:
-      console.error(`Unknown command ':${command}'. Use :help.`);
+      printer.err(`Unknown command ':${command}'. Use :help.`);
       return true;
   }
 }
 
-function checkSession(session: ReplSession): boolean {
+function checkSession(session: ReplSession, printer: ReplPrinter): boolean {
   const program = loadSessionProgram(session);
   const result = analyze(program, cliAnalyzeOptions());
   if (result.diagnostics.length > 0) {
-    console.error(formatSemanticDiagnostics(result.diagnostics));
+    printer.err(formatSemanticDiagnostics(result.diagnostics));
   } else {
-    console.log("ok");
+    printer.out("ok");
   }
   return !result.diagnostics.some((diagnostic) => diagnostic.severity === "error");
 }
 
-async function runSession(session: ReplSession, inputJson: string, reader: ReplReader): Promise<void> {
+async function runSession(
+  session: ReplSession,
+  inputJson: string,
+  reader: ReplReader,
+  printer: ReplPrinter,
+): Promise<void> {
   const program = loadSessionProgram(session);
   assertSemanticallyValid(program, cliAnalyzeOptions());
   const input = inputJson.trim().length > 0 ? parseJsonObjectInput(inputJson, ":run input") : {};
@@ -90,10 +101,10 @@ async function runSession(session: ReplSession, inputJson: string, reader: ReplR
     sourcePath: session.sourcePath,
   });
   session.lastTrace = result.trace;
-  console.log(JSON.stringify({ value: sanitizeForJson(result.value), trace: result.trace }, null, 2));
+  printer.out(JSON.stringify({ value: sanitizeForJson(result.value), trace: result.trace }, null, 2));
 }
 
-function printHelp(): void {
+function printHelp(printer: ReplPrinter): void {
   const lines = [
     ":import <import statement>",
     ":load <file.as>",
@@ -107,7 +118,7 @@ function printHelp(): void {
     ":reset",
     ":exit",
   ];
-  console.log(`Commands:\n${lines.join("\n")}`);
+  printer.out(`Commands:\n${lines.join("\n")}`);
 }
 
 function cliAnalyzeOptions() {

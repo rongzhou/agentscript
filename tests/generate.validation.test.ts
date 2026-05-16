@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { parse } from "../src/parser/parser.js";
-import { executeAgent } from "../src/runtime/interpreter.js";
-import { RuntimeError } from "../src/runtime/errors.js";
-import type { RuntimeValue } from "../src/runtime/types.js";
+import { executeAgent } from "../src/runtime/core/interpreter.js";
+import { RuntimeError } from "../src/runtime/core/errors.js";
+import type { RuntimeValue } from "../src/runtime/values/values.js";
 
 describe("generate validation", () => {
   it("rejects invalid generate attempts", async () => {

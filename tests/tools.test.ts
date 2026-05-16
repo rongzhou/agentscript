@@ -3,11 +3,12 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { parse } from "../src/parser/parser.js";
-import { executeAgent } from "../src/runtime/interpreter.js";
+import { executeAgent } from "../src/runtime/core/interpreter.js";
 import { HostToolProvider } from "../src/providers/tools/host.js";
 import { SchemeToolProvider } from "../src/providers/tools/scheme.js";
 import { uriScheme } from "../src/language/uri.js";
-import type { RuntimeValue, ToolCallRequest, ToolProvider } from "../src/runtime/types.js";
+import type { RuntimeValue } from "../src/runtime/values/values.js";
+import type { ToolCallRequest, ToolProvider } from "../src/runtime/values/providers.js";
 
 const request: ToolCallRequest = {
   toolName: "Find",

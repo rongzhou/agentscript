@@ -1,10 +1,10 @@
 import { readFileSync } from "node:fs";
 import { extname, isAbsolute, resolve } from "node:path";
-import type { Program } from "../ast/types.js";
-import type { BindingKind } from "../language/bindings.js";
-import { FILE_SCHEME, schemePrefix } from "../language/schemes.js";
-import { RuntimeError } from "./errors.js";
-import type { RuntimeValue } from "./types.js";
+import type { Program } from "../../ast/types.js";
+import type { BindingKind } from "../../language/bindings.js";
+import { FILE_SCHEME, schemePrefix } from "../../language/schemes.js";
+import { RuntimeError } from "../core/errors.js";
+import type { RuntimeValue } from "../values/values.js";
 
 export interface RuntimeImportBinding {
   name: string;

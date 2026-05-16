@@ -1,5 +1,6 @@
-import { RuntimeError } from "../../runtime/errors.js";
-import type { GenerateRequest, JsonObject, JsonValue, RuntimeValue } from "../../runtime/types.js";
+import { RuntimeError } from "../../runtime/core/errors.js";
+import type { JsonObject, JsonValue, RuntimeValue } from "../../runtime/values/values.js";
+import type { GenerateRequest } from "../../runtime/values/providers.js";
 import type { FetchLike } from "./types.js";
 
 export function budgetToTokenLimit(request: GenerateRequest): number | undefined {

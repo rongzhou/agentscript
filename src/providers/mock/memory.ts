@@ -1,4 +1,5 @@
-import type { MemoryAddRequest, MemoryProvider, MemoryQueryRequest, RuntimeValue } from "../../runtime/types.js";
+import type { RuntimeValue } from "../../runtime/values/values.js";
+import type { MemoryAddRequest, MemoryProvider, MemoryQueryRequest } from "../../runtime/values/providers.js";
 
 export class MockMemoryProvider implements MemoryProvider {
   private readonly records: RuntimeValue[] = [];

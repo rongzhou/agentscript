@@ -1,7 +1,7 @@
-import type { Budget } from "../ast/types.js";
+import type { Budget } from "../../ast/types.js";
 import { isRuntimeResource } from "./guards.js";
 import { CONTINUE_JSON_WALK, mapJsonLikeValue, OMIT_JSON_VALUE, type JsonWalkPolicy } from "./json-walk.js";
-import type { JsonObject, JsonValue, RuntimeResource, RuntimeValue } from "./types.js";
+import type { JsonObject, JsonValue, RuntimeResource, RuntimeValue } from "./values.js";
 
 export function sanitizeForJson(value: unknown): JsonValue {
   const sanitized = mapJsonLikeValue(value, "value", SANITIZE_JSON_POLICY);

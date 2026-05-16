@@ -1,5 +1,6 @@
-import { RuntimeError } from "../../runtime/errors.js";
-import type { GenerateRequest, JsonObject, JsonValue, RuntimeValue } from "../../runtime/types.js";
+import { RuntimeError } from "../../runtime/core/errors.js";
+import type { JsonObject, JsonValue, RuntimeValue } from "../../runtime/values/values.js";
+import type { GenerateRequest } from "../../runtime/values/providers.js";
 import { budgetToTokenLimit, finalizeLlmResponse, postJson, requireApiKey } from "./shared.js";
 import type { FetchLike, ParsedLlmUri, ProtocolLlmProviderOptions } from "./types.js";
 

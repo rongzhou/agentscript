@@ -1,8 +1,8 @@
-import type { BinaryExpr, SourceRange } from "../ast/types.js";
+import type { BinaryExpr, SourceRange } from "../../ast/types.js";
 import { RuntimeError } from "./errors.js";
-import { runtimeValuesEqual } from "./json.js";
+import { runtimeValuesEqual } from "../values/json.js";
 import { isTruthy } from "./truth.js";
-import type { RuntimeValue } from "./types.js";
+import type { RuntimeValue } from "../values/values.js";
 
 export type BinaryOperator = BinaryExpr["operator"];
 

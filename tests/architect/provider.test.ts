@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { RuntimeError } from "../../src/runtime/errors.js";
-import type { RuntimeValue } from "../../src/runtime/types.js";
+import { RuntimeError } from "../../src/runtime/core/errors.js";
+import type { RuntimeValue } from "../../src/runtime/values/values.js";
 import { ArchitectToolProvider } from "../../src/architect/tool/provider.js";
 import { compileSpec } from "../../src/architect/compiler/index.js";
 import { readFixture } from "./helpers.js";
@@ -56,6 +56,10 @@ describe("host://architect provider", () => {
         expect.objectContaining({
           code: "UNKNOWN_IDENTIFIER",
           path: expect.stringMatching(/^source:\d+:\d+$/),
+          range: expect.objectContaining({
+            start: expect.objectContaining({ line: expect.any(Number), column: expect.any(Number) }),
+            end: expect.objectContaining({ line: expect.any(Number), column: expect.any(Number) }),
+          }),
         }),
       ],
     });

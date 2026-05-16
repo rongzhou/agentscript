@@ -3,8 +3,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { parse } from "../src/parser/parser.js";
-import { executeAgent } from "../src/runtime/interpreter.js";
-import type { GenerateRequest } from "../src/runtime/types.js";
+import { executeAgent } from "../src/runtime/core/interpreter.js";
+import type { GenerateRequest } from "../src/runtime/values/providers.js";
 
 describe("runtime context", () => {
   it("lets functions override scoped model and role configuration", async () => {

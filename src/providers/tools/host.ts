@@ -8,8 +8,8 @@ import {
   NPM_SCHEME,
   SHELL_SCHEME,
 } from "../../language/schemes.js";
-import type { ToolProvider } from "../../runtime/types.js";
-import { RuntimeError } from "../../runtime/errors.js";
+import type { ToolProvider } from "../../runtime/values/providers.js";
+import { RuntimeError } from "../../runtime/core/errors.js";
 import { EnvToolProvider } from "./env.js";
 import { FileToolProvider } from "./file.js";
 import { HttpToolProvider } from "./http.js";

@@ -13,10 +13,6 @@
       "types": "./dist/ast/types.d.ts",
       "import": "./dist/ast/types.js"
     },
-    "./runtime/types": {
-      "types": "./dist/runtime/types.d.ts",
-      "import": "./dist/runtime/types.js"
-    },
     "./architect/spec/types": {
       "types": "./dist/architect/spec/types.d.ts",
       "import": "./dist/architect/spec/types.js"

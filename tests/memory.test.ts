@@ -4,8 +4,9 @@ import { dirname, join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { parse } from "../src/parser/parser.js";
 import { HostMemoryProvider } from "../src/providers/memory/host.js";
-import { executeAgent } from "../src/runtime/interpreter.js";
-import type { MemoryProvider, RuntimeValue } from "../src/runtime/types.js";
+import { executeAgent } from "../src/runtime/core/interpreter.js";
+import type { RuntimeValue } from "../src/runtime/values/values.js";
+import type { MemoryProvider } from "../src/runtime/values/providers.js";
 
 describe("memory", () => {
   it("adds and queries file memory records with trace", async () => {

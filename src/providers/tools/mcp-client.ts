@@ -1,5 +1,5 @@
-import { RuntimeError } from "../../runtime/errors.js";
-import type { RuntimeValue } from "../../runtime/types.js";
+import { RuntimeError } from "../../runtime/core/errors.js";
+import type { RuntimeValue } from "../../runtime/values/values.js";
 import type { McpServerConfig } from "./mcp-config.js";
 import { StdioJsonRpcClient } from "./mcp-rpc.js";
 import { expectPlainObject } from "./shared.js";

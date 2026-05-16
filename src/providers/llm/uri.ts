@@ -1,6 +1,6 @@
 import { OLLAMA_PROTOCOL } from "./types.js";
-import { RuntimeError } from "../../runtime/errors.js";
-import type { LlmBinding } from "../../runtime/types.js";
+import { RuntimeError } from "../../runtime/core/errors.js";
+import type { LlmBinding } from "../../runtime/values/values.js";
 import { SUPPORTED_LLM_PROTOCOL_SET, type LlmProtocol, type ParsedLlmUri } from "./types.js";
 
 export function parseLlmUri(model: LlmBinding): ParsedLlmUri {

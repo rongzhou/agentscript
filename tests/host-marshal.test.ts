@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { fromHostValue, toJsonArg } from "../src/runtime/host-marshal.js";
+import { fromHostValue, toJsonArg } from "../src/runtime/values/host-marshal.js";
 
 const context = { label: "test" };
 

@@ -1,14 +1,14 @@
-import type { Budget, Expr, GenerateExpr } from "../ast/types.js";
+import type { Budget, Expr, GenerateExpr } from "../../ast/types.js";
 import {
   findGenerateInputProperty,
   readGenerateBooleanProperty,
   readGenerateNumberProperty,
   readGenerateThinkProperty,
   requiredGenerateOptionDefault,
-} from "../language/generate-options.js";
-import { RuntimeError } from "./errors.js";
-import type { RuntimeScope } from "./scope.js";
-import type { RuntimeValue } from "./types.js";
+} from "../../language/generate-options.js";
+import { RuntimeError } from "../core/errors.js";
+import type { RuntimeScope } from "../core/scope.js";
+import type { RuntimeValue } from "../values/values.js";
 
 interface GenerateOptionsHost {
   evaluate(expr: Expr, scope: RuntimeScope): Promise<RuntimeValue>;
@@ -24,7 +24,7 @@ export interface GenerateOptions {
   debug: boolean;
 }
 
-export async function parseGenerateOptions(
+export async function resolveGenerateOptions(
   expr: GenerateExpr,
   scope: RuntimeScope,
   host: GenerateOptionsHost,

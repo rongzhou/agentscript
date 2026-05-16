@@ -1,20 +1,15 @@
-import type { AgentDecl, Expr, GenerateExpr } from "../ast/types.js";
-import { buildContext, builtContextToJson, type BuiltContext } from "./context.js";
-import { RuntimeError } from "./errors.js";
-import { parseGenerateOptions, type GenerateOptions } from "./generate-options.js";
-import { isLlmBinding } from "./guards.js";
-import { budgetToJson, sanitizeForJson } from "./json.js";
-import type { RuntimeScope } from "./scope.js";
-import { coerceValueToContract, validateValueAgainstContract } from "./contract.js";
-import { buildTraceEvent } from "./trace.js";
-import {
-  type ContextUse,
-  type JsonObject,
-  type LlmBinding,
-  type LlmProvider,
-  type RuntimeValue,
-  type TraceEvent,
-} from "./types.js";
+import type { AgentDecl, Expr, GenerateExpr } from "../../ast/types.js";
+import { buildContext, builtContextToJson, type BuiltContext } from "../context/context.js";
+import { RuntimeError } from "../core/errors.js";
+import { resolveGenerateOptions, type GenerateOptions } from "./resolve-generate-options.js";
+import { isLlmBinding } from "../values/guards.js";
+import { budgetToJson, sanitizeForJson } from "../values/json.js";
+import type { RuntimeScope } from "../core/scope.js";
+import { coerceValueToContract, validateValueAgainstContract } from "../contract/validate-contract.js";
+import { buildTraceEvent } from "../trace/trace.js";
+import type { JsonObject, LlmBinding, RuntimeValue } from "../values/values.js";
+import type { ContextUse, LlmProvider } from "../values/providers.js";
+import type { TraceEvent } from "../trace/trace.js";
 
 interface GenerateRuntimeHost {
   currentAgent(): AgentDecl;
@@ -42,7 +37,7 @@ export class GenerateRuntime {
   ) {}
 
   async evaluateGenerate(expr: GenerateExpr, scope: RuntimeScope): Promise<RuntimeValue> {
-    const options = await parseGenerateOptions(expr, scope, this.host);
+    const options = await resolveGenerateOptions(expr, scope, this.host);
     const environment: GenerateAttemptEnvironment = {
       agent: this.host.currentAgent(),
       model: this.requireModel(scope, expr),

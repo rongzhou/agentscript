@@ -1,10 +1,11 @@
 import { resolve } from "node:path";
 import { FILE_SCHEME, SQLITE_SCHEME, schemePrefix } from "../../language/schemes.js";
 import { splitSqliteUri, uriScheme } from "../../language/uri.js";
-import { RuntimeError } from "../../runtime/errors.js";
-import { isObject } from "../../runtime/guards.js";
-import type { Disposable } from "../../runtime/providers.js";
-import type { MemoryAddRequest, MemoryProvider, MemoryQueryRequest, RuntimeValue } from "../../runtime/types.js";
+import { RuntimeError } from "../../runtime/core/errors.js";
+import { isObject } from "../../runtime/values/guards.js";
+import type { Disposable } from "../../runtime/values/providers.js";
+import type { RuntimeValue } from "../../runtime/values/values.js";
+import type { MemoryAddRequest, MemoryProvider, MemoryQueryRequest } from "../../runtime/values/providers.js";
 import { Workspace } from "../shared/workspace.js";
 import { FileMemoryBackend } from "./file.js";
 import { SqliteMemoryBackend, type SqliteMemoryTarget } from "./sqlite.js";

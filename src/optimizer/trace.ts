@@ -1,6 +1,7 @@
-import { isObject } from "../runtime/guards.js";
-import { isTraceEventArray } from "../runtime/trace.js";
-import type { JsonObject, TraceEvent } from "../runtime/types.js";
+import { isObject } from "../runtime/values/guards.js";
+import { isTraceEventArray } from "../runtime/trace/trace.js";
+import type { JsonObject } from "../runtime/values/values.js";
+import type { TraceEvent } from "../runtime/trace/trace.js";
 
 export function pickedVariants(trace: TraceEvent[]): JsonObject {
   const picked: JsonObject = {};

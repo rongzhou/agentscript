@@ -1,8 +1,8 @@
-import type { Budget, Expr, SourceRange } from "../ast/types.js";
-import { type BindingKind, MUTABLE_BINDING_KINDS } from "../language/bindings.js";
+import type { Budget, Expr, SourceRange } from "../../ast/types.js";
+import { type BindingKind, MUTABLE_BINDING_KINDS } from "../../language/bindings.js";
 import { RuntimeError } from "./errors.js";
-import type { RuntimeValue } from "./types.js";
-import type { RuntimeUseOneOfCandidate } from "./use-one-of.js";
+import type { RuntimeValue } from "../values/values.js";
+import type { RuntimeUseOneOfCandidate } from "../context/use-one-of.js";
 
 interface Binding {
   value: RuntimeValue;

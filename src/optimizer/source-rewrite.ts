@@ -4,8 +4,8 @@ import type { UseOneOfCandidate } from "../ast/types.js";
 import { formatExpressionSource } from "../ast/format.js";
 import { normalizeTargetPath } from "../language/site-id.js";
 import type { VariantSiteMetadata } from "../language/variant-sites.js";
-import type { JsonObject } from "../runtime/types.js";
-import type { LoadedProgramGraph, LoadedSourceFile } from "../runtime/loader.js";
+import type { JsonObject } from "../runtime/values/values.js";
+import type { LoadedProgramGraph, LoadedSourceFile } from "../runtime/program/loader.js";
 
 export interface RewriteResult {
   files: Map<string, string>;

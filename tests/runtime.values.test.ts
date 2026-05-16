@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { parse } from "../src/parser/parser.js";
-import { executeAgent } from "../src/runtime/interpreter.js";
-import { sanitizeForJson } from "../src/runtime/json.js";
-import type { RuntimeValue } from "../src/runtime/types.js";
+import { executeAgent } from "../src/runtime/core/interpreter.js";
+import { sanitizeForJson } from "../src/runtime/values/json.js";
+import type { RuntimeValue } from "../src/runtime/values/values.js";
 
 describe("runtime values", () => {
   it("serializes circular runtime values safely", async () => {

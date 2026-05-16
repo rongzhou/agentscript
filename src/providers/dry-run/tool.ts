@@ -1,6 +1,7 @@
 import { NODE_SCHEME, NPM_SCHEME } from "../../language/schemes.js";
 import { uriScheme } from "../../language/uri.js";
-import type { RuntimeValue, ToolCallRequest, ToolProvider } from "../../runtime/types.js";
+import type { RuntimeValue } from "../../runtime/values/values.js";
+import type { ToolCallRequest, ToolProvider } from "../../runtime/values/providers.js";
 import { createDefaultToolProvider } from "../tools/host.js";
 import { checkNodeImport, checkNpmImport, loadNpmRegistry, type NpmRegistry } from "../../language/npm-registry.js";
 

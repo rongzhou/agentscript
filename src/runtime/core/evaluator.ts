@@ -1,21 +1,17 @@
-import type { AgentDecl, CallExpr, ConfigDecl, Expr, MemberExpr, SourceRange, Stmt } from "../ast/types.js";
+import type { AgentDecl, CallExpr, ConfigDecl, Expr, MemberExpr, SourceRange, Stmt } from "../../ast/types.js";
 import { RuntimeError } from "./errors.js";
-import { GenerateRuntime } from "./generate.js";
-import { isAgentBinding, isFunctionBinding, isLlmBinding, isMemoryBinding, isObject, isToolBinding } from "./guards.js";
-import { sanitizeForJson } from "./json.js";
+import { GenerateRuntime } from "../generate/generate.js";
+import { isAgentBinding, isFunctionBinding, isLlmBinding, isMemoryBinding, isObject, isToolBinding } from "../values/guards.js";
+import { sanitizeForJson } from "../values/json.js";
 import { evaluateBinaryOperator } from "./operators.js";
-import { ResourceCallRuntime } from "./resource-calls.js";
+import { ResourceCallRuntime } from "../trace/resource-calls.js";
 import type { RuntimeScope } from "./scope.js";
 import { isTruthy } from "./truth.js";
-import { evaluateParallelFor } from "./parallel-for.js";
-import { pickUseOneOfCandidate } from "./use-one-of.js";
-import {
-  type ContextUse,
-  type MemoryProvider,
-  type RuntimeValue,
-  type ToolProvider,
-  type TraceEvent,
-} from "./types.js";
+import { evaluateParallelFor } from "./evaluate-parallel-for.js";
+import { pickUseOneOfCandidate } from "../context/use-one-of.js";
+import type { RuntimeValue } from "../values/values.js";
+import type { ContextUse, MemoryProvider, ToolProvider } from "../values/providers.js";
+import type { TraceEvent } from "../trace/trace.js";
 
 export interface EvaluatorHost {
   callAgent(agentName: string, functionName: string, args: RuntimeValue[], range: SourceRange): Promise<RuntimeValue>;

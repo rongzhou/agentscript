@@ -1,10 +1,10 @@
 import { readFileSync } from "node:fs";
 import { dirname, isAbsolute, resolve } from "node:path";
-import type { AgentDecl, ImportDecl, NodeBase, Program } from "../ast/types.js";
-import { FILE_SCHEME, SQLITE_SCHEME, schemePrefix } from "../language/schemes.js";
-import { parse } from "../parser/parser.js";
-import { splitSqliteUri } from "../language/uri.js";
-import { setAgentSourcePath, setNodeSourcePath } from "../language/source-map.js";
+import type { AgentDecl, ImportDecl, NodeBase, Program } from "../../ast/types.js";
+import { FILE_SCHEME, SQLITE_SCHEME, schemePrefix } from "../../language/schemes.js";
+import { parse } from "../../parser/parser.js";
+import { splitSqliteUri } from "../../language/uri.js";
+import { setAgentSourcePath, setNodeSourcePath } from "../../language/source-map.js";
 
 export interface LoadProgramOptions {
   sourcePath?: string;
@@ -137,6 +137,8 @@ function parseSource(source: string, sourcePath: string | undefined): Program {
   return program;
 }
 
+// Source paths are attached after parsing so later analysis can build stable
+// multi-file site ids without forcing source metadata into every AST constructor.
 function annotateSourcePath(node: unknown, sourcePath: string, seen = new WeakSet<object>()): void {
   if (!node || typeof node !== "object" || seen.has(node)) return;
   seen.add(node);

@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { MockToolProvider } from "../src/providers/mock/tool.js";
 import { parse } from "../src/parser/parser.js";
-import { executeAgent } from "../src/runtime/interpreter.js";
-import { formatTrace } from "../src/runtime/trace.js";
-import type { ToolProvider } from "../src/runtime/types.js";
+import { executeAgent } from "../src/runtime/core/interpreter.js";
+import { formatTrace } from "../src/runtime/trace/trace.js";
+import type { ToolProvider } from "../src/runtime/values/providers.js";
 
 describe("runtime calls", () => {
   it("calls another agent with AgentName(input) shorthand", async () => {

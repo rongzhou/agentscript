@@ -1,8 +1,10 @@
 import type { AgentSpecDraft } from "../spec/types.js";
+import type { SourceRange } from "../../ast/types.js";
 import type { DiagnosticBase } from "../../language/diagnostic.js";
 
 export interface SpecDiagnostic extends DiagnosticBase {
   path: string;
+  range?: SourceRange;
   suggested_fix?: string;
 }
 

@@ -7,11 +7,11 @@ import { validateSpec, type SpecDiagnostic, type ValidateResult } from "../archi
 import { MockLlmProvider } from "../providers/mock/llm.js";
 import { ProtocolLlmProvider } from "../providers/llm/protocol.js";
 import { createAgentScriptToolProvider } from "../host-tools.js";
-import { executeAgent } from "../runtime/interpreter.js";
-import { loadProgram } from "../runtime/loader.js";
-import { isObject } from "../runtime/guards.js";
-import { sanitizeForJson } from "../runtime/json.js";
-import type { LlmProvider } from "../runtime/types.js";
+import { executeAgent } from "../runtime/core/interpreter.js";
+import { loadProgram } from "../runtime/program/loader.js";
+import { isObject } from "../runtime/values/guards.js";
+import { sanitizeForJson } from "../runtime/values/json.js";
+import type { LlmProvider } from "../runtime/values/providers.js";
 import type { ArchitectCliOptions } from "./args.js";
 
 export async function runArchitect(options: ArchitectCliOptions): Promise<number> {

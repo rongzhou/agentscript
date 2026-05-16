@@ -1,4 +1,4 @@
-import type { LlmProvider, MemoryProvider, ToolProvider } from "../runtime/types.js";
+import type { LlmProvider, MemoryProvider, ToolProvider } from "../runtime/values/providers.js";
 
 export interface OptimizerToolContext {
   workspaceRoot: string;

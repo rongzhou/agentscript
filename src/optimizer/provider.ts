@@ -1,9 +1,11 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { normalizeTargetPath } from "../language/site-id.js";
-import { RuntimeError } from "../runtime/errors.js";
-import { sanitizeForJson } from "../runtime/json.js";
-import type { RuntimeValue, ToolCallRequest, ToolProvider, TraceEvent } from "../runtime/types.js";
+import { RuntimeError } from "../runtime/core/errors.js";
+import { sanitizeForJson } from "../runtime/values/json.js";
+import type { RuntimeValue } from "../runtime/values/values.js";
+import type { ToolCallRequest, ToolProvider } from "../runtime/values/providers.js";
+import type { TraceEvent } from "../runtime/trace/trace.js";
 import { softError } from "../providers/tools/shared.js";
 import type { OptimizerToolContext } from "./context.js";
 import { inspectOptimizer } from "./inspect.js";

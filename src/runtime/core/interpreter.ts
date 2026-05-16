@@ -1,24 +1,26 @@
-import type { AgentDecl, CallExpr, FuncDecl, Program, UseOneOfStmt, UseStmt } from "../ast/types.js";
-import { formatExpressionSource } from "../ast/format.js";
+import type { AgentDecl, CallExpr, FuncDecl, Program, UseOneOfStmt, UseStmt } from "../../ast/types.js";
+import { formatExpressionSource } from "../../ast/format.js";
 import { createAgentMap, findFunction, requireAgent, resolveEntryAgent, resolveMainFunction } from "./agents.js";
 import { Evaluator } from "./evaluator.js";
 import { RuntimeError } from "./errors.js";
-import { GenerateRuntime } from "./generate.js";
-import { budgetToJson } from "./json.js";
-import { prepareEntryInput } from "./input.js";
-import { createRuntimeImportBindings, type RuntimeImportBinding } from "./imports.js";
-import { createRuntimePaths } from "./paths.js";
+import { GenerateRuntime } from "../generate/generate.js";
+import { budgetToJson } from "../values/json.js";
+import { prepareEntryInput } from "../contract/input.js";
+import { createRuntimeImportBindings, type RuntimeImportBinding } from "../program/imports.js";
+import { createRuntimePaths } from "../program/paths.js";
 import { RuntimeScope } from "./scope.js";
-import { collectVariantSites, type VariantSiteMetadata } from "../language/variant-sites.js";
-import { buildSiteId } from "../language/site-id.js";
-import { buildTraceEvent } from "./trace.js";
+import { collectVariantSites, type VariantSiteMetadata } from "../../language/variant-sites.js";
+import { buildSiteId } from "../../language/site-id.js";
+import { buildTraceEvent } from "../trace/trace.js";
 import { evaluateBlockFinalValue, executeBlock, type StatementHost } from "./statements.js";
-import { pickUseOneOfCandidate } from "./use-one-of.js";
-import { createDefaultMemoryProvider } from "../providers/memory/host.js";
-import { MockLlmProvider } from "../providers/mock/llm.js";
-import { createAgentScriptToolProvider } from "../host-tools.js";
-import { isDisposable } from "./providers.js";
-import type { InputProvider, LlmProvider, MemoryProvider, RuntimeValue, ToolProvider, TraceEvent } from "./types.js";
+import { pickUseOneOfCandidate } from "../context/use-one-of.js";
+import { createDefaultMemoryProvider } from "../../providers/memory/host.js";
+import { MockLlmProvider } from "../../providers/mock/llm.js";
+import { createAgentScriptToolProvider } from "../../host-tools.js";
+import { type Disposable, isDisposable } from "../values/providers.js";
+import type { RuntimeValue } from "../values/values.js";
+import type { InputProvider, LlmProvider, MemoryProvider, ToolProvider } from "../values/providers.js";
+import type { TraceEvent } from "../trace/trace.js";
 
 interface OptimizerExecutionOptions {
   artifactsDir?: string;
@@ -131,12 +133,17 @@ class Interpreter {
       return await this.callFunction(this.agent, entry.name, args, entry.range, this.trace);
     } finally {
       if (this.options.closeProviders !== false) {
-        await Promise.all([
-          closeIfDisposable(this.toolProvider),
-          closeIfDisposable(this.memoryProvider),
-          closeIfDisposable(this.llmProvider),
-          closeIfDisposable(this.inputProvider),
-        ]);
+        const providers = [this.toolProvider, this.memoryProvider, this.llmProvider, this.inputProvider];
+        await Promise.all(
+          providers.filter(isDisposable).map(async (provider: Disposable) => {
+            try {
+              await provider.close();
+            } catch (error) {
+              const message = error instanceof Error ? error.message : String(error);
+              console.error(`AgentScript cleanup failed: ${message}`);
+            }
+          }),
+        );
       }
     }
   }
@@ -177,6 +184,9 @@ class Interpreter {
 
   private createEvaluator(trace: TraceEvent[], activeAgent: AgentDecl, activeFunction?: FuncDecl): Evaluator {
     let evaluator: Evaluator;
+    // GenerateRuntime delegates expression and context evaluation back to the Evaluator
+    // that owns this execution scope, so these callbacks close over the evaluator
+    // assigned immediately below.
     const generateRuntime = new GenerateRuntime(this.llmProvider, trace, {
       currentAgent: () => activeAgent,
       evaluate: (expr, scope) => evaluator.evaluate(expr, scope),
@@ -353,14 +363,4 @@ function readMaxCallDepth(value: number | undefined): number {
     throw new RuntimeError("maxCallDepth must be a positive integer");
   }
   return value;
-}
-
-async function closeIfDisposable(value: unknown): Promise<void> {
-  if (!isDisposable(value)) return;
-  try {
-    await value.close();
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    console.error(`AgentScript cleanup failed: ${message}`);
-  }
 }

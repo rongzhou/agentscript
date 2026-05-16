@@ -1,9 +1,10 @@
-import { formatExpressionSource } from "../ast/format.js";
-import type { ParallelForExpr } from "../ast/types.js";
+import { formatExpressionSource } from "../../ast/format.js";
+import type { ParallelForExpr } from "../../ast/types.js";
 import { RuntimeError } from "./errors.js";
 import type { RuntimeScope } from "./scope.js";
-import { buildTraceEvent } from "./trace.js";
-import type { RuntimeValue, TraceEvent } from "./types.js";
+import { buildTraceEvent } from "../trace/trace.js";
+import type { RuntimeValue } from "../values/values.js";
+import type { TraceEvent } from "../trace/trace.js";
 
 interface ParallelForRuntimeHost {
   concurrency(): number;

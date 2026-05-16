@@ -13,8 +13,8 @@ import {
 import { normalizeTargetPath } from "../language/site-id.js";
 import { uriScheme } from "../language/uri.js";
 import { collectVariantSites, type VariantSiteMetadata } from "../language/variant-sites.js";
-import { loadProgramGraph, type LoadedProgramGraph } from "../runtime/loader.js";
-import type { JsonValue } from "../runtime/types.js";
+import { loadProgramGraph, type LoadedProgramGraph } from "../runtime/program/loader.js";
+import type { JsonValue } from "../runtime/values/values.js";
 import { analyze } from "../semantic/analyzer.js";
 import type { SemanticDiagnostic } from "../semantic/diagnostics.js";
 import type { OptimizerToolContext } from "./context.js";

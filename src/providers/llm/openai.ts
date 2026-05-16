@@ -1,4 +1,5 @@
-import type { GenerateRequest, JsonObject, RuntimeValue } from "../../runtime/types.js";
+import type { JsonObject, RuntimeValue } from "../../runtime/values/values.js";
+import type { GenerateRequest } from "../../runtime/values/providers.js";
 import { budgetToTokenLimit, finalizeLlmResponse, postJson, readPath, requireApiKey } from "./shared.js";
 import type { FetchLike, ParsedLlmUri, ProtocolLlmProviderOptions } from "./types.js";
 

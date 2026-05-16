@@ -1,5 +1,5 @@
-import type { AgentDecl, FuncDecl, Program, SourceRange } from "../ast/types.js";
-import { defaultEntryAgent, findMainFunction } from "../language/entry.js";
+import type { AgentDecl, FuncDecl, Program, SourceRange } from "../../ast/types.js";
+import { defaultEntryAgent, findMainFunction } from "../../language/entry.js";
 import { RuntimeError } from "./errors.js";
 
 export function createAgentMap(program: Program): Map<string, AgentDecl> {

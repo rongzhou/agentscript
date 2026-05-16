@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { parse } from "../src/parser/parser.js";
-import { executeAgent } from "../src/runtime/interpreter.js";
+import { executeAgent } from "../src/runtime/core/interpreter.js";
 import { analyze } from "../src/semantic/analyzer.js";
 
 const echoServer = fileURLToPath(new URL("./fixtures/mcp-echo-server.mjs", import.meta.url));

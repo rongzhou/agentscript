@@ -1,5 +1,5 @@
-import type { Budget } from "../ast/types.js";
-import type { BuiltContext } from "./context.js";
+import type { Budget } from "../../ast/types.js";
+import type { BuiltContext } from "../context/context.js";
 import type { JsonObject, LlmBinding, RuntimeValue } from "./values.js";
 
 export interface Disposable {

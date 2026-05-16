@@ -1,4 +1,4 @@
-import type { RuntimeValue } from "./types.js";
+import type { RuntimeValue } from "../values/values.js";
 
 export function isTruthy(value: RuntimeValue): boolean {
   if (value === null) return false;

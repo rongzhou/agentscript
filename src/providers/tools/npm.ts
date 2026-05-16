@@ -3,8 +3,9 @@ import { createRequire } from "node:module";
 import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { NPM_SCHEME } from "../../language/schemes.js";
-import { RuntimeError } from "../../runtime/errors.js";
-import type { RuntimeValue, ToolCallRequest, ToolProvider } from "../../runtime/types.js";
+import { RuntimeError } from "../../runtime/core/errors.js";
+import type { RuntimeValue } from "../../runtime/values/values.js";
+import type { ToolCallRequest, ToolProvider } from "../../runtime/values/providers.js";
 import { invokeModuleMember } from "./module-tool.js";
 import { checkNpmImport, type NpmPackageEntry, type NpmRegistry } from "../../language/npm-registry.js";
 

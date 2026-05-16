@@ -371,12 +371,11 @@ For a hands-on walkthrough, see
 
 ## TypeScript API
 
-The package root exports only stable runtime entry points. Public types that are
-useful for embedding are exposed through explicit subpaths:
+The package root exports stable runtime entry points and embedding types:
 
 ```ts
 import { executeAgent, parse } from "@rong/agentscript";
-import type { ExecuteOptions, RuntimeValue } from "@rong/agentscript/runtime/types";
+import type { ExecuteOptions, RuntimeValue } from "@rong/agentscript";
 import type { Program } from "@rong/agentscript/ast/types";
 import type { AgentSpec } from "@rong/agentscript/architect/spec/types";
 ```

@@ -1,8 +1,8 @@
 import { randomUUID } from "node:crypto";
-import { RuntimeError } from "../../runtime/errors.js";
-import { isObject } from "../../runtime/guards.js";
-import { runtimeValuesEqual, sanitizeForJson } from "../../runtime/json.js";
-import type { RuntimeObject, RuntimeValue } from "../../runtime/types.js";
+import { RuntimeError } from "../../runtime/core/errors.js";
+import { isObject } from "../../runtime/values/guards.js";
+import { runtimeValuesEqual, sanitizeForJson } from "../../runtime/values/json.js";
+import type { RuntimeObject, RuntimeValue } from "../../runtime/values/values.js";
 
 export interface MemoryEnvelope extends RuntimeObject {
   id: string;

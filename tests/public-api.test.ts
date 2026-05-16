@@ -40,7 +40,6 @@ describe("public package API", () => {
       "./architect/spec/types",
       "./ast/types",
       "./package.json",
-      "./runtime/types",
     ]);
   });
 });

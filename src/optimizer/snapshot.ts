@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import type { LoadedProgramGraph } from "../runtime/loader.js";
+import type { LoadedProgramGraph } from "../runtime/program/loader.js";
 import type { OptimizerToolContext } from "./context.js";
 import { normalizePath } from "./graph.js";
 

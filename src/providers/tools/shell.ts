@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
-import { RuntimeError } from "../../runtime/errors.js";
-import type { JsonObject, RuntimeValue, ToolCallRequest, ToolProvider } from "../../runtime/types.js";
+import { RuntimeError } from "../../runtime/core/errors.js";
+import type { JsonObject, RuntimeValue } from "../../runtime/values/values.js";
+import type { ToolCallRequest, ToolProvider } from "../../runtime/values/providers.js";
 import type { WorkspaceContext } from "../shared/workspace.js";
 import {
   DEFAULT_MAX_RESULTS,

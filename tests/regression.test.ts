@@ -2,8 +2,8 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { executeAgent } from "../src/runtime/interpreter.js";
-import { loadProgram, loadProgramSource } from "../src/runtime/loader.js";
+import { executeAgent } from "../src/runtime/core/interpreter.js";
+import { loadProgram, loadProgramSource } from "../src/runtime/program/loader.js";
 import { MockToolProvider } from "../src/providers/mock/tool.js";
 import { analyze } from "../src/semantic/analyzer.js";
 

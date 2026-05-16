@@ -350,11 +350,11 @@ main agent NodeCryptoExample {
 
 ## TypeScript API
 
-Package 根入口只导出稳定的 runtime 入口。嵌入场景需要的 public type 通过明确的 subpath 暴露：
+Package 根入口导出稳定的 runtime 入口和嵌入场景常用类型：
 
 ```ts
 import { executeAgent, parse } from "@rong/agentscript";
-import type { ExecuteOptions, RuntimeValue } from "@rong/agentscript/runtime/types";
+import type { ExecuteOptions, RuntimeValue } from "@rong/agentscript";
 import type { Program } from "@rong/agentscript/ast/types";
 ```
 

@@ -1,8 +1,9 @@
-import type { Budget, ContractObjectExpr } from "../ast/types.js";
+import type { Budget, ContractObjectExpr } from "../../ast/types.js";
 import { clipJson } from "./context-clip.js";
-import { contractToSchema } from "./contract-schema.js";
-import { budgetToJson, renderJson, sanitizeForJson } from "./json.js";
-import type { ContextUse, JsonObject, JsonValue, LlmBinding, RuntimeValue } from "./types.js";
+import { contractToSchema } from "../contract/contract-schema.js";
+import { budgetToJson, renderJson, sanitizeForJson } from "../values/json.js";
+import type { JsonObject, JsonValue, LlmBinding, RuntimeValue } from "../values/values.js";
+import type { ContextUse } from "../values/providers.js";
 
 export interface ContextBuildInput {
   agentName: string;

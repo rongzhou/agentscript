@@ -1,4 +1,5 @@
-import type { InputProvider, InputRequest, JsonObject, RuntimeValue } from "../runtime/types.js";
+import type { JsonObject, RuntimeValue } from "../runtime/values/values.js";
+import type { InputProvider, InputRequest } from "../runtime/values/providers.js";
 
 export function parseJsonObjectInput(source: string, label: string): JsonObject {
   const value = JSON.parse(source) as RuntimeValue;

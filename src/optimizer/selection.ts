@@ -1,8 +1,8 @@
-import { findFunction, requireAgent, resolveEntryAgent, resolveMainFunction } from "../runtime/agents.js";
-import { RuntimeError } from "../runtime/errors.js";
-import { isObject } from "../runtime/guards.js";
-import type { LoadedProgramGraph } from "../runtime/loader.js";
-import type { RuntimeValue } from "../runtime/types.js";
+import { findFunction, requireAgent, resolveEntryAgent, resolveMainFunction } from "../runtime/core/agents.js";
+import { RuntimeError } from "../runtime/core/errors.js";
+import { isObject } from "../runtime/values/guards.js";
+import type { LoadedProgramGraph } from "../runtime/program/loader.js";
+import type { RuntimeValue } from "../runtime/values/values.js";
 import type { VariantSiteMetadata } from "../language/variant-sites.js";
 
 export interface OptimizerEntry {

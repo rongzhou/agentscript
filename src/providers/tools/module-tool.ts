@@ -1,7 +1,8 @@
 import type { NODE_SCHEME, NPM_SCHEME } from "../../language/schemes.js";
-import { RuntimeError } from "../../runtime/errors.js";
-import { fromHostValue, toJsonArg } from "../../runtime/host-marshal.js";
-import type { RuntimeValue, ToolCallRequest } from "../../runtime/types.js";
+import { RuntimeError } from "../../runtime/core/errors.js";
+import { fromHostValue, toJsonArg } from "../../runtime/values/host-marshal.js";
+import type { RuntimeValue } from "../../runtime/values/values.js";
+import type { ToolCallRequest } from "../../runtime/values/providers.js";
 
 export interface ModuleInvokeInfo {
   schemeLabel: typeof NPM_SCHEME | typeof NODE_SCHEME;

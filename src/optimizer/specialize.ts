@@ -1,6 +1,7 @@
-import { RuntimeError } from "../runtime/errors.js";
-import { sanitizeForJson } from "../runtime/json.js";
-import type { RuntimeValue, ToolCallRequest } from "../runtime/types.js";
+import { RuntimeError } from "../runtime/core/errors.js";
+import { sanitizeForJson } from "../runtime/values/json.js";
+import type { RuntimeValue } from "../runtime/values/values.js";
+import type { ToolCallRequest } from "../runtime/values/providers.js";
 import { expectObject, readOptionalString, readRequiredString } from "../providers/tools/shared.js";
 import type { OptimizerToolContext } from "./context.js";
 import { collectGraphSites, normalizePath, readTargetGraph, semanticErrors } from "./graph.js";

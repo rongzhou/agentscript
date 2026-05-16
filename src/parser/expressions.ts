@@ -11,7 +11,7 @@ import type {
   StringExpr,
   UnaryExpr,
 } from "../ast/types.js";
-import { parseGenerate } from "./generate.js";
+import { parseGenerate } from "./parse-generate.js";
 import type { ExpressionParserHost } from "./host.js";
 import { parseList, parseObject } from "./literals.js";
 import { parseParallelFor } from "./control-flow.js";

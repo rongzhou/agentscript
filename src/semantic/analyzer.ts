@@ -6,10 +6,10 @@ import { collectAssignmentDiagnostics } from "./assignment.js";
 import { collectCallDiagnostics } from "./calls.js";
 import { collectConfigDiagnostics, collectGenerateRequiredConfigDiagnostics } from "./config.js";
 import { SemanticError, errorDiagnostic, type SemanticDiagnostic, type SemanticResult } from "./diagnostics.js";
-import { collectGenerateOptionDiagnostics } from "./generate.js";
-import { collectParallelForDiagnostics } from "./parallel-for.js";
+import { collectGenerateOptionDiagnostics } from "./check-generate.js";
+import { collectParallelForDiagnostics } from "./check-parallel-for.js";
 import { collectProgramDeclarations, type ImportBindingDecl } from "./program.js";
-import { collectContractDiagnostics } from "./contract.js";
+import { collectContractDiagnostics } from "./check-contract.js";
 import { SemanticScope } from "./scope.js";
 import {
   collectAgentUseDiagnostics,

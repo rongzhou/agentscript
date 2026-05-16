@@ -1,5 +1,6 @@
-import { RuntimeError } from "../../runtime/errors.js";
-import type { RuntimeValue, ToolCallRequest, ToolProvider } from "../../runtime/types.js";
+import { RuntimeError } from "../../runtime/core/errors.js";
+import type { RuntimeValue } from "../../runtime/values/values.js";
+import type { ToolCallRequest, ToolProvider } from "../../runtime/values/providers.js";
 import { expectObject, readRequiredString } from "./shared.js";
 
 export class EnvToolProvider implements ToolProvider {

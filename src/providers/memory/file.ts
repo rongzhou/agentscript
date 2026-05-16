@@ -1,7 +1,8 @@
 import { appendFileSync, existsSync, mkdirSync, readFileSync } from "node:fs";
 import { dirname } from "node:path";
-import { RuntimeError } from "../../runtime/errors.js";
-import type { MemoryAddRequest, MemoryQueryRequest, RuntimeObject, RuntimeValue } from "../../runtime/types.js";
+import { RuntimeError } from "../../runtime/core/errors.js";
+import type { RuntimeObject, RuntimeValue } from "../../runtime/values/values.js";
+import type { MemoryAddRequest, MemoryQueryRequest } from "../../runtime/values/providers.js";
 import { createMemoryEnvelope, isMemoryEnvelope, matchesQuery, readLimit, type MemoryEnvelope } from "./shared.js";
 
 export class FileMemoryBackend {

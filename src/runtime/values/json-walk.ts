@@ -1,4 +1,4 @@
-import type { JsonPrimitive, JsonValue } from "./types.js";
+import type { JsonPrimitive, JsonValue } from "./values.js";
 
 export const CONTINUE_JSON_WALK = Symbol("continue_json_walk");
 export const OMIT_JSON_VALUE = Symbol("omit_json_value");

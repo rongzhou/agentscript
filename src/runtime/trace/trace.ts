@@ -1,16 +1,114 @@
 import { sanitizeForJson } from "../values/json.js";
 import type { JsonObject, JsonValue } from "../values/values.js";
 
-export interface TraceEvent {
-  kind: "use" | "generate" | "tool" | "input" | "agent" | "for" | "parallel_for" | "memory";
-  data: JsonObject;
+interface UseTraceData {
+  source: JsonValue;
+  label: JsonValue;
+  budget: JsonValue;
+  variant?: JsonObject;
 }
 
-export function buildTraceEvent(kind: TraceEvent["kind"], data: Record<string, unknown>): TraceEvent {
+interface GenerateTraceData {
+  instruction: JsonValue;
+  config: JsonObject;
+  attempts: number;
+  context: JsonValue;
+  validation: JsonObject | null;
+  result: JsonValue;
+  ok: boolean;
+  error: string | null;
+  errors: JsonValue[];
+}
+
+interface ToolTraceData {
+  tool: string;
+  method: string;
+  scheme: string;
+  uri: string;
+  args: JsonValue;
+  result: JsonValue;
+  effects: JsonValue;
+}
+
+interface InputTraceData {
+  path: string;
+  value: JsonValue;
+}
+
+interface AgentTraceData {
+  agent: string;
+  function: string;
+  args: JsonValue;
+  result: JsonValue;
+  trace: TraceEvent[];
+}
+
+interface ForTraceData {
+  item: string;
+  index: number;
+  value: JsonValue;
+  max_items: number;
+  total_items: number;
+  truncated: boolean;
+}
+
+interface ParallelForIterationTraceData {
+  index: number;
+  input: JsonValue;
+  ok: boolean;
+  trace: TraceEvent[];
+  result?: JsonValue;
+  error?: string;
+}
+
+interface ParallelForTraceData {
+  item: string;
+  source: string;
+  max_items: number;
+  items: number;
+  concurrency: number;
+  duration_ms: number;
+  ok: boolean;
+  failed_indices?: JsonValue;
+  iterations: ParallelForIterationTraceData[];
+}
+
+interface MemoryTraceData {
+  memory: string;
+  operation: string;
+  uri: string;
+  args: JsonValue;
+  result: JsonValue;
+  count: number | null;
+  id?: string | null;
+  record?: JsonValue;
+}
+
+interface TraceDataByKind {
+  use: UseTraceData;
+  generate: GenerateTraceData;
+  tool: ToolTraceData;
+  input: InputTraceData;
+  agent: AgentTraceData;
+  for: ForTraceData;
+  parallel_for: ParallelForTraceData;
+  memory: MemoryTraceData;
+}
+
+type TraceEventInputByKind = { [K in keyof TraceDataByKind]: Record<string, unknown> };
+
+export type TraceEvent = {
+  [K in keyof TraceDataByKind]: { kind: K; data: TraceDataByKind[K] };
+}[keyof TraceDataByKind];
+
+export function buildTraceEvent<K extends keyof TraceDataByKind>(
+  kind: K,
+  data: TraceEventInputByKind[K],
+): Extract<TraceEvent, { kind: K }> {
   return {
     kind,
-    data: sanitizeForJson(data) as JsonObject,
-  };
+    data: sanitizeForJson(data) as unknown as TraceDataByKind[K],
+  } as unknown as Extract<TraceEvent, { kind: K }>;
 }
 
 export function formatTrace(trace: TraceEvent[]): string {
@@ -54,7 +152,7 @@ function formatEvent(event: TraceEvent, depth: number): string {
   }
 }
 
-function formatParallelFor(event: TraceEvent, depth: number): string {
+function formatParallelFor(event: Extract<TraceEvent, { kind: "parallel_for" }>, depth: number): string {
   const indent = "  ".repeat(depth);
   const header = `${indent}- parallel for ${readString(event.data.item)} (${summarize(event.data.items)} items, concurrency ${summarize(event.data.concurrency)})`;
   const iterations = Array.isArray(event.data.iterations) ? event.data.iterations : [];

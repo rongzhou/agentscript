@@ -20,14 +20,22 @@ const BINDING_KIND_SPECS: Record<BindingKind, BindingKindSpec> = {
   memory: { imported: true, mutable: false, prompt: false, hasUri: true },
 };
 
-const IMPORT_RESOURCE_KINDS = new Set<ImportResourceKind>(["tool", "llm", "file", "agent", "memory"]);
 export const IMPORTED_BINDING_KINDS = bindingKindsWhere((spec) => spec.imported);
 export const MUTABLE_BINDING_KINDS = bindingKindsWhere((spec) => spec.mutable);
 export const NON_CONTEXT_BINDING_KINDS = bindingKindsWhere((spec) => !spec.prompt);
 export const URI_BINDING_KINDS = bindingKindsWhere((spec) => spec.hasUri);
 
 export function isImportResourceKind(value: string): value is ImportResourceKind {
-  return IMPORT_RESOURCE_KINDS.has(value as ImportResourceKind);
+  switch (value) {
+    case "tool":
+    case "llm":
+    case "file":
+    case "agent":
+    case "memory":
+      return true;
+    default:
+      return false;
+  }
 }
 
 function bindingKindsWhere(predicate: (spec: BindingKindSpec) => boolean): Set<BindingKind> {

@@ -8,17 +8,6 @@ export type AgentSpecType =
   | "list[boolean]"
   | "list[json]";
 
-export const AGENT_SPEC_TYPES = new Set<AgentSpecType>([
-  "string",
-  "number",
-  "boolean",
-  "json",
-  "list[string]",
-  "list[number]",
-  "list[boolean]",
-  "list[json]",
-]);
-
 export function isAgentSpecType(value: string): value is AgentSpecType {
   switch (value) {
     case "string":
@@ -35,11 +24,15 @@ export function isAgentSpecType(value: string): value is AgentSpecType {
   }
 }
 
-export const SUPPORTED_PATTERNS = new Set(["linear", "react"]);
+export type AgentSpecPattern = "linear" | "react";
+
+export function isAgentSpecPattern(value: string): value is AgentSpecPattern {
+  return value === "linear" || value === "react";
+}
 
 export interface AgentSpecBase {
   version: "0.1";
-  pattern?: "linear" | "react";
+  pattern?: AgentSpecPattern;
   agent: AgentSpecAgent;
   model: AgentSpecModel;
   inputs: Record<string, AgentSpecInput>;
@@ -63,7 +56,20 @@ export interface ReactAgentSpec extends AgentSpecBase {
 
 export type AgentSpec = LinearAgentSpec | ReactAgentSpec;
 
-export type AgentSpecDraft = Record<string, unknown>;
+export interface AgentSpecDraft extends Record<string, unknown> {
+  version?: unknown;
+  pattern?: unknown;
+  agent?: unknown;
+  model?: unknown;
+  inputs?: unknown;
+  tools?: unknown;
+  locals?: unknown;
+  model_context?: unknown;
+  generation?: unknown;
+  output?: unknown;
+  assumptions?: unknown;
+  react?: unknown;
+}
 
 export function asAgentSpecDraft(value: unknown): AgentSpecDraft | null {
   return typeof value === "object" && value !== null && !Array.isArray(value) ? (value as AgentSpecDraft) : null;

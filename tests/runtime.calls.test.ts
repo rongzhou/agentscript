@@ -61,6 +61,8 @@ describe("runtime calls", () => {
         function: "search",
       },
     });
+    expect(result.trace[0]!.kind).toBe("agent");
+    if (result.trace[0]!.kind !== "agent") throw new Error("expected agent trace event");
     expect(result.trace[0]!.data.trace).toEqual([
       expect.objectContaining({
         kind: "tool",
@@ -143,7 +145,9 @@ describe("runtime calls", () => {
       kind: "parallel_for",
       data: { ok: true },
     });
-    const iterations = parallelFor.data.iterations as Array<{
+    expect(parallelFor.kind).toBe("parallel_for");
+    if (parallelFor.kind !== "parallel_for") throw new Error("expected parallel_for trace event");
+    const iterations = parallelFor.data.iterations as unknown as Array<{
       index: number;
       input: { query: string; delay: number };
       result: { query: string };

@@ -1,14 +1,14 @@
 import type { AgentDecl, ConfigDecl, Expr, GenerateExpr, Program, SourceRange, Stmt } from "../ast/types.js";
 import { REQUIRED_GENERATE_CONFIG_KEYS } from "../language/config.js";
 import type { NpmRegistry } from "../language/npm-registry.js";
-import { createAgentScope, createFunctionScope, defineAgentFunctions } from "./agents.js";
-import { collectAssignmentDiagnostics } from "./assignment.js";
-import { collectCallDiagnostics } from "./calls.js";
-import { collectConfigDiagnostics, collectGenerateRequiredConfigDiagnostics } from "./config.js";
+import { createAgentScope, createFunctionScope, defineAgentFunctions } from "./check-agents.js";
+import { collectAssignmentDiagnostics } from "./check-assignment.js";
+import { collectCallDiagnostics } from "./check-calls.js";
+import { collectConfigDiagnostics, collectGenerateRequiredConfigDiagnostics } from "./check-config.js";
 import { SemanticError, errorDiagnostic, type SemanticDiagnostic, type SemanticResult } from "./diagnostics.js";
 import { collectGenerateOptionDiagnostics } from "./check-generate.js";
 import { collectParallelForDiagnostics } from "./check-parallel-for.js";
-import { collectProgramDeclarations, type ImportBindingDecl } from "./program.js";
+import { collectProgramDeclarations, type ImportBindingDecl } from "./check-program.js";
 import { collectContractDiagnostics } from "./check-contract.js";
 import { SemanticScope } from "./scope.js";
 import {
@@ -16,7 +16,7 @@ import {
   collectAgentUseOneOfDiagnostics,
   collectFunctionUseDiagnostics,
   collectFunctionUseOneOfDiagnostics,
-} from "./use.js";
+} from "./check-use.js";
 import { walkExpressionInScope, walkStatementsInScope } from "./walker.js";
 
 export interface AnalyzeOptions {

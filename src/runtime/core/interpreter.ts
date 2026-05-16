@@ -22,6 +22,10 @@ import type { RuntimeValue } from "../values/values.js";
 import type { InputProvider, LlmProvider, MemoryProvider, ToolProvider } from "../values/providers.js";
 import type { TraceEvent } from "../trace/trace.js";
 
+export interface RuntimeLogger {
+  error(message: string): void;
+}
+
 interface OptimizerHookOptions {
   artifactsDir?: string;
   budget?: BudgetCounter;
@@ -43,6 +47,7 @@ export interface ExecuteOptions {
   workspaceRoot?: string;
   variant?: Record<string, string>;
   closeProviders?: boolean;
+  logger?: RuntimeLogger;
   optimizer?: OptimizerHookOptions;
 }
 
@@ -135,7 +140,7 @@ class Interpreter {
             await provider?.close?.();
           } catch (error) {
             const message = error instanceof Error ? error.message : String(error);
-            console.error(`AgentScript cleanup failed: ${message}`);
+            this.options.logger?.error(`AgentScript cleanup failed: ${message}`);
           }
         }
       }
@@ -181,11 +186,16 @@ class Interpreter {
     // GenerateRuntime delegates expression and context evaluation back to the Evaluator
     // that owns this execution scope, so these callbacks close over the evaluator
     // assigned immediately below.
-    const generateRuntime = new GenerateRuntime(this.llmProvider, trace, {
-      currentAgent: () => activeAgent,
-      evaluate: (expr, scope) => evaluator.evaluate(expr, scope),
-      resolveContextUses: (scope) => evaluator.resolveContextUses(scope),
-    });
+    const generateRuntime = new GenerateRuntime(
+      this.llmProvider,
+      trace,
+      {
+        currentAgent: () => activeAgent,
+        evaluate: (expr, scope) => evaluator.evaluate(expr, scope),
+        resolveContextUses: (scope) => evaluator.resolveContextUses(scope),
+      },
+      this.options.logger,
+    );
     evaluator = new Evaluator(
       this.toolProvider,
       this.memoryProvider,

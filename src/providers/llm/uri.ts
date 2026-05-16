@@ -1,7 +1,7 @@
 import { OLLAMA_PROTOCOL } from "./types.js";
 import { RuntimeError } from "../../runtime/core/errors.js";
 import type { LlmBinding } from "../../runtime/values/values.js";
-import { SUPPORTED_LLM_PROTOCOL_SET, type LlmProtocol, type ParsedLlmUri } from "./types.js";
+import { isLlmProtocol, type LlmProtocol, type ParsedLlmUri } from "./types.js";
 
 export function parseLlmUri(model: LlmBinding): ParsedLlmUri {
   if (!model.uri.includes("://")) {
@@ -52,5 +52,5 @@ function defaultBaseUrlScheme(hostname: string): "http" | "https" {
 }
 
 function isSupportedLlmProtocol(value: string): value is LlmProtocol {
-  return SUPPORTED_LLM_PROTOCOL_SET.has(value as LlmProtocol);
+  return isLlmProtocol(value);
 }

@@ -138,6 +138,7 @@ describe("generate runtime", () => {
               return buildValueFromRequestContract(request);
             },
           },
+          logger: console,
         },
       );
       expect(debug).toHaveBeenCalledWith(expect.stringContaining("AgentScript generate debug"));

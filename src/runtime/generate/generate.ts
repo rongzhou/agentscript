@@ -9,6 +9,7 @@ import { coerceValueToContract, validateValueAgainstContract } from "../contract
 import { buildTraceEvent } from "../trace/trace.js";
 import type { JsonObject, LlmBinding, RuntimeValue } from "../values/values.js";
 import type { ContextUse, LlmProvider } from "../values/providers.js";
+import type { RuntimeLogger } from "../core/interpreter.js";
 import type { TraceEvent } from "../trace/trace.js";
 
 interface GenerateRuntimeHost {
@@ -29,6 +30,7 @@ export class GenerateRuntime {
     private readonly llmProvider: LlmProvider,
     private readonly trace: TraceEvent[],
     private readonly host: GenerateRuntimeHost,
+    private readonly logger?: RuntimeLogger,
   ) {}
 
   async evaluateGenerate(expr: GenerateExpr, scope: RuntimeScope): Promise<RuntimeValue> {
@@ -46,7 +48,7 @@ export class GenerateRuntime {
     for (let attempt = 1; attempt <= options.attempts; attempt += 1) {
       const builtContext = this.buildAttemptContext(expr, options, environment, repair);
       if (options.debug) {
-        writeGenerateDebugPrompt(environment.agent.name, attempt, builtContext);
+        writeGenerateDebugPrompt(environment.agent.name, attempt, builtContext, this.logger);
       }
 
       let rawResult: RuntimeValue;
@@ -245,7 +247,13 @@ function withGenerateRange(error: unknown, range: GenerateExpr["range"]): Error 
   return new RuntimeError(generateErrorMessage(error), range);
 }
 
-function writeGenerateDebugPrompt(agentName: string, attempt: number, builtContext: BuiltContext): void {
+function writeGenerateDebugPrompt(
+  agentName: string,
+  attempt: number,
+  builtContext: BuiltContext,
+  logger: RuntimeLogger | undefined,
+): void {
+  if (!logger) return;
   const parts = [
     `--- AgentScript generate debug: ${agentName} attempt ${attempt} ---`,
     "System:",
@@ -256,5 +264,5 @@ function writeGenerateDebugPrompt(agentName: string, attempt: number, builtConte
     JSON.stringify(builtContext.returnSchema, null, 2),
     "--- end AgentScript generate debug ---",
   ];
-  console.error(parts.join("\n"));
+  logger.error(parts.join("\n"));
 }

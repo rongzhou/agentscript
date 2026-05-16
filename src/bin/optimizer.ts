@@ -47,6 +47,7 @@ export async function runOptimizer(options: CliOptions): Promise<number> {
     memoryProvider,
     sourcePath: options.file,
     workspaceRoot: process.cwd(),
+    logger: console,
     optimizer: {
       artifactsDir: runDir,
       budget,

@@ -1,12 +1,11 @@
-import { isObject } from "../runtime/values/guards.js";
-import { isTraceEventArray } from "../runtime/trace/trace.js";
 import type { JsonObject } from "../runtime/values/values.js";
 import type { TraceEvent } from "../runtime/trace/trace.js";
 
 export function pickedVariants(trace: TraceEvent[]): JsonObject {
   const picked: JsonObject = {};
   for (const event of flattenTrace(trace)) {
-    const variant = isObject(event.data.variant) ? event.data.variant : undefined;
+    if (event.kind !== "use") continue;
+    const variant = event.data.variant;
     if (!variant || typeof variant.site_id !== "string" || typeof variant.picked !== "string") continue;
     picked[variant.site_id] = {
       variant: variant.picked,
@@ -25,14 +24,12 @@ function flattenTrace(trace: TraceEvent[]): TraceEvent[] {
   const events: TraceEvent[] = [];
   for (const event of trace) {
     events.push(event);
-    const nested = event.data.trace;
-    if (isTraceEventArray(nested)) events.push(...flattenTrace(nested));
-    const iterations = event.data.iterations;
-    if (Array.isArray(iterations)) {
-      for (const iteration of iterations) {
-        if (isObject(iteration) && isTraceEventArray(iteration.trace)) {
-          events.push(...flattenTrace(iteration.trace));
-        }
+    if (event.kind === "agent") {
+      events.push(...flattenTrace(event.data.trace));
+    }
+    if (event.kind === "parallel_for") {
+      for (const iteration of event.data.iterations) {
+        events.push(...flattenTrace(iteration.trace));
       }
     }
   }

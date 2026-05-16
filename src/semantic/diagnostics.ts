@@ -1,6 +1,6 @@
 import type { SourceRange } from "../ast/types.js";
 import type { DiagnosticBase } from "../language/diagnostic.js";
-import { formatSourceRangeStart } from "../ast/location.js";
+import { formatSourceRangeStart } from "../ast/format.js";
 
 export interface SemanticDiagnostic extends DiagnosticBase {
   range: SourceRange;

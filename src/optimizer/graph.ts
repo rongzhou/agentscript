@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { resolve } from "node:path";
 import {
   ENV_SCHEME,
@@ -35,6 +36,19 @@ export function normalizePath(path: string | undefined, ctx: OptimizerToolContex
   return normalizeTargetPath(path, ctx.workspaceRoot);
 }
 
+export function snapshotGraph(graph: LoadedProgramGraph, ctx: OptimizerToolContext): string {
+  const hash = createHash("sha256");
+  for (const file of [...graph.files].sort((a, b) =>
+    normalizePath(a.path, ctx).localeCompare(normalizePath(b.path, ctx)),
+  )) {
+    hash.update(normalizePath(file.path, ctx));
+    hash.update("\0");
+    hash.update(normalizeSource(file.source));
+    hash.update("\0");
+  }
+  return `sha256:${hash.digest("hex")}`;
+}
+
 export function targetEffectfulToolWarnings(graph: LoadedProgramGraph): JsonValue[] {
   const warnings: JsonValue[] = [];
   const seen = new Set<string>();
@@ -62,6 +76,13 @@ function isTargetEffectfulToolImport(uri: string): boolean {
     }
   }
   return EFFECTFUL_TARGET_TOOL_SCHEMES.has(scheme);
+}
+
+function normalizeSource(source: string): string {
+  return source
+    .replace(/^\uFEFF/, "")
+    .replace(/\r\n?/g, "\n")
+    .normalize("NFC");
 }
 
 const EFFECTFUL_TARGET_TOOL_SCHEMES = new Set([

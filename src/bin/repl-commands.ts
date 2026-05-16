@@ -49,10 +49,10 @@ export async function handleCommand(
       setMainAgent(session, args, printer);
       return true;
     case "show":
-      printer.out(buildProgramSource(session));
+      printer.log(buildProgramSource(session));
       return true;
     case "parse":
-      printer.out(JSON.stringify(loadSessionProgram(session), null, 2));
+      printer.log(JSON.stringify(loadSessionProgram(session), null, 2));
       return true;
     case "check":
       checkSession(session, printer);
@@ -62,16 +62,16 @@ export async function handleCommand(
       return true;
     case "trace":
       if (args.length === 0) {
-        printer.out(formatTrace(session.lastTrace));
+        printer.log(formatTrace(session.lastTrace));
       } else {
-        printer.err("Usage: :trace");
+        printer.error("Usage: :trace");
       }
       return true;
     case "reset":
       resetSession(session, printer);
       return true;
     default:
-      printer.err(`Unknown command ':${command}'. Use :help.`);
+      printer.error(`Unknown command ':${command}'. Use :help.`);
       return true;
   }
 }
@@ -80,9 +80,9 @@ function checkSession(session: ReplSession, printer: ReplPrinter): boolean {
   const program = loadSessionProgram(session);
   const result = analyze(program, cliAnalyzeOptions());
   if (result.diagnostics.length > 0) {
-    printer.err(formatSemanticDiagnostics(result.diagnostics));
+    printer.error(formatSemanticDiagnostics(result.diagnostics));
   } else {
-    printer.out("ok");
+    printer.log("ok");
   }
   return !result.diagnostics.some((diagnostic) => diagnostic.severity === "error");
 }
@@ -99,9 +99,10 @@ async function runSession(
   const result = await executeAgent(program, input, {
     inputProvider: createReadlineInputProvider(reader),
     sourcePath: session.sourcePath,
+    logger: { error: (message) => printer.error(message) },
   });
   session.lastTrace = result.trace;
-  printer.out(JSON.stringify({ value: sanitizeForJson(result.value), trace: result.trace }, null, 2));
+  printer.log(JSON.stringify({ value: sanitizeForJson(result.value), trace: result.trace }, null, 2));
 }
 
 function printHelp(printer: ReplPrinter): void {
@@ -118,7 +119,7 @@ function printHelp(printer: ReplPrinter): void {
     ":reset",
     ":exit",
   ];
-  printer.out(`Commands:\n${lines.join("\n")}`);
+  printer.log(`Commands:\n${lines.join("\n")}`);
 }
 
 function cliAnalyzeOptions() {

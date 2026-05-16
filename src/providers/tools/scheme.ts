@@ -2,7 +2,7 @@ import { RuntimeError } from "../../runtime/core/errors.js";
 import { uriScheme } from "../../language/uri.js";
 import type { RuntimeValue } from "../../runtime/values/values.js";
 import type { ToolCallRequest, ToolProvider } from "../../runtime/values/providers.js";
-import { closeDisposableProviders } from "./shared.js";
+import { closeToolProviders } from "./shared.js";
 
 export class SchemeToolProvider implements ToolProvider {
   constructor(
@@ -20,6 +20,6 @@ export class SchemeToolProvider implements ToolProvider {
   }
 
   async close(): Promise<void> {
-    await closeDisposableProviders(this.providers);
+    await closeToolProviders(this.providers);
   }
 }

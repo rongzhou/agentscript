@@ -18,5 +18,9 @@ export function isEffectfulMemoryMethod(value: string): boolean {
 }
 
 export function getMemoryMethodSpec(value: string): MemoryMethodSpec | undefined {
-  return MEMORY_METHOD_SPECS[value as MemoryMethod];
+  return isMemoryMethod(value) ? MEMORY_METHOD_SPECS[value] : undefined;
+}
+
+function isMemoryMethod(value: string): value is MemoryMethod {
+  return value === MEMORY_ADD_METHOD || value === MEMORY_QUERY_METHOD;
 }

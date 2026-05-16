@@ -20,7 +20,7 @@ import { NpmToolProvider } from "./npm.js";
 import { loadNpmRegistry } from "../../language/npm-registry.js";
 import { SchemeToolProvider } from "./scheme.js";
 import { ShellToolProvider } from "./shell.js";
-import { closeDisposableProviders } from "./shared.js";
+import { closeToolProviders } from "./shared.js";
 import { Workspace } from "../shared/workspace.js";
 
 export class HostToolProvider extends SchemeToolProvider {
@@ -58,7 +58,7 @@ function createHostNamespaceProvider(providers: Record<string, ToolProvider>): T
     },
 
     async close(): Promise<void> {
-      await closeDisposableProviders(providers);
+      await closeToolProviders(providers);
     },
   };
 }

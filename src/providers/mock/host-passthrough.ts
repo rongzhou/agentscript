@@ -3,9 +3,10 @@ import type { ToolCallRequest, ToolProvider } from "../../runtime/values/provide
 import { MockToolProvider } from "./tool.js";
 
 export class HostPassthroughToolProvider implements ToolProvider {
-  private readonly mock: ToolProvider = new MockToolProvider();
-
-  constructor(private readonly host: ToolProvider) {}
+  constructor(
+    private readonly host: ToolProvider,
+    private readonly mock: ToolProvider = new MockToolProvider(),
+  ) {}
 
   async call(request: ToolCallRequest): ReturnType<ToolProvider["call"]> {
     if (uriScheme(request.uri) === "host") {

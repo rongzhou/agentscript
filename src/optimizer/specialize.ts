@@ -4,9 +4,8 @@ import type { RuntimeValue } from "../runtime/values/values.js";
 import type { ToolCallRequest } from "../runtime/values/providers.js";
 import { expectRuntimeObject, readOptionalString, readRequiredString } from "../providers/tools/shared.js";
 import type { OptimizerToolContext } from "./context.js";
-import { collectGraphSites, normalizePath, readTargetGraph, semanticErrors } from "./graph.js";
+import { collectGraphSites, normalizePath, readTargetGraph, semanticErrors, snapshotGraph } from "./graph.js";
 import { readSelection, validateSelection } from "./selection.js";
-import { snapshotGraph } from "./snapshot.js";
 import { outputTarget, rewriteGraph, writeRewrite } from "./source-rewrite.js";
 
 export function specializeOptimizer(request: ToolCallRequest, ctx: OptimizerToolContext): RuntimeValue {

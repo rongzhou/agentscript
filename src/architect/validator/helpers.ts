@@ -51,10 +51,20 @@ export function outputFields(output: unknown): Record<string, unknown> | null {
   return output.fields;
 }
 
-export function error(code: string, path: string, message: string, suggested_fix?: string): SpecDiagnostic {
-  return suggested_fix
-    ? { severity: "error", code, path, message, suggested_fix }
-    : { severity: "error", code, path, message };
+export function error(
+  code: string,
+  path: string,
+  message: string,
+  options: { range?: SourceRange; suggested_fix?: string } = {},
+): SpecDiagnostic {
+  return {
+    severity: "error",
+    code,
+    path,
+    message,
+    ...(options.range ? { range: options.range } : {}),
+    ...(options.suggested_fix ? { suggested_fix: options.suggested_fix } : {}),
+  };
 }
 
 export function okFromDiagnostics(diagnostics: SpecDiagnostic[]): boolean {

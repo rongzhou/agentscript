@@ -1,4 +1,12 @@
-import type { Expr, ObjectProperty } from "./types.js";
+import type { Expr, ObjectProperty, SourceLocation, SourceRange } from "./types.js";
+
+export function formatSourceLocation(location: SourceLocation): string {
+  return `${location.line}:${location.column}`;
+}
+
+export function formatSourceRangeStart(range: SourceRange): string {
+  return formatSourceLocation(range.start);
+}
 
 export function formatExpressionSource(expr: Expr): string {
   switch (expr.kind) {

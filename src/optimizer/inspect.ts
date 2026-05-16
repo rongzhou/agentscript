@@ -9,9 +9,9 @@ import {
   normalizePath,
   readTargetGraph,
   semanticErrors,
+  snapshotGraph,
   targetEffectfulToolWarnings,
 } from "./graph.js";
-import { snapshotGraph } from "./snapshot.js";
 
 export function inspectOptimizer(request: ToolCallRequest, ctx: OptimizerToolContext): RuntimeValue {
   const args = expectRuntimeObject(request.args[0], "Optimizer.inspect");

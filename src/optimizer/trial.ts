@@ -6,9 +6,8 @@ import type { ToolCallRequest } from "../runtime/values/providers.js";
 import type { TraceEvent } from "../runtime/trace/trace.js";
 import { expectRuntimeObject, readOptionalString, readRequiredString, softError } from "../providers/tools/shared.js";
 import type { OptimizerToolContext } from "./context.js";
-import { collectGraphSites, normalizePath, readTargetGraph, semanticErrors } from "./graph.js";
+import { collectGraphSites, normalizePath, readTargetGraph, semanticErrors, snapshotGraph } from "./graph.js";
 import { readEntry, readSelection, validateEntry, validateSelection } from "./selection.js";
-import { snapshotGraph } from "./snapshot.js";
 import { countEvents, pickedVariants } from "./trace.js";
 
 export type TrialTraceWriter = (trace: TraceEvent[], runId: string | undefined) => string | null;

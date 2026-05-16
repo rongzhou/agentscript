@@ -4,15 +4,15 @@ import { loadProgramSource } from "../runtime/program/loader.js";
 import type { TraceEvent } from "../runtime/trace/trace.js";
 
 export interface ReplPrinter {
-  out(message: string): void;
-  err(message: string): void;
+  log(message: string): void;
+  error(message: string): void;
 }
 
-export const consoleReplPrinter: ReplPrinter = {
-  out(message) {
+export const terminalReplPrinter: ReplPrinter = {
+  log(message) {
     console.log(message);
   },
-  err(message) {
+  error(message) {
     console.error(message);
   },
 };
@@ -40,12 +40,12 @@ export function addImport(session: ReplSession, source: string, printer: ReplPri
   const line = source.trim().startsWith("import ") ? source.trim() : `import ${source.trim()}`;
   parse(`${line}\nmain agent { main func(input {}) { return input } }`);
   session.importSources = [...session.importSources.filter((item) => item !== line), line];
-  printer.out("imported");
+  printer.log("imported");
 }
 
 export function loadFile(session: ReplSession, file: string, printer: ReplPrinter): void {
   if (!file) {
-    printer.err("Usage: :load <file.as>");
+    printer.error("Usage: :load <file.as>");
     return;
   }
 
@@ -69,12 +69,12 @@ export function loadFile(session: ReplSession, file: string, printer: ReplPrinte
     }
     session.agentSources.set(agent.name, agentSources[index]!);
   }
-  printer.out(`loaded ${program.agents.length} agent(s)`);
+  printer.log(`loaded ${program.agents.length} agent(s)`);
 }
 
 export function addAgentSource(session: ReplSession, source: string, printer: ReplPrinter): void {
   if (!AGENT_PATTERN.test(source)) {
-    printer.err("REPL accepts one complete agent declaration at a time.");
+    printer.error("REPL accepts one complete agent declaration at a time.");
     return;
   }
 
@@ -83,7 +83,7 @@ export function addAgentSource(session: ReplSession, source: string, printer: Re
   const program = parse(programSource);
   const agent = program.agents[program.agents.length - 1];
   if (!agent) {
-    printer.err("No agent found.");
+    printer.error("No agent found.");
     return;
   }
 
@@ -92,22 +92,22 @@ export function addAgentSource(session: ReplSession, source: string, printer: Re
   }
   const replaced = session.agentSources.has(agent.name);
   session.agentSources.set(agent.name, source);
-  printer.out(`${replaced ? "replaced" : "added"} agent ${agent.name}`);
+  printer.log(`${replaced ? "replaced" : "added"} agent ${agent.name}`);
 }
 
 export function setMainAgent(session: ReplSession, name: string, printer: ReplPrinter): void {
   if (!name) {
-    printer.err("Usage: :main <AgentName>");
+    printer.error("Usage: :main <AgentName>");
     return;
   }
   const source = session.agentSources.get(name);
   if (!source) {
-    printer.err(`Unknown agent '${name}'`);
+    printer.error(`Unknown agent '${name}'`);
     return;
   }
   demoteAllMainAgents(session);
   session.agentSources.set(name, source.replace(/^\s*agent\b/, "main agent"));
-  printer.out(`main agent ${name}`);
+  printer.log(`main agent ${name}`);
 }
 
 export function resetSession(session: ReplSession, printer: ReplPrinter): void {
@@ -115,17 +115,17 @@ export function resetSession(session: ReplSession, printer: ReplPrinter): void {
   session.importSources = [];
   session.lastTrace = [];
   session.sourcePath = undefined;
-  printer.out("reset");
+  printer.log("reset");
 }
 
 export function printAgents(session: ReplSession, printer: ReplPrinter): void {
   if (session.agentSources.size === 0) {
-    printer.out("(no agents)");
+    printer.log("(no agents)");
     return;
   }
   for (const [name, source] of session.agentSources) {
     const marker = MAIN_AGENT_PATTERN.test(source) ? "*" : " ";
-    printer.out(`${marker} ${name}`);
+    printer.log(`${marker} ${name}`);
   }
 }
 

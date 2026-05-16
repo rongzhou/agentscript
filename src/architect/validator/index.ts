@@ -34,5 +34,5 @@ export function validateTypedSpec(spec: AgentSpecDraft): TypedValidateResult {
 }
 
 function validatedAgentSpec(spec: AgentSpecDraft): AgentSpec {
-  return spec as unknown as AgentSpec;
+  return spec as AgentSpec;
 }

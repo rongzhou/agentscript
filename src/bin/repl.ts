@@ -1,7 +1,7 @@
 import { stdin as inputStream, stdout as outputStream } from "node:process";
 import { createInterface } from "node:readline/promises";
 import { handleCommand } from "./repl-commands.js";
-import { addAgentSource, createReplSession, consoleReplPrinter, type ReplPrinter } from "./repl-session.js";
+import { addAgentSource, createReplSession, terminalReplPrinter, type ReplPrinter } from "./repl-session.js";
 
 export interface ReplOptions {
   input?: NodeJS.ReadableStream;
@@ -16,11 +16,11 @@ export async function runRepl(options: ReplOptions = {}): Promise<number> {
     terminal: isTty(options.input ?? inputStream),
   });
   const session = createReplSession();
-  const printer = options.printer ?? consoleReplPrinter;
+  const printer = options.printer ?? terminalReplPrinter;
 
   try {
-    printer.out("AgentScript REPL");
-    printer.out("Paste one complete agent or use :help.");
+    printer.log("AgentScript REPL");
+    printer.log("Paste one complete agent or use :help.");
 
     let buffer: string[] = [];
     while (true) {
@@ -55,7 +55,7 @@ export async function runRepl(options: ReplOptions = {}): Promise<number> {
     if (error instanceof Error && error.message === "readline was closed") {
       return 0;
     }
-    printer.err(error instanceof Error ? error.message : String(error));
+    printer.error(error instanceof Error ? error.message : String(error));
     return 1;
   } finally {
     reader.close();

@@ -1,4 +1,4 @@
-import { SUPPORTED_PATTERNS } from "../spec/types.js";
+import { isAgentSpecPattern } from "../spec/types.js";
 import type { AgentSpecDraft } from "../spec/types.js";
 import { error, type SpecDiagnostic } from "./helpers.js";
 import { patternOf } from "./helpers.js";
@@ -6,7 +6,7 @@ import { patternOf } from "./helpers.js";
 export function checkPattern(spec: AgentSpecDraft): SpecDiagnostic[] {
   const diagnostics: SpecDiagnostic[] = [];
   const pattern = patternOf(spec);
-  if (!SUPPORTED_PATTERNS.has(pattern)) {
+  if (!isAgentSpecPattern(pattern)) {
     diagnostics.push(error("UNSUPPORTED_PATTERN", "/pattern", `Unsupported pattern '${pattern}'.`));
     return diagnostics;
   }

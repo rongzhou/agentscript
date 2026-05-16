@@ -95,6 +95,7 @@ async function runAgent(options: CliOptions): Promise<number> {
     memoryProvider: createCliMemoryProvider(options),
     sourcePath: options.file,
     toolProvider: createCliToolProvider(options),
+    logger: console,
   }).finally(() => inputProvider?.close?.());
 
   if (options.traceFile) {

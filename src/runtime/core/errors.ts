@@ -1,5 +1,5 @@
 import type { SourceRange } from "../../ast/types.js";
-import { formatSourceRangeStart } from "../../ast/location.js";
+import { formatSourceRangeStart } from "../../ast/format.js";
 
 export class RuntimeError extends Error {
   constructor(

@@ -2,11 +2,11 @@ export const OPENAI_PROTOCOL = "openai";
 export const ANTHROPIC_PROTOCOL = "anthropic";
 export const OLLAMA_PROTOCOL = "ollama";
 
-const SUPPORTED_LLM_PROTOCOLS = [OPENAI_PROTOCOL, ANTHROPIC_PROTOCOL, OLLAMA_PROTOCOL] as const;
+export type LlmProtocol = typeof OPENAI_PROTOCOL | typeof ANTHROPIC_PROTOCOL | typeof OLLAMA_PROTOCOL;
 
-export type LlmProtocol = (typeof SUPPORTED_LLM_PROTOCOLS)[number];
-
-export const SUPPORTED_LLM_PROTOCOL_SET: ReadonlySet<LlmProtocol> = new Set(SUPPORTED_LLM_PROTOCOLS);
+export function isLlmProtocol(value: string): value is LlmProtocol {
+  return value === OPENAI_PROTOCOL || value === ANTHROPIC_PROTOCOL || value === OLLAMA_PROTOCOL;
+}
 
 export interface ParsedLlmUri {
   protocol: LlmProtocol;

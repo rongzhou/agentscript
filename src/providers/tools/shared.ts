@@ -68,7 +68,7 @@ export function softError(code: string, message: string): JsonObject {
   return { ok: false, code, message };
 }
 
-export async function closeDisposableProviders(providers: Record<string, ToolProvider>): Promise<void> {
+export async function closeToolProviders(providers: Record<string, ToolProvider>): Promise<void> {
   const unique = new Set(Object.values(providers));
   await Promise.all([...unique].map((provider) => provider.close?.()));
 }

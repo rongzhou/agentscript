@@ -5,6 +5,7 @@ import { FILE_SCHEME, SQLITE_SCHEME, schemePrefix } from "../../language/schemes
 import { parse } from "../../parser/parser.js";
 import { splitSqliteUri } from "../../language/uri.js";
 import { setAgentSourcePath, setNodeSourcePath } from "../../language/source-map.js";
+import { RuntimeError } from "../core/errors.js";
 
 export interface LoadProgramOptions {
   sourcePath?: string;
@@ -93,7 +94,7 @@ function sourceBaseDir(program: Program, sourcePath: string | undefined): string
 function ensureNoRelativeImports(program: Program): void {
   for (const imported of program.imports) {
     if (requiresFileResolution(imported) && isRelativeImport(imported.uri)) {
-      throw new Error(`sourcePath is required to resolve relative ${imported.resourceKind} import '${imported.uri}'`);
+      throw new RuntimeError(`sourcePath is required to resolve relative ${imported.resourceKind} import '${imported.uri}'`);
     }
   }
 }
@@ -181,7 +182,7 @@ function loadAgentImport(imported: ImportDecl, baseDir: string, state: LoadState
     return;
   }
   if (state.loadingFiles.has(path)) {
-    throw new Error(`Circular agent import detected at ${imported.uri}`);
+    throw new RuntimeError(`Circular agent import detected at ${imported.uri}`);
   }
 
   state.agentImportKeys.add(importKey);
@@ -191,7 +192,7 @@ function loadAgentImport(imported: ImportDecl, baseDir: string, state: LoadState
     mergeImports(program.imports, dirname(path), state);
     const agent = program.agents.find((item) => item.name === imported.name);
     if (!agent) {
-      throw new Error(`Imported agent '${imported.name}' was not found in ${imported.uri}`);
+      throw new RuntimeError(`Imported agent '${imported.name}' was not found in ${imported.uri}`);
     }
     for (const item of program.agents) {
       const importedAgent = { ...item, isMain: false };
@@ -200,7 +201,7 @@ function loadAgentImport(imported: ImportDecl, baseDir: string, state: LoadState
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    throw new Error(`Failed to load agent import '${imported.name}' from ${path}: ${message}`);
+    throw new RuntimeError(`Failed to load agent import '${imported.name}' from ${path}: ${message}`);
   } finally {
     state.loadingFiles.delete(path);
   }

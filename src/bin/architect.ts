@@ -1,7 +1,7 @@
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { basename, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { buildAgentScript } from "../architect/pipeline.js";
+import { buildAgentScript } from "../architect/compiler/index.js";
 import { asAgentSpecDraft } from "../architect/spec/types.js";
 import { validateSpec, type SpecDiagnostic, type ValidateResult } from "../architect/validator/index.js";
 import { MockLlmProvider } from "../providers/mock/llm.js";
@@ -53,6 +53,7 @@ async function runArchitectRequest(options: Extract<ArchitectCliOptions, { mode:
       toolProvider,
       sourcePath,
       workspaceRoot: process.cwd(),
+      logger: console,
     },
   ).finally(async () => {
     await llmProvider.close?.();
@@ -99,12 +100,10 @@ function printDiagnostics(header: string, diagnostics: SpecDiagnostic[]): void {
   console.error(JSON.stringify(diagnostics, null, 2));
 }
 
-function pipelineFailureHeader(stage: "validate" | "compile" | "analyze"): string {
+function pipelineFailureHeader(stage: "validate" | "analyze"): string {
   switch (stage) {
     case "validate":
       return "AgentSpec validation failed";
-    case "compile":
-      return "AgentSpec compilation failed";
     case "analyze":
       return "Generated source analysis failed";
   }

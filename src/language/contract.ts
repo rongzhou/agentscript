@@ -1,7 +1,5 @@
 import type { ContractTypeName } from "../ast/types.js";
 
-const CONTRACT_TYPE_KEYS = new Set<ContractTypeName>(["string", "number", "boolean", "json", "list"]);
-
 type ContractJsonSchema = Record<string, string>;
 
 interface ContractTypeSpec {
@@ -27,7 +25,16 @@ const CONTRACT_TYPE_SPECS: Record<ContractTypeName, ContractTypeSpec> = {
 };
 
 export function isContractTypeName(value: string): value is ContractTypeName {
-  return CONTRACT_TYPE_KEYS.has(value as ContractTypeName);
+  switch (value) {
+    case "string":
+    case "number":
+    case "boolean":
+    case "json":
+    case "list":
+      return true;
+    default:
+      return false;
+  }
 }
 
 export function contractTypeJsonSchema(name: ContractTypeName): ContractJsonSchema {

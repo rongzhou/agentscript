@@ -4,7 +4,13 @@ import { MockToolProvider } from "../src/providers/mock/tool.js";
 import { parse } from "../src/parser/parser.js";
 import { executeAgent } from "../src/runtime/core/interpreter.js";
 import type { RuntimeValue } from "../src/runtime/values/values.js";
-import type { GenerateRequest, InputRequest, MemoryAddRequest, MemoryQueryRequest, ToolCallRequest } from "../src/runtime/values/providers.js";
+import type {
+  GenerateRequest,
+  InputRequest,
+  MemoryAddRequest,
+  MemoryQueryRequest,
+  ToolCallRequest,
+} from "../src/runtime/values/providers.js";
 
 describe("runtime core", () => {
   it("executes the research regression fixture with mock providers", async () => {

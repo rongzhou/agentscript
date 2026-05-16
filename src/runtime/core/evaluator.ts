@@ -1,7 +1,14 @@
 import type { AgentDecl, CallExpr, ConfigDecl, Expr, MemberExpr, SourceRange, Stmt } from "../../ast/types.js";
 import { RuntimeError } from "./errors.js";
 import { GenerateRuntime } from "../generate/generate.js";
-import { isAgentBinding, isFunctionBinding, isLlmBinding, isMemoryBinding, isObject, isToolBinding } from "../values/guards.js";
+import {
+  isAgentBinding,
+  isFunctionBinding,
+  isLlmBinding,
+  isMemoryBinding,
+  isObject,
+  isToolBinding,
+} from "../values/guards.js";
 import { sanitizeForJson } from "../values/json.js";
 import { evaluateBinaryOperator } from "./operators.js";
 import { ResourceCallRuntime } from "./resource-calls.js";

@@ -74,9 +74,7 @@ function normalizedBaseSpec(spec: AgentSpecDraft): Omit<AgentSpecBase, "pattern"
     model_context: normalizedModelContext(spec.model_context),
     generation: normalizedGeneration(spec.generation),
     output: normalizedOutput(spec.output),
-    ...(spec.assumptions === undefined
-      ? {}
-      : { assumptions: normalizedStringArray(spec.assumptions, "assumptions") }),
+    ...(spec.assumptions === undefined ? {} : { assumptions: normalizedStringArray(spec.assumptions, "assumptions") }),
   };
 }
 
@@ -109,9 +107,7 @@ function normalizedInputs(value: unknown): Record<string, AgentSpecInput> {
     const record = expectRecord(input, `inputs.${name}`);
     inputs[name] = {
       type: expectSpecType(record.type, `inputs.${name}.type`),
-      ...(record.required === undefined
-        ? {}
-        : { required: expectBoolean(record.required, `inputs.${name}.required`) }),
+      ...(record.required === undefined ? {} : { required: expectBoolean(record.required, `inputs.${name}.required`) }),
     };
   }
   return inputs;

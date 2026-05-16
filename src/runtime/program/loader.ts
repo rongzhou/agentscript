@@ -94,7 +94,9 @@ function sourceBaseDir(program: Program, sourcePath: string | undefined): string
 function ensureNoRelativeImports(program: Program): void {
   for (const imported of program.imports) {
     if (requiresFileResolution(imported) && isRelativeImport(imported.uri)) {
-      throw new RuntimeError(`sourcePath is required to resolve relative ${imported.resourceKind} import '${imported.uri}'`);
+      throw new RuntimeError(
+        `sourcePath is required to resolve relative ${imported.resourceKind} import '${imported.uri}'`,
+      );
     }
   }
 }
